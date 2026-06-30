@@ -57,10 +57,11 @@ export async function uploadImageAction(formData: FormData): Promise<UploadRespo
       success: true,
       url: publicUrl,
     }
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during upload"
     return {
       success: false,
-      error: error.message || "An unexpected error occurred during upload",
+      error: errorMessage,
     }
   }
 }
