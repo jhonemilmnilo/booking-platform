@@ -1,35 +1,55 @@
-name: CI
+name: CI - Tala Booking Platform
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
-  build:
+  build-and-lint:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: 📂 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install pnpm
+      - name: 📦 Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 11.9.0 # matching our current local version
+          version: 11.9.0
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # matching our current node environment
+          node-version: '22'
           cache: 'pnpm'
 
-      - name: Install Dependencies
+      - name: 📦 Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint Check
-        run: pnpm lint
+      - name: 💎 Prisma Schema Validation
+        run: pnpm exec prisma validate
+        env:
+          DATABASE_URL: "postgresql://mockuser:mockpass@localhost:5432/mockdb"
+          DIRECT_DATABASE_URL: "postgresql://mockuser:mockpass@localhost:5432/mockdb"
+        # Validates schema without needing a database connection
 
-      - name: Build Verification
-        run: pnpm build
+      - name: ⚙️ Generate Prisma Client
+        run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: "postgresql://mockuser:mockpass@localhost:5432/mockdb"
+          DIRECT_DATABASE_URL: "postgresql://mockuser:mockpass@localhost:5432/mockdb"
+
+      - name: 🧹 Lint Check
+        run: pnpm run lint
+
+      - name: ⌨️ TypeScript Type Check
+        run: pnpm exec tsc --noEmit
+        # Ensures no type errors before the build starts
+
+      - name: 🏗️ Production Build Check
+        run: pnpm run build
+        env:
+          DATABASE_URL: "postgresql://mockuser:mockpass@localhost:5432/mockdb"
+          DIRECT_DATABASE_URL: "postgresql://mockuser:mockpass@localhost:5432/mockdb"
