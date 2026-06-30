@@ -5,19 +5,21 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { Loader2, Compass, Mail, Lock, User } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { Loader2, Compass, Mail, Lock, User, Eye, EyeOff, ShieldAlert } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { FormField } from "@/components/ui/form-field"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
 import { loginWithEmailAction, signUpWithEmailAction, getSocialLoginUrlAction } from "./actions"
+
+import { Suspense } from "react"
 
 // Validation Schemas
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 })
 
 const signUpSchema = z.object({
@@ -26,10 +28,31 @@ const signUpSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
 })
 
-export default function AuthPage() {
+function AuthContent() {
   const [activeTab, setActiveTab] = React.useState<"login" | "signup">("login")
   const [isPending, startTransition] = React.useTransition()
+  const [showPassword, setShowPassword] = React.useState(false)
+  const [attemptsLeft, setAttemptsLeft] = React.useState<number | null>(null)
+  
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const errorParam = searchParams.get("error")
+
+  // Focus states for input styling matching EMapandan
+  const [isEmailFocused, setIsEmailFocused] = React.useState(false)
+  const [isPasswordFocused, setIsPasswordFocused] = React.useState(false)
+  const [isNameFocused, setIsNameFocused] = React.useState(false)
+
+  // Handle error parameters passed via redirect URLs
+  React.useEffect(() => {
+    if (errorParam) {
+      toast.error(errorParam)
+      // Clean query parameter from URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete("error")
+      window.history.replaceState({}, "", url.pathname)
+    }
+  }, [errorParam])
 
   // Form hooks
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -46,11 +69,25 @@ export default function AuthPage() {
     startTransition(async () => {
       const result = await loginWithEmailAction(values)
       if (result.success) {
-        toast.success("Successfully logged in!")
-        router.push("/")
-        router.refresh()
+        if (result.otpRequired) {
+          toast.success("Verification code sent to your email.")
+          router.push(`/auth/verify?email=${encodeURIComponent(values.email)}`)
+        } else {
+          toast.success("Successfully logged in!")
+          router.push("/")
+          router.refresh()
+        }
       } else {
         toast.error(result.error || "Login failed.")
+        // Extract attempts remaining if returned in message or standard EMapandan formats
+        if (result.error?.includes("remaining")) {
+          const match = result.error.match(/(\d+) attempt/)
+          if (match) {
+            setAttemptsLeft(parseInt(match[1], 10))
+          }
+        } else if (result.code === "lockout") {
+          setAttemptsLeft(0)
+        }
       }
     })
   }
@@ -59,9 +96,8 @@ export default function AuthPage() {
     startTransition(async () => {
       const result = await signUpWithEmailAction(values)
       if (result.success) {
-        toast.success("Registration successful! Check your email for confirmation.")
-        setActiveTab("login")
-        loginForm.setValue("email", values.email)
+        toast.success("Account registration initiated. Verification code sent to your email.")
+        router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
       } else {
         toast.error(result.error || "Registration failed.")
       }
@@ -80,36 +116,83 @@ export default function AuthPage() {
     })
   }
 
+  const themeColor = "var(--primary)"
+
   return (
-    <div className="min-h-[85vh] w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-muted/20">
-      <Card className="w-full max-w-[420px] bg-card border-border shadow-xl rounded-2xl overflow-hidden">
-        {/* Brand Header */}
-        <div className="bg-primary/5 py-6 border-b border-border/40 flex flex-col items-center justify-center gap-1">
-          <Compass className="h-8 w-8 text-primary animate-pulse" />
-          <span className="font-bold tracking-tight text-foreground text-sm uppercase">Tala Resort Portal</span>
+    <div className="min-h-screen w-full flex bg-background">
+      {/* Left side: Premium split-screen image layout */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
+        <Image
+          src="/images/auth-bg.png"
+          alt="Tala Resort Overwater Villa"
+          fill
+          priority
+          sizes="50vw"
+          className="object-cover object-center opacity-85 saturate-[1.1] contrast-[1.05]"
+        />
+        {/* Dark warm gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-transparent" />
+        
+        {/* Welcome Tagline Text */}
+        <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
+          <div className="flex items-center gap-2">
+            <Compass className="h-6 w-6 text-emerald-400 animate-spin-slow" />
+            <span className="text-xs font-bold tracking-widest uppercase text-emerald-300">Premium Tropical Sanctuary</span>
+          </div>
+          <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
+            Experience Tala Resort
+          </h2>
+          <p className="text-sm font-medium text-emerald-100/90 max-w-md leading-relaxed">
+            Welcome to your digital portal. Sign in to view reservation queues, manage stay durations, and access exclusive oceanfront amenities.
+          </p>
         </div>
+      </div>
 
-        <CardHeader className="text-center pt-8 pb-4">
-          <CardTitle className="text-2xl font-bold">
-            {activeTab === "login" ? "Welcome Back" : "Create Account"}
-          </CardTitle>
-          <CardDescription>
-            {activeTab === "login" 
-              ? "Access your dashboard and bookings" 
-              : "Register to request reservations"}
-          </CardDescription>
-        </CardHeader>
+      {/* Right side: Login Card Section */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 md:p-16 bg-muted/10">
+        <div className="w-full max-w-[420px] space-y-6">
+          
+          {/* Logo & Headline */}
+          <div className="space-y-2 text-left">
+            <div className="flex items-center gap-2 mb-2 lg:hidden">
+              <Compass className="h-7 w-7 text-primary" />
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Tala Portal</span>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+              {activeTab === "login" ? "Welcome Back" : "Create Account"}
+            </h1>
+            <p className="text-xs font-semibold text-muted-foreground">
+              {activeTab === "login" 
+                ? "Please enter your details to access your account."
+                : "Register with us to initiate custom booking reservations."}
+            </p>
+          </div>
 
-        <CardContent className="space-y-6">
+          {/* Locked out remaining attempts banner (EMapandan style) */}
+          {attemptsLeft !== null && attemptsLeft > 0 && attemptsLeft < 3 && (
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
+              <div className="p-2 bg-amber-500/20 text-amber-600 rounded-xl">
+                <ShieldAlert className="h-5 w-5" />
+              </div>
+              <div className="space-y-1 text-left">
+                <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 leading-none">Warning: Remaining Attempts</h4>
+                <p className="text-[11px] font-semibold text-amber-700/90 leading-normal mt-1">
+                  You have <span className="font-extrabold text-amber-600">{attemptsLeft} attempt{attemptsLeft > 1 ? "s" : ""} remaining</span> before account lockout.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Custom Tabs */}
           <div className="grid grid-cols-2 bg-muted/60 p-1 rounded-xl">
             <button
               onClick={() => {
                 setActiveTab("login")
                 signUpForm.reset()
+                setAttemptsLeft(null)
               }}
               disabled={isPending}
-              className={`py-2 text-sm font-semibold rounded-lg transition-all ${
+              className={`py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
                 activeTab === "login" 
                   ? "bg-background text-foreground shadow-sm" 
                   : "text-muted-foreground hover:text-foreground"
@@ -121,9 +204,10 @@ export default function AuthPage() {
               onClick={() => {
                 setActiveTab("signup")
                 loginForm.reset()
+                setAttemptsLeft(null)
               }}
               disabled={isPending}
-              className={`py-2 text-sm font-semibold rounded-lg transition-all ${
+              className={`py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all cursor-pointer ${
                 activeTab === "signup" 
                   ? "bg-background text-foreground shadow-sm" 
                   : "text-muted-foreground hover:text-foreground"
@@ -140,9 +224,8 @@ export default function AuthPage() {
               variant="outline"
               disabled={isPending}
               onClick={() => handleSocialLogin("google")}
-              className="h-10 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl"
+              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
             >
-              {/* Google Icon SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
@@ -161,7 +244,7 @@ export default function AuthPage() {
                   d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0C7.28 0 3.21 2.5 1.22 6.42l4.05 3.45c.95-2.85 3.6-4.96 6.73-4.96z"
                 />
               </svg>
-              Google
+              <span className="text-xs font-bold uppercase tracking-wider">Google</span>
             </Button>
 
             {/* Facebook Button */}
@@ -169,52 +252,90 @@ export default function AuthPage() {
               variant="outline"
               disabled={isPending}
               onClick={() => handleSocialLogin("facebook")}
-              className="h-10 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl"
+              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
             >
               <svg className="h-4 w-4 text-[#1877F2] fill-[#1877F2]" viewBox="0 0 24 24">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
               </svg>
-              Facebook
+              <span className="text-xs font-bold uppercase tracking-wider">Facebook</span>
             </Button>
           </div>
 
           <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-border/60"></div>
-            <span className="flex-shrink mx-4 text-xs uppercase text-muted-foreground tracking-wider">Or continue with</span>
-            <div className="flex-grow border-t border-border/60"></div>
+            <div className="flex-grow border-t border-border/50"></div>
+            <span className="flex-shrink mx-4 text-[10px] uppercase text-muted-foreground tracking-widest font-bold">Or continue with</span>
+            <div className="flex-grow border-t border-border/50"></div>
           </div>
 
           {/* Forms */}
           {activeTab === "login" ? (
             // Login Form
             <form onSubmit={loginForm.handleSubmit(handleEmailLogin)} className="space-y-4">
-              <FormField label="Email Address" error={loginForm.formState.errors.email?.message}>
+              <div className="space-y-1.5 text-left">
+                <Label htmlFor="login-email" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Email Address</Label>
                 <div className="relative flex items-center">
-                  <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                  <Mail 
+                    className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                    style={{ color: isEmailFocused ? themeColor : undefined }}
+                  />
                   <Input
+                    id="login-email"
                     {...loginForm.register("email")}
                     type="email"
                     placeholder="juan@email.com"
                     disabled={isPending}
-                    className="pl-9 h-10"
+                    className="pl-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{
+                      borderColor: isEmailFocused ? themeColor : undefined,
+                      boxShadow: isEmailFocused ? `0 0 0 1px ${themeColor}` : undefined
+                    }}
+                    onFocus={() => setIsEmailFocused(true)}
+                    onBlur={() => setIsEmailFocused(false)}
                   />
                 </div>
-              </FormField>
+                {loginForm.formState.errors.email && (
+                  <p className="text-[11px] text-destructive font-semibold mt-1">{loginForm.formState.errors.email.message}</p>
+                )}
+              </div>
 
-              <FormField label="Password" error={loginForm.formState.errors.password?.message}>
+              <div className="space-y-1.5 text-left">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="login-password" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Password</Label>
+                </div>
                 <div className="relative flex items-center">
-                  <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                  <Lock 
+                    className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                    style={{ color: isPasswordFocused ? themeColor : undefined }}
+                  />
                   <Input
+                    id="login-password"
                     {...loginForm.register("password")}
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     disabled={isPending}
-                    className="pl-9 h-10"
+                    className="pl-9 pr-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{
+                      borderColor: isPasswordFocused ? themeColor : undefined,
+                      boxShadow: isPasswordFocused ? `0 0 0 1px ${themeColor}` : undefined
+                    }}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 opacity-40 hover:opacity-100 focus:outline-none transition-colors cursor-pointer"
+                    style={{ color: isPasswordFocused || showPassword ? themeColor : undefined, opacity: isPasswordFocused || showPassword ? 1 : undefined }}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-              </FormField>
+                {loginForm.formState.errors.password && (
+                  <p className="text-[11px] text-destructive font-semibold mt-1">{loginForm.formState.errors.password.message}</p>
+                )}
+              </div>
 
-              <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-10 rounded-xl font-semibold">
+              <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer">
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -228,45 +349,95 @@ export default function AuthPage() {
           ) : (
             // Sign Up Form
             <form onSubmit={signUpForm.handleSubmit(handleEmailSignUp)} className="space-y-4">
-              <FormField label="Full Name" error={signUpForm.formState.errors.fullName?.message}>
+              <div className="space-y-1.5 text-left">
+                <Label htmlFor="signup-name" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Full Name</Label>
                 <div className="relative flex items-center">
-                  <User className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                  <User 
+                    className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                    style={{ color: isNameFocused ? themeColor : undefined }}
+                  />
                   <Input
+                    id="signup-name"
                     {...signUpForm.register("fullName")}
                     placeholder="Juan dela Cruz"
                     disabled={isPending}
-                    className="pl-9 h-10"
+                    className="pl-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{
+                      borderColor: isNameFocused ? themeColor : undefined,
+                      boxShadow: isNameFocused ? `0 0 0 1px ${themeColor}` : undefined
+                    }}
+                    onFocus={() => setIsNameFocused(true)}
+                    onBlur={() => setIsNameFocused(false)}
                   />
                 </div>
-              </FormField>
+                {signUpForm.formState.errors.fullName && (
+                  <p className="text-[11px] text-destructive font-semibold mt-1">{signUpForm.formState.errors.fullName.message}</p>
+                )}
+              </div>
 
-              <FormField label="Email Address" error={signUpForm.formState.errors.email?.message}>
+              <div className="space-y-1.5 text-left">
+                <Label htmlFor="signup-email" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Email Address</Label>
                 <div className="relative flex items-center">
-                  <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                  <Mail 
+                    className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                    style={{ color: isEmailFocused ? themeColor : undefined }}
+                  />
                   <Input
+                    id="signup-email"
                     {...signUpForm.register("email")}
                     type="email"
                     placeholder="juan@email.com"
                     disabled={isPending}
-                    className="pl-9 h-10"
+                    className="pl-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{
+                      borderColor: isEmailFocused ? themeColor : undefined,
+                      boxShadow: isEmailFocused ? `0 0 0 1px ${themeColor}` : undefined
+                    }}
+                    onFocus={() => setIsEmailFocused(true)}
+                    onBlur={() => setIsEmailFocused(false)}
                   />
                 </div>
-              </FormField>
+                {signUpForm.formState.errors.email && (
+                  <p className="text-[11px] text-destructive font-semibold mt-1">{signUpForm.formState.errors.email.message}</p>
+                )}
+              </div>
 
-              <FormField label="Password" error={signUpForm.formState.errors.password?.message}>
+              <div className="space-y-1.5 text-left">
+                <Label htmlFor="signup-password" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Password</Label>
                 <div className="relative flex items-center">
-                  <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                  <Lock 
+                    className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                    style={{ color: isPasswordFocused ? themeColor : undefined }}
+                  />
                   <Input
+                    id="signup-password"
                     {...signUpForm.register("password")}
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     disabled={isPending}
-                    className="pl-9 h-10"
+                    className="pl-9 pr-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{
+                      borderColor: isPasswordFocused ? themeColor : undefined,
+                      boxShadow: isPasswordFocused ? `0 0 0 1px ${themeColor}` : undefined
+                    }}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 opacity-40 hover:opacity-100 focus:outline-none transition-colors cursor-pointer"
+                    style={{ color: isPasswordFocused || showPassword ? themeColor : undefined, opacity: isPasswordFocused || showPassword ? 1 : undefined }}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-              </FormField>
+                {signUpForm.formState.errors.password && (
+                  <p className="text-[11px] text-destructive font-semibold mt-1">{signUpForm.formState.errors.password.message}</p>
+                )}
+              </div>
 
-              <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-10 rounded-xl font-semibold">
+              <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer">
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -278,8 +449,20 @@ export default function AuthPage() {
               </Button>
             </form>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[85vh] w-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    }>
+      <AuthContent />
+    </Suspense>
   )
 }
