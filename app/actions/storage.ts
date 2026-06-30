@@ -37,7 +37,7 @@ export async function uploadImageAction(formData: FormData): Promise<UploadRespo
     const buffer = Buffer.from(arrayBuffer)
 
     // Upload to Supabase Storage Bucket 'gallery'
-    const { data, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("gallery")
       .upload(filePath, buffer, {
         contentType: file.type,

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { motion } from "framer-motion"
+
 import { Palmtree, Waves, Compass, Sparkles, MapPin, Mail, Phone } from "lucide-react"
 
 import Hero from "@/components/shared/Hero"
