@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format, differenceInDays } from "date-fns"
-import { DateRange } from "react-day-picker"
 import { toast } from "sonner"
 import { CalendarIcon, Loader2, Sparkles } from "lucide-react"
 
@@ -77,6 +76,7 @@ export default function BookingModal({ room, isOpen, onClose }: BookingModalProp
   })
 
   // Watch fields for dynamic receipt computation
+  // eslint-disable-next-line react-hooks/incompatible-library
   const dateRange = watch("dateRange")
 
   // Reset success state and form when modal is closed/opened
@@ -108,7 +108,7 @@ export default function BookingModal({ room, isOpen, onClose }: BookingModalProp
         } else {
           toast.error(response.error || "Something went wrong.")
         }
-      } catch (err) {
+      } catch {
         toast.error("Failed to submit request. Please try again.")
       }
     })
