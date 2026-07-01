@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { format, differenceInDays } from "date-fns"
+
 import { toast } from "sonner"
 import { CalendarIcon, Loader2, Sparkles } from "lucide-react"
 
@@ -115,8 +116,8 @@ export default function BookingModal({ room, isOpen, onClose }: BookingModalProp
   }
 
   // Calculate live summary nights & cost
-  const nights = dateRange?.from && dateRange?.to 
-    ? differenceInDays(dateRange.to, dateRange.from) 
+  const nights = dateRange?.from && dateRange?.to
+    ? differenceInDays(dateRange.to, dateRange.from)
     : 0
   const estimatedCost = room ? room.pricePerNight * nights : 0
 

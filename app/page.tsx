@@ -1,6 +1,11 @@
 "use client"
 
 import * as React from "react"
+
+import { Palmtree, Waves, Compass, Sparkles, MapPin, Mail, Phone } from "lucide-react"
+
+import Hero from "@/components/shared/Hero"
+import RoomCard, { Room } from "@/components/shared/RoomCard"
 import Image from "next/image"
 import BookingModal from "@/components/shared/BookingModal"
 import { Room } from "@/components/shared/RoomCard"
