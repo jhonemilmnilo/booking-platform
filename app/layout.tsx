@@ -44,8 +44,8 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <main className="flex-grow">{children}</main>
-        <Toaster position="top-right" closeButton richColors />
+        {children}
+        <Toaster position="top-center" closeButton />
       </body>
     </html>
   );

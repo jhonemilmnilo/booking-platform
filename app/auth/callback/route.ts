@@ -27,23 +27,27 @@ export async function GET(request: Request) {
           // Force sign out to clear session
           await supabase.auth.signOut()
           const errorMsg = "Account not found. Please register an account before signing in."
-          return NextResponse.redirect(`${origin}/auth?error=${encodeURIComponent(errorMsg)}`)
+          return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(errorMsg)}`)
         }
-      }
 
-      const forwardedHost = request.headers.get("x-forwarded-host") // original origin before load balancer
-      const isLocalEnv = process.env.NODE_ENV === "development"
-      if (isLocalEnv) {
-        // we can safely redirect locally
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
+        // Force sign out of the active OAuth session to enforce OTP
+        await supabase.auth.signOut()
+
+        // Trigger OTP delivery
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email: email.trim().toLowerCase(),
+        })
+
+        if (otpError) {
+          return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(otpError.message)}`)
+        }
+
+        // Redirect to OTP verify page
+        return NextResponse.redirect(`${origin}/auth/verify?email=${encodeURIComponent(email.trim().toLowerCase())}`)
       }
     }
   }
 
   // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth?error=Could not authenticate user`)
+  return NextResponse.redirect(`${origin}/auth/login?error=Could not authenticate user`)
 }

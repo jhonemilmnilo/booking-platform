@@ -23,3 +23,7 @@ These rules must be strictly followed when writing database schema, server actio
 ## 6. Realtime & Webhook Restrictions
 - **No Database Polling**: Use webhook listeners (like PayMongo webhooks) or immediate Server Action responses for transitions. Do not run interval-based database polling.
 - **Use Supabase Realtime Sparingly**: Do not enable realtime listeners globally. Only enable them on tables where instantaneous UI updates are critical (like an active dashboard queue).
+
+## 7. Authentication & Registration Flow
+- **Social Login Pre-Registration Requirement**: If a user signs in via Google or Facebook but they do not have an existing user record in our `prisma.user` table, the system must abort the login, sign them out, and direct them to the sign-up page with a message stating they must register/sign up first. Do not auto-register users.
+- **Enforced OTP Verification**: All authentication flows (both standard credentials and social logins) must be validated with an **8-digit OTP** sent to their email.

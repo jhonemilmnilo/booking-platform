@@ -75,6 +75,19 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
     where: { key: { in: [`pw:fail:${emailClean}`, lockoutKey] } }
   })
 
+  // Check if user profile exists in database
+  const exists = await prisma.user.findUnique({
+    where: { email: emailClean }
+  })
+
+  if (!exists) {
+    await supabase.auth.signOut()
+    return {
+      success: false,
+      error: "Account not found. Please register an account before signing in."
+    }
+  }
+
   // Sign out to enforce OTP verification on next screen
   await supabase.auth.signOut()
 

@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
+import { showToast } from "@/components/shared/Toast"
 import { Loader2, Compass, Mail, Lock, User, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { signUpWithEmailAction, getSocialLoginUrlAction } from "../actions"
 
+import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
 
 const signUpSchema = z.object({
@@ -24,6 +25,7 @@ const signUpSchema = z.object({
 })
 
 function SignUpContent() {
+  const [isLoading, setIsLoading] = React.useState(false)
   const [isPending, startTransition] = React.useTransition()
   const [showPassword, setShowPassword] = React.useState(false)
   
@@ -40,25 +42,29 @@ function SignUpContent() {
   })
 
   const handleEmailSignUp = (values: z.infer<typeof signUpSchema>) => {
+    setIsLoading(true)
     startTransition(async () => {
       const result = await signUpWithEmailAction(values)
       if (result.success) {
-        toast.success("Account registration initiated. Verification code sent to your email.")
+        showToast.success("Account registration initiated. Verification code sent to your email.")
         router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
       } else {
-        toast.error(result.error || "Registration failed.")
+        setIsLoading(false)
+        showToast.error(result.error || "Registration failed.")
       }
     })
   }
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
+    setIsLoading(true)
     startTransition(async () => {
       const origin = window.location.origin
       const result = await getSocialLoginUrlAction(provider, origin)
       if (result.success && result.url) {
         window.location.href = result.url
       } else {
-        toast.error(result.error || `Failed to initiate ${provider} login.`)
+        setIsLoading(false)
+        showToast.error(result.error || `Failed to initiate ${provider} login.`)
       }
     })
   }
@@ -268,6 +274,7 @@ function SignUpContent() {
           </div>
         </div>
       </div>
+      <LoadingOverlay isVisible={isLoading} />
     </div>
   )
 }
