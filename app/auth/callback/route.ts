@@ -10,7 +10,27 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
     if (!error) {
+      // Get the authenticated user details
+      const { data: { user } } = await supabase.auth.getUser()
+      const email = user?.email
+
+      if (email) {
+        // Import prisma client singleton
+        const { default: prisma } = await import("@/lib/prisma/client")
+        const exists = await prisma.user.findUnique({
+          where: { email: email.trim().toLowerCase() }
+        })
+
+        if (!exists) {
+          // Force sign out to clear session
+          await supabase.auth.signOut()
+          const errorMsg = "Account not found. Please register an account before signing in."
+          return NextResponse.redirect(`${origin}/auth?error=${encodeURIComponent(errorMsg)}`)
+        }
+      }
+
       const forwardedHost = request.headers.get("x-forwarded-host") // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === "development"
       if (isLocalEnv) {

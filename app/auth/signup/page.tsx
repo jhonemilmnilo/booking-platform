@@ -1,0 +1,285 @@
+"use client"
+
+import * as React from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { toast } from "sonner"
+import { Loader2, Compass, Mail, Lock, User, Eye, EyeOff } from "lucide-react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import Link from "next/link"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { signUpWithEmailAction, getSocialLoginUrlAction } from "../actions"
+
+import { Suspense } from "react"
+
+const signUpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+})
+
+function SignUpContent() {
+  const [isPending, startTransition] = React.useTransition()
+  const [showPassword, setShowPassword] = React.useState(false)
+  
+  const router = useRouter()
+
+  // Focus states
+  const [isEmailFocused, setIsEmailFocused] = React.useState(false)
+  const [isPasswordFocused, setIsPasswordFocused] = React.useState(false)
+  const [isNameFocused, setIsNameFocused] = React.useState(false)
+
+  const signUpForm = useForm<z.infer<typeof signUpSchema>>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { email: "", password: "", fullName: "" },
+  })
+
+  const handleEmailSignUp = (values: z.infer<typeof signUpSchema>) => {
+    startTransition(async () => {
+      const result = await signUpWithEmailAction(values)
+      if (result.success) {
+        toast.success("Account registration initiated. Verification code sent to your email.")
+        router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
+      } else {
+        toast.error(result.error || "Registration failed.")
+      }
+    })
+  }
+
+  const handleSocialLogin = (provider: "google" | "facebook") => {
+    startTransition(async () => {
+      const origin = window.location.origin
+      const result = await getSocialLoginUrlAction(provider, origin)
+      if (result.success && result.url) {
+        window.location.href = result.url
+      } else {
+        toast.error(result.error || `Failed to initiate ${provider} login.`)
+      }
+    })
+  }
+
+  const themeColor = "var(--primary)"
+
+  return (
+    <div className="min-h-screen w-full flex bg-background">
+      {/* Left side: Premium split-screen image layout */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
+        <Image
+          src="/images/auth-bg.png"
+          alt="Tala Resort Overwater Villa"
+          fill
+          priority
+          sizes="50vw"
+          className="object-cover object-center opacity-85 saturate-[1.1] contrast-[1.05]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-transparent" />
+        
+        <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
+          <div className="flex items-center gap-2">
+            <Compass className="h-6 w-6 text-emerald-400 animate-spin-slow" />
+            <span className="text-xs font-bold tracking-widest uppercase text-emerald-300">Premium Tropical Sanctuary</span>
+          </div>
+          <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
+            Experience Tala Resort
+          </h2>
+          <p className="text-sm font-medium text-emerald-100/90 max-w-md leading-relaxed">
+            Welcome to your digital portal. Sign in to view reservation queues, manage stay durations, and access exclusive oceanfront amenities.
+          </p>
+        </div>
+      </div>
+
+      {/* Right side: Login Card Section */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 md:p-16 bg-muted/10">
+        <div className="w-full max-w-[420px] space-y-6">
+          
+          <div className="space-y-2 text-left">
+            <div className="flex items-center gap-2 mb-2 lg:hidden">
+              <Compass className="h-7 w-7 text-primary" />
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Tala Portal</span>
+            </div>
+            <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
+              Create Account
+            </h1>
+            <p className="text-xs font-semibold text-muted-foreground">
+              Register with us to initiate custom booking reservations.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              disabled={isPending}
+              onClick={() => handleSocialLogin("google")}
+              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.6c-.28 1.5-.12 3.01-.8 4.27l3.19 2.47c1.87-1.73 2.95-4.28 2.95-7.3c0-.85-.13-1.7-.19-2.27z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.19-2.47c-.89.6-2.02.95-3.54.95c-3.13 0-5.78-2.11-6.73-4.96L1.22 17.58C3.21 21.5 7.28 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.27 14.61c-.25-.75-.39-1.55-.39-2.39c0-.84.14-1.64.39-2.39L1.22 6.94C.44 8.5 0 10.2 0 12c0 1.8.44 3.5 1.22 5.06l4.05-3.45z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0C7.28 0 3.21 2.5 1.22 6.42l4.05 3.45c.95-2.85 3.6-4.96 6.73-4.96z"
+                />
+              </svg>
+              <span className="text-xs font-bold uppercase tracking-wider">Google</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={isPending}
+              onClick={() => handleSocialLogin("facebook")}
+              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
+            >
+              <svg className="h-4 w-4 text-[#1877F2] fill-[#1877F2]" viewBox="0 0 24 24">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              </svg>
+              <span className="text-xs font-bold uppercase tracking-wider">Facebook</span>
+            </Button>
+          </div>
+
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-border/50"></div>
+            <span className="flex-shrink mx-4 text-[10px] uppercase text-muted-foreground tracking-widest font-bold">Or continue with</span>
+            <div className="flex-grow border-t border-border/50"></div>
+          </div>
+
+          <form onSubmit={signUpForm.handleSubmit(handleEmailSignUp)} className="space-y-4">
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="signup-name" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Full Name</Label>
+              <div className="relative flex items-center">
+                <User 
+                  className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                  style={{ color: isNameFocused ? themeColor : undefined }}
+                />
+                <Input
+                  id="signup-name"
+                  {...signUpForm.register("fullName")}
+                  placeholder="Juan dela Cruz"
+                  disabled={isPending}
+                  className="pl-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{
+                    borderColor: isNameFocused ? themeColor : undefined,
+                    boxShadow: isNameFocused ? `0 0 0 1px ${themeColor}` : undefined
+                  }}
+                  onFocus={() => setIsNameFocused(true)}
+                  onBlur={() => setIsNameFocused(false)}
+                />
+              </div>
+              {signUpForm.formState.errors.fullName && (
+                <p className="text-[11px] text-destructive font-semibold mt-1">{signUpForm.formState.errors.fullName.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="signup-email" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Email Address</Label>
+              <div className="relative flex items-center">
+                <Mail 
+                  className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                  style={{ color: isEmailFocused ? themeColor : undefined }}
+                />
+                <Input
+                  id="signup-email"
+                  {...signUpForm.register("email")}
+                  type="email"
+                  placeholder="juan@email.com"
+                  disabled={isPending}
+                  className="pl-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{
+                    borderColor: isEmailFocused ? themeColor : undefined,
+                    boxShadow: isEmailFocused ? `0 0 0 1px ${themeColor}` : undefined
+                  }}
+                  onFocus={() => setIsEmailFocused(true)}
+                  onBlur={() => setIsEmailFocused(false)}
+                />
+              </div>
+              {signUpForm.formState.errors.email && (
+                <p className="text-[11px] text-destructive font-semibold mt-1">{signUpForm.formState.errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5 text-left">
+              <Label htmlFor="signup-password" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Password</Label>
+              <div className="relative flex items-center">
+                <Lock 
+                  className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                  style={{ color: isPasswordFocused ? themeColor : undefined }}
+                />
+                <Input
+                  id="signup-password"
+                  {...signUpForm.register("password")}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  disabled={isPending}
+                  className="pl-9 pr-9 h-11 bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{
+                    borderColor: isPasswordFocused ? themeColor : undefined,
+                    boxShadow: isPasswordFocused ? `0 0 0 1px ${themeColor}` : undefined
+                  }}
+                  onFocus={() => setIsPasswordFocused(true)}
+                  onBlur={() => setIsPasswordFocused(false)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 opacity-40 hover:opacity-100 focus:outline-none transition-colors cursor-pointer"
+                  style={{ color: isPasswordFocused || showPassword ? themeColor : undefined, opacity: isPasswordFocused || showPassword ? 1 : undefined }}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {signUpForm.formState.errors.password && (
+                <p className="text-[11px] text-destructive font-semibold mt-1">{signUpForm.formState.errors.password.message}</p>
+              )}
+            </div>
+
+            <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer">
+              {isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                "Create Account"
+              )}
+            </Button>
+          </form>
+
+          <div className="text-center pt-2">
+            <p className="text-xs text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/auth/login" className="text-primary font-bold hover:underline">
+                Sign In
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[85vh] w-full flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin" />
+      </div>
+    }>
+      <SignUpContent />
+    </Suspense>
+  )
+}

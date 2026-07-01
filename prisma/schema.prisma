@@ -3,7 +3,8 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider   = "prisma-client-js"
+  engineType = "library"
 }
 
 enum Role {
@@ -20,4 +21,10 @@ model User {
   role      Role     @default(GUEST)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RateLimit {
+  key       String   @id
+  attempts  Int
+  expiresAt DateTime
 }
