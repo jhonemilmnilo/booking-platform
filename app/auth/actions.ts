@@ -3,7 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import prisma from "@/lib/prisma/client"
-import { isRateLimited } from "@/lib/rate-limit"
+import { isRateLimited, incrementOtpSendAttempts, resetOtpSendLimits, maskEmail, checkLockout } from "@/lib/rate-limit"
+import { getSystemSetting } from "@/lib/settings"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -108,6 +109,41 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
   // Clear active session to enforce OTP
   await supabase.auth.signOut()
 
+  // Check progressive lockout for sending OTP
+  const sendLockoutKey = `otp:send_lockout:${emailClean}`
+  const sendLockout = await checkLockout(sendLockoutKey)
+  if (sendLockout.active) {
+    const elapsedMs = sendLockout.remainingMs
+    const hours = Math.floor(elapsedMs / 3600000)
+    const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+    
+    let timeString = ""
+    if (hours > 0) {
+      timeString = `${hours} hour(s) and ${minutes} minute(s)`
+    } else if (minutes > 0) {
+      timeString = `${minutes} minute(s) and ${seconds} second(s)`
+    } else {
+      timeString = `${seconds} second(s)`
+    }
+
+    return {
+      success: false,
+      error: `Too many verification requests. Please try again in ${timeString}.`
+    }
+  }
+
+  // Increment send attempts
+  const incrementResult = await incrementOtpSendAttempts(emailClean)
+  if (incrementResult.locked) {
+    const cooldownSec = incrementResult.cooldownMs / 1000
+    const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+    return {
+      success: false,
+      error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+    }
+  }
+
   // 3. Check local database cooldown for sending OTP to avoid hitting Supabase rate limit
   const otpCooldownKey = `otp:send:${emailClean}`
   const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
@@ -127,6 +163,7 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
     return { success: false, error: otpError.message }
   }
 
+  console.info(`[Auth] Login OTP successfully requested for email: ${maskEmail(emailClean)}`)
   return { success: true, otpRequired: true }
 }
 
@@ -142,12 +179,9 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
 
   // Check if locked out of OTP verification attempts
   const otpLockoutKey = `otp:lockout:${emailClean}`
-  const existingOtpLockout = await prisma.rateLimit.findUnique({
-    where: { key: otpLockoutKey }
-  })
-  const now = new Date()
-  if (existingOtpLockout && existingOtpLockout.expiresAt > now) {
-    const elapsedMs = existingOtpLockout.expiresAt.getTime() - now.getTime()
+  const otpLockout = await checkLockout(otpLockoutKey)
+  if (otpLockout.active) {
+    const elapsedMs = otpLockout.remainingMs
     const minutes = Math.floor(elapsedMs / 60000)
     const seconds = Math.ceil((elapsedMs % 60000) / 1000)
     const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
@@ -155,6 +189,41 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
       success: false,
       error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
       code: "lockout"
+    }
+  }
+
+  // Check progressive lockout for sending OTP
+  const sendLockoutKey = `otp:send_lockout:${emailClean}`
+  const sendLockout = await checkLockout(sendLockoutKey)
+  if (sendLockout.active) {
+    const elapsedMs = sendLockout.remainingMs
+    const hours = Math.floor(elapsedMs / 3600000)
+    const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+    
+    let timeString = ""
+    if (hours > 0) {
+      timeString = `${hours} hour(s) and ${minutes} minute(s)`
+    } else if (minutes > 0) {
+      timeString = `${minutes} minute(s) and ${seconds} second(s)`
+    } else {
+      timeString = `${seconds} second(s)`
+    }
+
+    return {
+      success: false,
+      error: `Too many verification requests. Please try again in ${timeString}.`
+    }
+  }
+
+  // Increment send attempts
+  const incrementResult = await incrementOtpSendAttempts(emailClean)
+  if (incrementResult.locked) {
+    const cooldownSec = incrementResult.cooldownMs / 1000
+    const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+    return {
+      success: false,
+      error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
     }
   }
 
@@ -176,6 +245,7 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
     return { success: false, error: error.message }
   }
 
+  console.info(`[Auth] Signup OTP successfully requested for email: ${maskEmail(emailClean)}`)
   return { success: true, user: data.user }
 }
 
@@ -185,12 +255,9 @@ export async function verifyOtpAction(email: string, code: string) {
 
   // 1. Check lockout status
   const lockoutKey = `otp:lockout:${emailClean}`
-  const existingLockout = await prisma.rateLimit.findUnique({
-    where: { key: lockoutKey }
-  })
-  const now = new Date()
-  if (existingLockout && existingLockout.expiresAt > now) {
-    const elapsedMs = existingLockout.expiresAt.getTime() - now.getTime()
+  const otpLockout = await checkLockout(lockoutKey)
+  if (otpLockout.active) {
+    const elapsedMs = otpLockout.remainingMs
     const minutes = Math.floor(elapsedMs / 60000)
     const seconds = Math.ceil((elapsedMs % 60000) / 1000)
     const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
@@ -241,7 +308,8 @@ export async function verifyOtpAction(email: string, code: string) {
     }
   }
 
-  // Success! Clear fail trackers
+  // Success! Clear fail trackers and reset progressive OTP send limits
+  await resetOtpSendLimits(emailClean)
   await prisma.rateLimit.deleteMany({
     where: { key: { in: [`otp:fail:${emailClean}`, lockoutKey] } }
   })
@@ -293,4 +361,73 @@ export async function signOutAction() {
   const supabase = await createClient()
   await supabase.auth.signOut()
   return { success: true }
+}
+
+export async function resendOtpAction(email: string) {
+  const emailClean = email.trim().toLowerCase()
+  const supabase = await createClient()
+
+  // 1. Check progressive lockout for sending OTP
+  const sendLockoutKey = `otp:send_lockout:${emailClean}`
+  const sendLockout = await checkLockout(sendLockoutKey)
+  if (sendLockout.active) {
+    const elapsedMs = sendLockout.remainingMs
+    const hours = Math.floor(elapsedMs / 3600000)
+    const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+    
+    let timeString = ""
+    if (hours > 0) {
+      timeString = `${hours} hour(s) and ${minutes} minute(s)`
+    } else if (minutes > 0) {
+      timeString = `${minutes} minute(s) and ${seconds} second(s)`
+    } else {
+      timeString = `${seconds} second(s)`
+    }
+
+    return {
+      success: false,
+      error: `Too many verification requests. Please try again in ${timeString}.`
+    }
+  }
+
+  // 2. Increment send attempts
+  const incrementResult = await incrementOtpSendAttempts(emailClean)
+  if (incrementResult.locked) {
+    const cooldownSec = incrementResult.cooldownMs / 1000
+    const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+    return {
+      success: false,
+      error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`,
+      code: "lockout"
+    }
+  }
+
+  // 3. Check local database 60s cooldown for sending OTP
+  const otpCooldownKey = `otp:send:${emailClean}`
+  const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
+  if (!otpRateLimit.success) {
+    return { success: true, otpAlreadySent: true }
+  }
+
+  // 4. Trigger OTP delivery
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email: emailClean,
+  })
+
+  if (otpError) {
+    if (otpError.message.includes("For security purposes")) {
+      return { success: true, otpAlreadySent: true }
+    }
+    return { success: false, error: otpError.message }
+  }
+
+  console.info(`[Auth] OTP successfully resent to email: ${maskEmail(emailClean)}`)
+  return { success: true }
+}
+
+export async function getHeroVideoUrlsAction() {
+  const desktopUrl = await getSystemSetting("hero_video_url", "/videos/enhance_ocean_hill_villas.mp4")
+  const mobileUrl = await getSystemSetting("hero_video_url_mobile", "/videos/enhance_ocean_hill_villas_mobile.mp4")
+  return { desktopUrl, mobileUrl }
 }

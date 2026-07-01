@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { FormField } from "@/components/ui/form-field"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { verifyOtpAction } from "../actions"
+import { verifyOtpAction, resendOtpAction } from "../actions"
 
 import { Suspense } from "react"
 
@@ -116,20 +116,26 @@ function VerifyOtpContent() {
   const handleResendCode = async () => {
     if (!email) return
     setIsResending(true)
-    try {
-      // Re-trigger OTP via login action (which sends OTP under the hood)
-      // Since password is not required for just sending OTP to an existing session request,
-      // we can call signInWithOtp directly, but since we wrapped it, let's trigger it.
-      // We can also make a resend helper or use the default supabase behaviors.
-      // For simplicity, we can let them know a new code was requested.
-      showToast.success("A new 8-digit code has been sent to your email.")
+    const result = await resendOtpAction(email)
+    setIsResending(false)
+
+    if (result.success) {
+      if (result.otpAlreadySent) {
+        showToast.info("Verification code already sent", "Please check your inbox or spam folder.")
+      } else {
+        showToast.success("A new 8-digit code has been sent to your email.")
+      }
       const expiryKey = `otp_resend_expiry:${email}`
       localStorage.setItem(expiryKey, (Date.now() + 60000).toString())
       setResendTimer(60)
-    } catch {
-      showToast.error("Failed to resend code.")
-    } finally {
-      setIsResending(false)
+    } else {
+      showToast.error(result.error || "Failed to resend code.")
+      if (result.code === "lockout") {
+        localStorage.removeItem("pending_otp_email")
+        localStorage.removeItem("pending_otp_timestamp")
+        localStorage.removeItem(`otp_resend_expiry:${email}`)
+        router.push("/auth/signup")
+      }
     }
   }
 

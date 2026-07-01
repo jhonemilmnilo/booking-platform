@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showToast } from "@/components/shared/Toast"
 import { Loader2, Compass, Mail, Lock, User, Eye, EyeOff } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -30,6 +30,17 @@ function SignUpContent() {
   const [showPassword, setShowPassword] = React.useState(false)
   
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const errorParam = searchParams.get("error")
+
+  React.useEffect(() => {
+    if (errorParam) {
+      showToast.error(errorParam)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("error")
+      window.history.replaceState({}, "", url.pathname)
+    }
+  }, [errorParam])
 
   // Focus states
   const [isEmailFocused, setIsEmailFocused] = React.useState(false)

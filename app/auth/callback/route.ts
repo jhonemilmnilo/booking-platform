@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { isRateLimited } from "@/lib/rate-limit"
+import { isRateLimited, incrementOtpSendAttempts, maskEmail, checkLockout } from "@/lib/rate-limit"
 import prisma from "@/lib/prisma/client"
 
 export async function GET(request: Request) {
@@ -19,18 +19,16 @@ export async function GET(request: Request) {
       if (email) {
         const emailClean = email.trim().toLowerCase()
         const otpLockoutKey = `otp:lockout:${emailClean}`
-        const existingOtpLockout = await prisma.rateLimit.findUnique({
-          where: { key: otpLockoutKey }
-        })
-        const now = new Date()
-        if (existingOtpLockout && existingOtpLockout.expiresAt > now) {
+        const otpLockout = await checkLockout(otpLockoutKey)
+        if (otpLockout.active) {
           await supabase.auth.signOut()
-          const elapsedMs = existingOtpLockout.expiresAt.getTime() - now.getTime()
+          const elapsedMs = otpLockout.remainingMs
           const minutes = Math.floor(elapsedMs / 60000)
           const seconds = Math.ceil((elapsedMs % 60000) / 1000)
           const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
           const errorMsg = `Too many incorrect verification attempts. Please try again in ${timeString}.`
-          return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(errorMsg)}`)
+          const targetUrl = isSignup ? `${origin}/auth/signup` : `${origin}/auth/login`
+          return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
         }
 
         const exists = await prisma.user.findUnique({
@@ -46,6 +44,39 @@ export async function GET(request: Request) {
 
         // Force sign out of the active OAuth session to enforce OTP
         await supabase.auth.signOut()
+
+        // Check progressive lockout for sending OTP
+        const sendLockoutKey = `otp:send_lockout:${emailClean}`
+        const sendLockout = await checkLockout(sendLockoutKey)
+        if (sendLockout.active) {
+          const elapsedMs = sendLockout.remainingMs
+          const hours = Math.floor(elapsedMs / 3600000)
+          const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+          const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+          
+          let timeString = ""
+          if (hours > 0) {
+            timeString = `${hours} hour(s) and ${minutes} minute(s)`
+          } else if (minutes > 0) {
+            timeString = `${minutes} minute(s) and ${seconds} second(s)`
+          } else {
+            timeString = `${seconds} second(s)`
+          }
+
+          const errorMsg = `Too many verification requests. Please try again in ${timeString}.`
+          const targetUrl = isSignup ? `${origin}/auth/signup` : `${origin}/auth/login`
+          return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
+        }
+
+        // Increment send attempts
+        const incrementResult = await incrementOtpSendAttempts(emailClean)
+        if (incrementResult.locked) {
+          const cooldownSec = incrementResult.cooldownMs / 1000
+          const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+          const errorMsg = `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+          const targetUrl = isSignup ? `${origin}/auth/signup` : `${origin}/auth/login`
+          return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
+        }
 
         const verifyUrl = isSignup
           ? `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}&signup=true`
@@ -70,6 +101,7 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(otpError.message)}`)
         }
 
+        console.info(`[Auth] OAuth-callback OTP successfully requested for email: ${maskEmail(emailClean)}`)
         return NextResponse.redirect(verifyUrl)
       }
     }

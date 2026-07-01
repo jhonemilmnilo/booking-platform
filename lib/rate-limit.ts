@@ -133,3 +133,199 @@ export async function isRateLimited(
     return { success: true, remaining: 1 }
   }
 }
+
+/**
+ * Progressive OTP send rate-limiting module.
+ * Tier 1: 3 attempts, cooldown 3 minutes.
+ * Tier 2: 2 attempts, cooldown 5 minutes.
+ * Tier 3: 1 attempt, cooldown 1 hour.
+ */
+
+export async function getOtpSendTier(email: string): Promise<number> {
+  const key = `otp:tier:${email}`
+  if (redis && redis.status === "ready") {
+    try {
+      const val = await redis.get(key)
+      return val ? parseInt(val, 10) : 1
+    } catch {
+      // Fallback below
+    }
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { key } })
+    if (record && record.expiresAt > new Date()) {
+      return record.attempts
+    }
+  } catch (error) {
+    console.error("[RateLimit] Error getting OTP tier:", error)
+  }
+  return 1
+}
+
+export async function incrementOtpSendAttempts(
+  email: string
+): Promise<{ locked: boolean; cooldownMs: number; remaining: number }> {
+  const tier = await getOtpSendTier(email)
+  
+  // Set configuration based on current tier
+  let maxAttempts = 3
+  let cooldownMs = 180000
+  
+  if (tier === 2) {
+    maxAttempts = 2
+    cooldownMs = 300000
+  } else if (tier >= 3) {
+    maxAttempts = 1
+    cooldownMs = 3600000
+  }
+
+  const attemptsKey = `otp:send_attempts:${email}`
+  let currentAttempts = 0
+
+  if (redis && redis.status === "ready") {
+    try {
+      const val = await redis.get(attemptsKey)
+      currentAttempts = val ? parseInt(val, 10) : 0
+    } catch {
+      // Fallback below
+    }
+  } else {
+    try {
+      const record = await prisma.rateLimit.findUnique({ where: { key: attemptsKey } })
+      if (record && record.expiresAt > new Date()) {
+        currentAttempts = record.attempts
+      }
+    } catch (error) {
+      console.error("[RateLimit] Error getting send attempts:", error)
+    }
+  }
+
+  const nextAttempts = currentAttempts + 1
+
+  if (nextAttempts > maxAttempts) {
+    // Lock them out!
+    const lockoutExpiry = new Date(Date.now() + cooldownMs)
+    const lockoutKey = `otp:send_lockout:${email}`
+    const nextTier = Math.min(3, tier + 1)
+    const tierKey = `otp:tier:${email}`
+
+    if (redis && redis.status === "ready") {
+      try {
+        const multi = redis.multi()
+        multi.set(lockoutKey, lockoutExpiry.getTime().toString(), "PX", cooldownMs)
+        multi.set(tierKey, nextTier.toString(), "PX", 86400000)
+        multi.del(attemptsKey)
+        await multi.exec()
+      } catch (error) {
+        console.warn("[RateLimit] Redis lockout multi block failed:", error)
+      }
+    } else {
+      try {
+        await prisma.$transaction([
+          prisma.rateLimit.upsert({
+            where: { key: lockoutKey },
+            create: { key: lockoutKey, attempts: 1, expiresAt: lockoutExpiry },
+            update: { attempts: 1, expiresAt: lockoutExpiry }
+          }),
+          prisma.rateLimit.upsert({
+            where: { key: tierKey },
+            create: { key: tierKey, attempts: nextTier, expiresAt: new Date(Date.now() + 86400000) },
+            update: { attempts: nextTier, expiresAt: new Date(Date.now() + 86400000) }
+          }),
+          prisma.rateLimit.deleteMany({
+            where: { key: attemptsKey }
+          })
+        ])
+      } catch (error) {
+        console.error("[RateLimit] Database lockout transaction failed:", error)
+      }
+    }
+    return { locked: true, cooldownMs, remaining: 0 }
+  }
+
+  // Increment attempt counter
+  if (redis && redis.status === "ready") {
+    try {
+      const multi = redis.multi()
+      multi.incr(attemptsKey)
+      if (currentAttempts === 0) {
+        multi.pexpire(attemptsKey, 3600000)
+      }
+      await multi.exec()
+    } catch (error) {
+      console.warn("[RateLimit] Redis increment failed:", error)
+    }
+  } else {
+    try {
+      await prisma.rateLimit.upsert({
+        where: { key: attemptsKey },
+        create: { key: attemptsKey, attempts: 1, expiresAt: new Date(Date.now() + 3600000) },
+        update: { attempts: nextAttempts, expiresAt: new Date(Date.now() + 3600000) }
+      })
+    } catch (error) {
+      console.error("[RateLimit] Database increment failed:", error)
+    }
+  }
+
+  return { locked: false, cooldownMs: 0, remaining: maxAttempts - nextAttempts }
+}
+
+export async function resetOtpSendLimits(email: string): Promise<void> {
+  const keys = [`otp:tier:${email}`, `otp:send_attempts:${email}`, `otp:send_lockout:${email}`]
+  if (redis && redis.status === "ready") {
+    try {
+      await redis.del(...keys)
+    } catch {
+      // Fallback below
+    }
+  }
+
+  try {
+    await prisma.rateLimit.deleteMany({
+      where: { key: { in: keys } }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database reset failed:", error)
+  }
+}
+
+/**
+ * Mask email address to secure PII in system logs.
+ * e.g., "jhonemil@example.com" -> "j*******@example.com"
+ */
+export function maskEmail(email: string): string {
+  const parts = email.split("@")
+  if (parts.length !== 2) return "invalid-email"
+  const [username, domain] = parts
+  if (username.length <= 2) return `${username.charAt(0)}***@${domain}`
+  return `${username.charAt(0)}${"*".repeat(username.length - 1)}@${domain}`
+}
+
+/**
+ * Universal lockout checker that queries Redis first and falls back to Postgres.
+ */
+export async function checkLockout(key: string): Promise<{ active: boolean; remainingMs: number }> {
+  const now = Date.now()
+  if (redis && redis.status === "ready") {
+    try {
+      const ttl = await redis.ttl(key)
+      if (ttl > 0) {
+        return { active: true, remainingMs: ttl * 1000 }
+      }
+      return { active: false, remainingMs: 0 }
+    } catch {
+      // Fallback below
+    }
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { key } })
+    if (record && record.expiresAt > new Date()) {
+      return { active: true, remainingMs: record.expiresAt.getTime() - now }
+    }
+  } catch (error) {
+    console.error("[RateLimit] Lockout check failed:", error)
+  }
+  return { active: false, remainingMs: 0 }
+}
