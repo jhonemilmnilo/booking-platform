@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
+import { showToast } from "@/components/shared/Toast"
 import { Loader2, ShieldCheck, Mail, ArrowLeft } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -18,7 +18,7 @@ import { verifyOtpAction } from "../actions"
 import { Suspense } from "react"
 
 const verifySchema = z.object({
-  code: z.string().length(6, "Code must be exactly 6 digits").regex(/^\d+$/, "Code must contain only numbers"),
+  code: z.string().length(8, "Code must be exactly 8 digits").regex(/^\d+$/, "Code must contain only numbers"),
 })
 
 function VerifyOtpContent() {
@@ -46,18 +46,18 @@ function VerifyOtpContent() {
 
   const onSubmit = (values: z.infer<typeof verifySchema>) => {
     if (!email) {
-      toast.error("Missing email address. Please go back and try again.")
+      showToast.error("Missing email address. Please go back and try again.")
       return
     }
 
     startTransition(async () => {
       const result = await verifyOtpAction(email, values.code)
       if (result.success) {
-        toast.success("Identity verified successfully!")
+        showToast.success("Identity verified successfully!")
         router.push("/")
         router.refresh()
       } else {
-        toast.error(result.error || "Verification failed.")
+        showToast.error(result.error || "Verification failed.")
       }
     })
   }
@@ -71,10 +71,10 @@ function VerifyOtpContent() {
       // we can call signInWithOtp directly, but since we wrapped it, let's trigger it.
       // We can also make a resend helper or use the default supabase behaviors.
       // For simplicity, we can let them know a new code was requested.
-      toast.success("A new 6-digit code has been sent to your email.")
+      showToast.success("A new 8-digit code has been sent to your email.")
       setResendTimer(60)
     } catch {
-      toast.error("Failed to resend code.")
+      showToast.error("Failed to resend code.")
     } finally {
       setIsResending(false)
     }
@@ -92,20 +92,20 @@ function VerifyOtpContent() {
         <CardHeader className="text-center pt-8 pb-4">
           <CardTitle className="text-2xl font-bold">Verify Your Email</CardTitle>
           <CardDescription>
-            We sent a 6-digit verification code to
+            We sent an 8-digit verification code to
             <span className="block font-semibold text-foreground mt-1 break-all">{email || "your email"}</span>
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6">
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField label="6-Digit OTP Code" error={form.formState.errors.code?.message}>
+            <FormField label="8-Digit OTP Code" error={form.formState.errors.code?.message}>
               <div className="relative flex items-center">
                 <Mail className="absolute left-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   {...form.register("code")}
-                  placeholder="123456"
-                  maxLength={6}
+                  placeholder="12345678"
+                  maxLength={8}
                   disabled={isPending}
                   className="pl-9 h-10 text-center tracking-[0.5em] font-mono text-lg"
                 />

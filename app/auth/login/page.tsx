@@ -4,7 +4,7 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
+import { showToast } from "@/components/shared/Toast"
 import { Loader2, Compass, Mail, Lock, Eye, EyeOff, ShieldAlert } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { loginWithEmailAction, getSocialLoginUrlAction } from "../actions"
 
+import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
 
 const loginSchema = z.object({
@@ -23,6 +24,7 @@ const loginSchema = z.object({
 })
 
 function LoginContent() {
+  const [isLoading, setIsLoading] = React.useState(false)
   const [isPending, startTransition] = React.useTransition()
   const [showPassword, setShowPassword] = React.useState(false)
   const [attemptsLeft, setAttemptsLeft] = React.useState<number | null>(null)
@@ -37,7 +39,7 @@ function LoginContent() {
 
   React.useEffect(() => {
     if (errorParam) {
-      toast.error(errorParam)
+      showToast.error(errorParam)
       const url = new URL(window.location.href)
       url.searchParams.delete("error")
       window.history.replaceState({}, "", url.pathname)
@@ -50,19 +52,21 @@ function LoginContent() {
   })
 
   const handleEmailLogin = (values: z.infer<typeof loginSchema>) => {
+    setIsLoading(true)
     startTransition(async () => {
       const result = await loginWithEmailAction(values)
       if (result.success) {
         if (result.otpRequired) {
-          toast.success("Verification code sent to your email.")
+          showToast.success("Verification code sent to your email.")
           router.push(`/auth/verify?email=${encodeURIComponent(values.email)}`)
         } else {
-          toast.success("Successfully logged in!")
+          showToast.success("Successfully logged in!")
           router.push("/")
           router.refresh()
         }
       } else {
-        toast.error(result.error || "Login failed.")
+        setIsLoading(false)
+        showToast.error(result.error || "Login failed.")
         if (result.error?.includes("remaining")) {
           const match = result.error.match(/(\d+) attempt/)
           if (match) {
@@ -76,13 +80,15 @@ function LoginContent() {
   }
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
+    setIsLoading(true)
     startTransition(async () => {
       const origin = window.location.origin
       const result = await getSocialLoginUrlAction(provider, origin)
       if (result.success && result.url) {
         window.location.href = result.url
       } else {
-        toast.error(result.error || `Failed to initiate ${provider} login.`)
+        setIsLoading(false)
+        showToast.error(result.error || `Failed to initiate ${provider} login.`)
       }
     })
   }
@@ -282,6 +288,7 @@ function LoginContent() {
           </div>
         </div>
       </div>
+      <LoadingOverlay isVisible={isLoading} />
     </div>
   )
 }
