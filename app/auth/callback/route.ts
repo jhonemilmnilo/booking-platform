@@ -5,8 +5,6 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
   // if "next" is in param, redirect there, otherwise redirect home
-  const next = searchParams.get("next") ?? "/"
-
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
