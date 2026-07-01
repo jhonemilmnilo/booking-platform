@@ -45,7 +45,7 @@ export default function Header() {
             <PhoneCall className="h-4 w-4" />
             +63 (917) 123 4567
           </Button>
-          <Link href="/auth">
+          <Link href="/auth/login">
             <Button variant="outline">
               Sign In
             </Button>
@@ -90,7 +90,7 @@ export default function Header() {
                     <PhoneCall className="h-4 w-4" />
                     +63 (917) 123 4567
                   </span>
-                  <Link href="/auth" className="w-full">
+                  <Link href="/auth/login" className="w-full">
                     <Button variant="outline" className="w-full">
                       Sign In
                     </Button>
