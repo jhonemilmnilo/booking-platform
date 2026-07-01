@@ -2,13 +2,9 @@
 
 import * as React from "react"
 
-import { Palmtree, Waves, Compass, Sparkles, MapPin, Mail, Phone } from "lucide-react"
-
-import Hero from "@/components/shared/Hero"
-import RoomCard, { Room } from "@/components/shared/RoomCard"
+import { Room } from "@/components/shared/RoomCard"
 import Image from "next/image"
 import BookingModal from "@/components/shared/BookingModal"
-import { Room } from "@/components/shared/RoomCard"
 import { createBookingAction } from "@/app/actions/booking"
 import { toast } from "sonner"
 
@@ -98,13 +94,15 @@ export default function Home() {
   const heroVideoRef = React.useRef<HTMLVideoElement | null>(null)
   const heroContentRef = React.useRef<HTMLDivElement | null>(null)
   const heroScrollIndicatorRef = React.useRef<HTMLDivElement | null>(null)
+  const heroTextsRef = React.useRef<HTMLDivElement | null>(null)
+  const bookingBarRef = React.useRef<HTMLDivElement | null>(null)
 
   // Hero Booking search bar states
-  const [heroVilla, setHeroVilla] = React.useState("royal-suite")
+  const [heroVilla, setHeroVilla] = React.useState("")
   const [heroCheckIn, setHeroCheckIn] = React.useState("")
   const [heroCheckOut, setHeroCheckOut] = React.useState("")
-  const [heroGuests, setHeroGuests] = React.useState("2 Guests")
-  const [heroCuration, setHeroCuration] = React.useState("Standard Resort Guest")
+  const [heroGuests, setHeroGuests] = React.useState("")
+  const [heroCuration, setHeroCuration] = React.useState("")
 
   // Bottom Bespoke Form Inquiry States
   const [fullName, setFullName] = React.useState("")
@@ -152,8 +150,9 @@ export default function Home() {
   React.useEffect(() => {
     const wrapper = heroWrapperRef.current
     const video = heroVideoRef.current
-    const content = heroContentRef.current
     const indicator = heroScrollIndicatorRef.current
+    const textsElement = heroTextsRef.current
+    const bookingBarElement = bookingBarRef.current
 
     if (!video) return
 
@@ -207,14 +206,20 @@ export default function Home() {
       }
 
       // Update foreground DOM opacity & transform smoothly in the rAF loop
-      if (content) {
-        let contentOpacity = 0
+      if (textsElement) {
+        let textsOpacity = 0
         if (currentScrollFraction > 0) {
-          contentOpacity = Math.min(1, currentScrollFraction / 0.2)
+          textsOpacity = Math.min(1, currentScrollFraction / 0.2)
         }
-        content.style.opacity = String(contentOpacity)
-        content.style.transform = `translateY(${(20 * (1 - contentOpacity))}px)`
-        content.style.pointerEvents = contentOpacity > 0.1 ? "auto" : "none"
+        textsElement.style.opacity = String(textsOpacity)
+        textsElement.style.transform = `translateY(${(20 * (1 - textsOpacity))}px)`
+        textsElement.style.pointerEvents = textsOpacity > 0.1 ? "auto" : "none"
+      }
+
+      if (bookingBarElement) {
+        // Display immediately at the start of the video, and keep visible
+        bookingBarElement.style.opacity = "1"
+        bookingBarElement.style.pointerEvents = "auto"
       }
 
       if (indicator) {
@@ -604,7 +609,7 @@ export default function Home() {
               disableRemotePlayback
               className="absolute inset-0 w-full h-full object-cover filter brightness-[0.95]"
             >
-              <source src="/ocean_hill_villa.mp4" type="video/mp4" />
+              <source src="/videos/enhance_ocean_hill_villas.mp4" type="video/mp4" />
             </video>
           </div>
 
@@ -612,41 +617,52 @@ export default function Home() {
           <div
             id="heroContent"
             ref={heroContentRef}
-            className="relative z-10 text-center px-6 max-w-5xl mx-auto flex flex-col items-center select-none mt-16 transition-all duration-300"
+            className="relative z-10 text-center px-6 max-w-5xl mx-auto flex flex-col items-center select-none mt-16 transition-all duration-300 w-full"
           >
-            <span className="text-luxury-gold font-semibold tracking-[0.4em] uppercase text-xs md:text-sm mb-4 animate-pulse-slow">
-              <i className="fa-regular fa-star mr-2"></i> The Apex of Oceanfront Luxury <i className="fa-regular fa-star ml-2"></i>
-            </span>
-            <h1 className="font-serif text-4xl sm:text-6xl md:text-8xl tracking-wider text-white mb-6 leading-tight">
-              Where Sky Meets <br />
-              <span className="text-gold-gradient italic font-normal">Sanctuary</span>
-            </h1>
-            <p className="text-white/90 max-w-2xl text-sm md:text-lg tracking-wide font-light leading-relaxed mb-10">
-              Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.
-            </p>
+            <div
+              ref={heroTextsRef}
+              className="flex flex-col items-center w-full transition-all duration-300"
+            >
+              <span className="text-luxury-gold font-semibold tracking-[0.4em] uppercase text-xs md:text-sm mb-4 animate-pulse-slow">
+                <i className="fa-regular fa-star mr-2"></i> The Apex of Oceanfront Luxury <i className="fa-regular fa-star ml-2"></i>
+              </span>
+              <h1 className="font-serif text-4xl sm:text-6xl md:text-8xl tracking-wider text-white mb-6 leading-tight">
+                Where Sky Meets <br />
+                <span className="text-gold-gradient italic font-normal">Sanctuary</span>
+              </h1>
+              <p className="text-white/90 max-w-2xl text-sm md:text-lg tracking-wide font-light leading-relaxed mb-10">
+                Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.
+              </p>
+            </div>
 
             {/* Quick Booking Bar */}
-            <div className="w-full max-w-6xl mt-12 bg-white/95 backdrop-blur border border-luxury-gold/40 rounded-2xl md:rounded-full p-4 shadow-2xl gold-glow text-left">
-              <form onSubmit={handleHeroBookingSubmit} className="flex flex-col md:flex-row items-center gap-4 md:gap-0 justify-between text-luxury-cream">
+            <div
+              ref={bookingBarRef}
+              className="w-full max-w-6xl mt-12 bg-white/95 backdrop-blur border border-luxury-gold/40 rounded-2xl md:rounded-full p-4 shadow-2xl gold-glow text-left transition-all duration-300"
+            >
+              <form onSubmit={handleHeroBookingSubmit} className="flex flex-col md:flex-row items-center gap-4 md:gap-0 justify-between text-luxury-cream w-full">
                 {/* 1. Selection: Villa / Suite */}
-                <div className="w-full md:w-1/4 px-4 md:border-r border-luxury-cream/10">
+                <div className="w-full md:w-[22%] px-3 md:border-r border-luxury-cream/10">
                   <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">SUITE / VILLA</label>
                   <div className="flex items-center gap-2">
                     <i className="fa-solid fa-hotel text-luxury-gold text-xs"></i>
                     <select
                       value={heroVilla}
                       onChange={(e) => setHeroVilla(e.target.value)}
-                      className="w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0"
+                      className={`w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0 transition-colors ${!heroVilla ? "text-luxury-cream/40" : "text-luxury-cream"
+                        }`}
+                      required
                     >
-                      <option value="royal-suite">Beachfront Royal Suite</option>
-                      <option value="garden-villa">Beachfront Garden Villa</option>
-                      <option value="lagoon-suite">Oceanview Lagoon Suite</option>
+                      <option value="" disabled hidden>Select villa...</option>
+                      <option value="royal-suite" className="text-luxury-cream bg-white">Beachfront Royal Suite</option>
+                      <option value="garden-villa" className="text-luxury-cream bg-white">Beachfront Garden Villa</option>
+                      <option value="lagoon-suite" className="text-luxury-cream bg-white">Oceanview Lagoon Suite</option>
                     </select>
                   </div>
                 </div>
 
                 {/* 2. Dates */}
-                <div className="w-full md:w-1/3 px-4 md:border-r border-luxury-cream/10">
+                <div className="w-full md:w-[28%] px-3 md:border-r border-luxury-cream/10">
                   <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">CHECK IN / OUT</label>
                   <div className="flex items-center gap-2">
                     <i className="fa-solid fa-calendar-days text-luxury-gold text-xs"></i>
@@ -671,36 +687,42 @@ export default function Home() {
                 </div>
 
                 {/* 3. Guests */}
-                <div className="w-full md:w-1/5 px-4 md:border-r border-luxury-cream/10">
+                <div className="w-full md:w-[18%] px-3 md:border-r border-luxury-cream/10">
                   <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">ROOMS & GUESTS</label>
                   <div className="flex items-center gap-2">
                     <i className="fa-solid fa-user-group text-luxury-gold text-xs"></i>
                     <select
                       value={heroGuests}
                       onChange={(e) => setHeroGuests(e.target.value)}
-                      className="w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0"
+                      className={`w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0 transition-colors ${!heroGuests ? "text-luxury-cream/40" : "text-luxury-cream"
+                        }`}
+                      required
                     >
-                      <option value="1 Guest">1 Room, 1 Guest</option>
-                      <option value="2 Guests">1 Room, 2 Guests</option>
-                      <option value="4 Guests">1 Room, 4 Guests</option>
-                      <option value="6 Guests">2 Rooms, 6 Guests</option>
+                      <option value="" disabled hidden>Select guests...</option>
+                      <option value="1 Guest" className="text-luxury-cream bg-white">1 Room, 1 Guest</option>
+                      <option value="2 Guests" className="text-luxury-cream bg-white">1 Room, 2 Guests</option>
+                      <option value="4 Guests" className="text-luxury-cream bg-white">1 Room, 4 Guests</option>
+                      <option value="6 Guests" className="text-luxury-cream bg-white">2 Rooms, 6 Guests</option>
                     </select>
                   </div>
                 </div>
 
                 {/* 4. Curation level */}
-                <div className="w-full md:w-1/5 px-4 md:mr-2">
+                <div className="w-full md:w-[18%] px-3 md:mr-1">
                   <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">CURATION LEVEL</label>
                   <div className="flex items-center gap-2">
                     <i className="fa-solid fa-star text-luxury-gold text-xs"></i>
                     <select
                       value={heroCuration}
                       onChange={(e) => setHeroCuration(e.target.value)}
-                      className="w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0"
+                      className={`w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0 transition-colors ${!heroCuration ? "text-luxury-cream/40" : "text-luxury-cream"
+                        }`}
+                      required
                     >
-                      <option value="Standard Resort Guest">Standard Resort Guest</option>
-                      <option value="VIP Beach Club Access">VIP Beach Club Access</option>
-                      <option value="Presidential All-Inclusive Access">Presidential Access</option>
+                      <option value="" disabled hidden>Select tier...</option>
+                      <option value="Standard Resort Guest" className="text-luxury-cream bg-white">Standard Resort Guest</option>
+                      <option value="VIP Beach Club Access" className="text-luxury-cream bg-white">VIP Beach Club Access</option>
+                      <option value="Presidential All-Inclusive Access" className="text-luxury-cream bg-white">Presidential Access</option>
                     </select>
                   </div>
                 </div>
@@ -709,7 +731,7 @@ export default function Home() {
                 <div className="w-full md:w-auto px-2">
                   <button
                     type="submit"
-                    className="w-full md:w-auto bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] px-8 py-3.5 rounded-xl md:rounded-full hover:brightness-110 shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+                    className="w-full md:w-auto bg-gold-gradient text-luxury-obsidian font-bold text-[10px] uppercase tracking-[0.15em] px-6 py-2.5 rounded-xl md:rounded-full hover:brightness-110 shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
                   >
                     RESERVE STAY
                   </button>
@@ -718,15 +740,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Scroll Indicator */}
-          <div
-            id="heroScrollIndicator"
-            ref={heroScrollIndicatorRef}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 animate-float transition-opacity duration-300"
-          >
-            <span className="text-[10px] tracking-[0.3em] uppercase text-luxury-gold/80">Descend</span>
-            <div className="w-[2px] h-12 bg-gradient-to-b from-luxury-gold to-transparent rounded-full animate-pulse"></div>
-          </div>
+
         </section>
       </div>
 
