@@ -37,6 +37,35 @@ function LoginContent() {
   const [isEmailFocused, setIsEmailFocused] = React.useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = React.useState(false)
 
+  // Handle BFCache spinner freeze and active OTP check
+  React.useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setIsLoading(false)
+      }
+    }
+    window.addEventListener("pageshow", handlePageShow)
+
+    const pendingEmail = localStorage.getItem("pending_otp_email")
+    const pendingTime = localStorage.getItem("pending_otp_timestamp")
+    const isBypassed = sessionStorage.getItem("otp_bypassed") === "true"
+    if (pendingEmail && pendingTime && !isBypassed) {
+      const elapsed = Date.now() - parseInt(pendingTime, 10)
+      if (elapsed < 5 * 60 * 1000) {
+        showToast.info("Verification in Progress", "We already sent an OTP code. Please check your inbox or spam folder.")
+        router.push(`/auth/verify?email=${encodeURIComponent(pendingEmail)}`)
+        return
+      } else {
+        localStorage.removeItem("pending_otp_email")
+        localStorage.removeItem("pending_otp_timestamp")
+      }
+    }
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow)
+    }
+  }, [router])
+
   React.useEffect(() => {
     if (errorParam) {
       showToast.error(errorParam)
@@ -53,11 +82,16 @@ function LoginContent() {
 
   const handleEmailLogin = (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true)
+    sessionStorage.removeItem("otp_bypassed")
     startTransition(async () => {
       const result = await loginWithEmailAction(values)
       if (result.success) {
         if (result.otpRequired) {
-          showToast.success("Verification code sent to your email.")
+          if (result.otpAlreadySent) {
+            showToast.info("Verification code already sent", "Please check your inbox or spam folder.")
+          } else {
+            showToast.success("Verification code sent to your email.")
+          }
           router.push(`/auth/verify?email=${encodeURIComponent(values.email)}`)
         } else {
           showToast.success("Successfully logged in!")
@@ -81,6 +115,7 @@ function LoginContent() {
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
     setIsLoading(true)
+    sessionStorage.removeItem("otp_bypassed")
     startTransition(async () => {
       const origin = window.location.origin
       const result = await getSocialLoginUrlAction(provider, origin)

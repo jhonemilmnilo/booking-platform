@@ -41,6 +41,23 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
     }
   }
 
+  // 1b. Check if locked out of OTP verification attempts
+  const otpLockoutKey = `otp:lockout:${emailClean}`
+  const existingOtpLockout = await prisma.rateLimit.findUnique({
+    where: { key: otpLockoutKey }
+  })
+  if (existingOtpLockout && existingOtpLockout.expiresAt > now) {
+    const elapsedMs = existingOtpLockout.expiresAt.getTime() - now.getTime()
+    const minutes = Math.floor(elapsedMs / 60000)
+    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+    const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
+    return {
+      success: false,
+      error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
+      code: "lockout"
+    }
+  }
+
   // 2. Validate Credentials
   const { error } = await supabase.auth.signInWithPassword({
     email,
@@ -88,15 +105,25 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
     }
   }
 
-  // Sign out to enforce OTP verification on next screen
+  // Clear active session to enforce OTP
   await supabase.auth.signOut()
 
-  // 3. Send Login OTP
+  // 3. Check local database cooldown for sending OTP to avoid hitting Supabase rate limit
+  const otpCooldownKey = `otp:send:${emailClean}`
+  const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
+  if (!otpRateLimit.success) {
+    return { success: true, otpRequired: true, otpAlreadySent: true }
+  }
+
+  // 4. Send Login OTP
   const { error: otpError } = await supabase.auth.signInWithOtp({
     email,
   })
 
   if (otpError) {
+    if (otpError.message.includes("For security purposes")) {
+      return { success: true, otpRequired: true, otpAlreadySent: true }
+    }
     return { success: false, error: otpError.message }
   }
 
@@ -110,7 +137,26 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
   }
 
   const { email, password, fullName } = parsed.data
+  const emailClean = email.trim().toLowerCase()
   const supabase = await createClient()
+
+  // Check if locked out of OTP verification attempts
+  const otpLockoutKey = `otp:lockout:${emailClean}`
+  const existingOtpLockout = await prisma.rateLimit.findUnique({
+    where: { key: otpLockoutKey }
+  })
+  const now = new Date()
+  if (existingOtpLockout && existingOtpLockout.expiresAt > now) {
+    const elapsedMs = existingOtpLockout.expiresAt.getTime() - now.getTime()
+    const minutes = Math.floor(elapsedMs / 60000)
+    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+    const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
+    return {
+      success: false,
+      error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
+      code: "lockout"
+    }
+  }
 
   // Sign up in Supabase Auth (sends verification email code automatically)
   const { data, error } = await supabase.auth.signUp({
@@ -124,6 +170,9 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
   })
 
   if (error) {
+    if (error.message.includes("For security purposes")) {
+      return { success: true, user: data?.user, otpAlreadySent: true }
+    }
     return { success: false, error: error.message }
   }
 
@@ -141,10 +190,13 @@ export async function verifyOtpAction(email: string, code: string) {
   })
   const now = new Date()
   if (existingLockout && existingLockout.expiresAt > now) {
-    const minutesLeft = Math.ceil((existingLockout.expiresAt.getTime() - now.getTime()) / 60000)
+    const elapsedMs = existingLockout.expiresAt.getTime() - now.getTime()
+    const minutes = Math.floor(elapsedMs / 60000)
+    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+    const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
     return {
       success: false,
-      error: `Too many failed attempts! OTP verification is locked for ${minutesLeft} minute(s).`,
+      error: `Too many incorrect OTP codes. Verification is locked for ${timeString}.`,
       code: "lockout"
     }
   }
@@ -217,9 +269,11 @@ export async function verifyOtpAction(email: string, code: string) {
   return { success: true }
 }
 
-export async function getSocialLoginUrlAction(provider: "google" | "facebook", origin: string) {
+export async function getSocialLoginUrlAction(provider: "google" | "facebook", origin: string, isSignup?: boolean) {
   const supabase = await createClient()
-  const redirectTo = `${origin}/auth/callback`
+  const redirectTo = isSignup 
+    ? `${origin}/auth/callback?signup=true` 
+    : `${origin}/auth/callback`
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,

@@ -27,17 +27,59 @@ function VerifyOtpContent() {
   const email = searchParams.get("email") || ""
   
   const [isPending, startTransition] = React.useTransition()
-  const [resendTimer, setResendTimer] = React.useState(60)
+  const [resendTimer, setResendTimer] = React.useState(0)
   const [isResending, setIsResending] = React.useState(false)
+
+  // Track unmount to allow returning to sign-in/up without redirect loops
+  React.useEffect(() => {
+    return () => {
+      sessionStorage.setItem("otp_bypassed", "true")
+    }
+  }, [])
+
+  // Track active OTP session and initialize/restore the countdown timer
+  React.useEffect(() => {
+    if (!email) return
+    localStorage.setItem("pending_otp_email", email)
+    localStorage.setItem("pending_otp_timestamp", Date.now().toString())
+
+    const expiryKey = `otp_resend_expiry:${email}`
+    const storedExpiry = localStorage.getItem(expiryKey)
+
+    const timer = setTimeout(() => {
+      if (storedExpiry) {
+        const remaining = Math.ceil((parseInt(storedExpiry, 10) - Date.now()) / 1000)
+        if (remaining > 0) {
+          setResendTimer(remaining)
+          showToast.info("Verification in Progress", "We already sent an OTP code. Please check your inbox or spam folder.")
+        } else {
+          setResendTimer(0)
+        }
+      } else {
+        // Set new 60s cooldown if it's the first time landing here
+        const newExpiry = Date.now() + 60000
+        localStorage.setItem(expiryKey, newExpiry.toString())
+        setResendTimer(60)
+      }
+    }, 0)
+
+    return () => clearTimeout(timer)
+  }, [email])
 
   // Countdown timer for Resend button
   React.useEffect(() => {
     if (resendTimer <= 0) return
     const interval = setInterval(() => {
-      setResendTimer((prev) => prev - 1)
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          localStorage.removeItem(`otp_resend_expiry:${email}`)
+          return 0
+        }
+        return prev - 1
+      })
     }, 1000)
     return () => clearInterval(interval)
-  }, [resendTimer])
+  }, [resendTimer, email])
 
   const form = useForm<z.infer<typeof verifySchema>>({
     resolver: zodResolver(verifySchema),
@@ -53,11 +95,20 @@ function VerifyOtpContent() {
     startTransition(async () => {
       const result = await verifyOtpAction(email, values.code)
       if (result.success) {
+        localStorage.removeItem("pending_otp_email")
+        localStorage.removeItem("pending_otp_timestamp")
+        localStorage.removeItem(`otp_resend_expiry:${email}`)
         showToast.success("Identity verified successfully!")
         router.push("/")
         router.refresh()
       } else {
         showToast.error(result.error || "Verification failed.")
+        if (result.code === "lockout") {
+          localStorage.removeItem("pending_otp_email")
+          localStorage.removeItem("pending_otp_timestamp")
+          localStorage.removeItem(`otp_resend_expiry:${email}`)
+          router.push("/auth/signup")
+        }
       }
     })
   }
@@ -72,6 +123,8 @@ function VerifyOtpContent() {
       // We can also make a resend helper or use the default supabase behaviors.
       // For simplicity, we can let them know a new code was requested.
       showToast.success("A new 8-digit code has been sent to your email.")
+      const expiryKey = `otp_resend_expiry:${email}`
+      localStorage.setItem(expiryKey, (Date.now() + 60000).toString())
       setResendTimer(60)
     } catch {
       showToast.error("Failed to resend code.")

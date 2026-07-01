@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma/client"
 import { headers } from "next/headers"
+import { redis } from "@/lib/redis"
 
 /**
  * Gets the client IP address from the request headers.
@@ -44,6 +45,33 @@ export async function isRateLimited(
   windowMs: number
 ): Promise<{ success: boolean; remaining: number; resetTime?: Date }> {
   const now = new Date()
+
+  // Try Redis first if it's initialized and ready
+  if (redis && redis.status === "ready") {
+    try {
+      const current = await redis.get(key)
+      if (current && parseInt(current, 10) >= maxAttempts) {
+        const ttl = await redis.ttl(key)
+        const resetTime = new Date(Date.now() + (ttl > 0 ? ttl * 1000 : windowMs))
+        return { success: false, remaining: 0, resetTime }
+      }
+
+      const multi = redis.multi()
+      multi.incr(key)
+      if (!current) {
+        multi.pexpire(key, windowMs)
+      }
+      const results = await multi.exec()
+      const newCount = results && results[0] && results[0][1] ? (results[0][1] as number) : 1
+
+      return {
+        success: newCount <= maxAttempts,
+        remaining: Math.max(0, maxAttempts - newCount)
+      }
+    } catch (error) {
+      console.warn("[RateLimit] Redis command failed, falling back to database:", error)
+    }
+  }
 
   // 1. Self-Cleaning: Delete all expired entries to prevent database bloating
   try {
