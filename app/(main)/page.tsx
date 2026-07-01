@@ -1,6 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import gsap from "gsap"
+import { ScrollTrigger } from "gsap/dist/ScrollTrigger"
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger)
+}
 
 import { Room } from "@/components/shared/RoomCard"
 import Image from "next/image"
@@ -15,7 +22,7 @@ const MOCK_ROOMS: Room[] = [
     description: "Steps from the water, this exquisite royal suite features a private swim-up pool, outdoor lounge overlooking the waves, and a dedicated personal beach concierge.",
     pricePerNight: 15500,
     capacity: 6,
-    imageUrl: "/images/image.png",
+    imageUrl: "/images/image7.webp",
     size: "6,800 Sq Ft",
     amenities: ["Private Swim-up Pool", "Beachfront Daybeds", "Personal Concierge", "Outdoor Spa Deck"],
   },
@@ -65,10 +72,132 @@ const CAMPAIGN_REELS = [
   }
 ]
 
+const VILLA_OPTIONS = [
+  { value: "royal-suite", label: "Royal Suite" },
+  { value: "garden-villa", label: "Garden Villa" },
+  { value: "lagoon-suite", label: "Lagoon Suite" }
+]
+
+const GUEST_OPTIONS = [
+  { value: "1 Guest", label: "1 Room, 1 Guest" },
+  { value: "2 Guests", label: "1 Room, 2 Guests" },
+  { value: "4 Guests", label: "1 Room, 4 Guests" },
+  { value: "6 Guests", label: "2 Rooms, 6 Guests" }
+]
+
+const CURATION_OPTIONS = [
+  { value: "Standard Resort Guest", label: "Standard Guest" },
+  { value: "VIP Beach Club Access", label: "VIP Beach Club" },
+  { value: "Presidential All-Inclusive Access", label: "Presidential Access" }
+]
+
+interface Option {
+  value: string;
+  label: string;
+}
+
+interface CustomSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: Option[];
+  placeholder: string;
+  icon: string;
+}
+
+function CustomSelect({ value, onChange, options, placeholder, icon }: CustomSelectProps) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+
+  const selectedOption = options.find((o) => o.value === value)
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between text-left focus:outline-none cursor-pointer p-0"
+      >
+        <div className="flex items-center gap-2 overflow-hidden w-full">
+          <i className={`fa-solid ${icon} text-luxury-gold text-xs flex-shrink-0`}></i>
+          <span className={`text-[10px] lg:text-[11px] xl:text-xs font-semibold truncate ${!value ? "text-luxury-cream/40" : "text-luxury-cream"}`}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+        </div>
+        <i
+          className={`fa-solid fa-chevron-down text-luxury-gold/50 text-[10px] ml-2 transition-transform duration-300 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        ></i>
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute left-0 bottom-full mb-3 w-64 bg-white/98 backdrop-blur border border-luxury-gold/30 rounded-2xl py-2 shadow-2xl z-50 gold-glow text-luxury-cream"
+          >
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  onChange(option.value)
+                  setIsOpen(false)
+                }}
+                className={`w-full flex items-center justify-between text-left px-4 py-2.5 text-xs hover:bg-luxury-gold/10 transition-colors ${
+                  option.value === value ? "text-luxury-gold font-bold bg-luxury-gold/5" : "text-luxury-cream"
+                }`}
+              >
+                <span>{option.label}</span>
+                {option.value === value && <i className="fa-solid fa-check text-luxury-gold text-xs"></i>}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+const slideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? "100%" : direction < 0 ? "-100%" : 0,
+    opacity: 0
+  }),
+  center: {
+    x: 0,
+    opacity: 1
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? "100%" : direction > 0 ? "-100%" : 0,
+    opacity: 0
+  })
+}
+
+
 export default function Home() {
   // Modal Booking States
   const [selectedRoom, setSelectedRoom] = React.useState<Room | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
+
+  // GSAP animation scope ref
+  const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
+
+  // Video source state (Mobile vs Desktop)
+  const [videoSrc, setVideoSrc] = React.useState("")
 
   // Floating Header Scroll state
   const [isHeaderScrolled, setIsHeaderScrolled] = React.useState(false)
@@ -76,33 +205,25 @@ export default function Home() {
   // Mobile navigation drawer toggle
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
 
-  // Audio Engine Refs & State
-  const audioContextRef = React.useRef<AudioContext | null>(null)
-  const gainNodeRef = React.useRef<GainNode | null>(null)
-  const [isAudioPlaying, setIsAudioPlaying] = React.useState(false)
+
 
   // Cinematic playlist state
   const [activeCampaignIndex, setActiveCampaignIndex] = React.useState(0)
   const [isVideoPlaying, setIsVideoPlaying] = React.useState(false)
   const mainVideoPlayerRef = React.useRef<HTMLVideoElement | null>(null)
 
-  // Suites carousel active index
+  // Suites carousel active index and slide direction
   const [activeSuiteIndex, setActiveSuiteIndex] = React.useState(0)
+  const [slideDirection, setSlideDirection] = React.useState(0)
 
-  // Scroll Video Refs
-  const heroWrapperRef = React.useRef<HTMLDivElement | null>(null)
-  const heroVideoRef = React.useRef<HTMLVideoElement | null>(null)
-  const heroContentRef = React.useRef<HTMLDivElement | null>(null)
-  const heroScrollIndicatorRef = React.useRef<HTMLDivElement | null>(null)
-  const heroTextsRef = React.useRef<HTMLDivElement | null>(null)
-  const bookingBarRef = React.useRef<HTMLDivElement | null>(null)
+
 
   // Hero Booking search bar states
-  const [heroVilla, setHeroVilla] = React.useState("")
+  const [heroVilla, setHeroVilla] = React.useState("royal-suite")
   const [heroCheckIn, setHeroCheckIn] = React.useState("")
   const [heroCheckOut, setHeroCheckOut] = React.useState("")
-  const [heroGuests, setHeroGuests] = React.useState("")
-  const [heroCuration, setHeroCuration] = React.useState("")
+  const [heroGuests, setHeroGuests] = React.useState("2 Guests")
+  const [heroCuration, setHeroCuration] = React.useState("Standard Resort Guest")
 
   // Bottom Bespoke Form Inquiry States
   const [fullName, setFullName] = React.useState("")
@@ -125,7 +246,7 @@ export default function Home() {
     totalPrice: number
   } | null>(null)
 
-  // Initialize Dates and Header Scroll Listeners
+  // Initialize Dates, Video Source, and Header Scroll Listeners
   React.useEffect(() => {
     // Set default dates: tomorrow to 4 days after
     const today = new Date()
@@ -137,211 +258,99 @@ export default function Home() {
     setTimeout(() => {
       setHeroCheckIn(tomorrow.toISOString().split("T")[0])
       setHeroCheckOut(nextDay.toISOString().split("T")[0])
-    }, 0)
 
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => { })
-      }
-    }
-  }, [])
+      // Determine optimized video source based on screen size and WebM support asynchronously
+      const isMobile = window.matchMedia("(max-width: 768px)").matches
+      const videoTest = document.createElement("video")
+      const supportsWebm = videoTest.canPlayType('video/webm; codecs="vp9"') !== ""
 
-  // Scroll Playhead Video Animation Effect (Optimized Throttled Seeking)
-  React.useEffect(() => {
-    const wrapper = heroWrapperRef.current
-    const video = heroVideoRef.current
-    const indicator = heroScrollIndicatorRef.current
-    const textsElement = heroTextsRef.current
-    const bookingBarElement = bookingBarRef.current
-
-    if (!video) return
-
-    // Ensure video is paused and doesn't autoplay
-    video.pause()
-
-    let targetScrollFraction = 0
-    let currentScrollFraction = 0
-    let animationFrameId: number
-
-    // Cache layout metrics to avoid layout thrashing (getBoundingClientRect) on scroll
-    let wrapperTop = 0
-    let wrapperHeight = 0
-    let viewportHeight = 0
-
-    const updateLayoutMetrics = () => {
-      if (!wrapper) return
-      const rect = wrapper.getBoundingClientRect()
-      wrapperTop = rect.top + window.scrollY
-      wrapperHeight = rect.height
-      viewportHeight = window.innerHeight
-    }
-
-    // Initialize metrics
-    updateLayoutMetrics()
-
-    const handleScroll = () => {
-      const scrollTop = window.scrollY
-      const pinStart = wrapperTop
-      const pinEnd = wrapperTop + wrapperHeight - viewportHeight
-      const pinRange = pinEnd - pinStart
-
-      const relativeScroll = scrollTop - pinStart
-      const scrollFraction = Math.max(0, Math.min(relativeScroll / pinRange, 1))
-
-      targetScrollFraction = scrollFraction
-
-      // Update header scrolled state
-      const scrolled = scrollTop > pinEnd
-      setIsHeaderScrolled(scrolled)
-    }
-
-    const tick = () => {
-      // Lerp the scroll fraction for ultra-smooth transition
-      const lerpFactor = 0.1 // Adjust between 0.05 (slower/smoother) and 0.2 (faster)
-      currentScrollFraction += (targetScrollFraction - currentScrollFraction) * lerpFactor
-
-      // Snap to target if very close
-      if (Math.abs(targetScrollFraction - currentScrollFraction) < 0.0001) {
-        currentScrollFraction = targetScrollFraction
+      if (isMobile) {
+        setVideoSrc(supportsWebm ? "/videos/enhance_ocean_hill_villas_mobile.webm" : "/videos/enhance_ocean_hill_villas_mobile.mp4")
+      } else {
+        setVideoSrc(supportsWebm ? "/videos/enhance_ocean_hill_villas.webm" : "/videos/enhance_ocean_hill_villas.mp4")
       }
 
-      // Update foreground DOM opacity & transform smoothly in the rAF loop
-      if (textsElement) {
-        let textsOpacity = 0
-        if (currentScrollFraction > 0) {
-          textsOpacity = Math.min(1, currentScrollFraction / 0.2)
-        }
-        textsElement.style.opacity = String(textsOpacity)
-        textsElement.style.transform = `translateY(${(20 * (1 - textsOpacity))}px)`
-        textsElement.style.pointerEvents = textsOpacity > 0.1 ? "auto" : "none"
-      }
-
-      if (bookingBarElement) {
-        // Display immediately at the start of the video, and keep visible
-        bookingBarElement.style.opacity = "1"
-        bookingBarElement.style.pointerEvents = "auto"
-      }
-
-      if (indicator) {
-        const indicatorOpacity = Math.max(0, 1 - currentScrollFraction / 0.3)
-        indicator.style.opacity = String(indicatorOpacity)
-      }
-
-      // Perform throttled video seeking only when the video is not already seeking
-      const duration = video.duration
-      if (duration && !isNaN(duration) && isFinite(duration) && duration > 0) {
-        // Stop scrubbing 5 seconds before the video ends so it is "almost done" when covered
-        const targetTime = currentScrollFraction * Math.max(0, duration - 5)
-
-        // Avoid seeking if the decoder is currently busy or the target difference is negligible
-        if (!video.seeking && Math.abs(video.currentTime - targetTime) > 0.015) {
-          if (!video.paused) {
-            video.pause()
-          }
-          video.currentTime = targetTime
-        }
-      }
-
-      animationFrameId = requestAnimationFrame(tick)
-    }
-
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    window.addEventListener("resize", updateLayoutMetrics, { passive: true })
-    animationFrameId = requestAnimationFrame(tick)
-
-    const handleLoadedMetadata = () => {
-      video.pause()
-      updateLayoutMetrics()
-      handleScroll()
-    }
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata)
-    if (video.readyState >= 1) {
-      video.pause()
-      updateLayoutMetrics()
-      handleScroll()
-    }
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll)
-      window.removeEventListener("resize", updateLayoutMetrics)
-      cancelAnimationFrame(animationFrameId)
-      if (video) {
-        video.removeEventListener("loadedmetadata", handleLoadedMetadata)
-      }
-    }
-  }, [])
-
-  // Audio Engine Initializer
-  const initOceanAudio = () => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      const audioContext = new AudioContextClass()
-      audioContextRef.current = audioContext
-
-      const bufferSize = 2 * audioContext.sampleRate
-      const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate)
-      const output = noiseBuffer.getChannelData(0)
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1
-      }
-
-      const noise = audioContext.createBufferSource()
-      noise.buffer = noiseBuffer
-      noise.loop = true
-
-      const filter = audioContext.createBiquadFilter()
-      filter.type = "lowpass"
-      filter.frequency.value = 350
-
-      const lfo = audioContext.createOscillator()
-      lfo.frequency.value = 0.08
-      const lfoGain = audioContext.createGain()
-      lfoGain.gain.value = 250
-
-      const gainNode = audioContext.createGain()
-      gainNode.gain.value = 0.25
-
-      lfo.connect(lfoGain)
-      lfoGain.connect(filter.frequency)
-      noise.connect(filter)
-      filter.connect(gainNode)
-      gainNode.connect(audioContext.destination)
-
-      noise.start(0)
-      lfo.start(0)
-
-      gainNodeRef.current = gainNode
-    } catch (err) {
-      console.warn("Audio Context init blocked or not supported.", err)
-    }
-  }
-
-  // Toggle ocean soundscapes
-  const toggleOceanSound = () => {
-    if (!audioContextRef.current) {
-      initOceanAudio()
-    }
-
-    const audioContext = audioContextRef.current
-    const gainNode = gainNodeRef.current
-    if (!audioContext || !gainNode) return
-
-    if (isAudioPlaying) {
-      gainNode.gain.setValueAtTime(gainNode.gain.value, audioContext.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1.5)
-      setTimeout(() => {
-        audioContext.suspend()
-      }, 1500)
-      setIsAudioPlaying(false)
-    } else {
-      audioContext.resume().then(() => {
-        gainNode.gain.setValueAtTime(0.001, audioContext.currentTime)
-        gainNode.gain.exponentialRampToValueAtTime(0.3, audioContext.currentTime + 2.0)
+      // Preload all critical page assets/images in the background for zero-latency scrolling
+      const imagesToPreload = [
+        "/images/image7.webp",
+        "/images/image1.png",
+        "/images/image2.png",
+        "/images/image3.png",
+        "/images/image4.png",
+        "/images/image5.png",
+        "/images/image6.png"
+      ]
+      imagesToPreload.forEach((src) => {
+        const img = new window.Image()
+        img.src = src
       })
-      setIsAudioPlaying(true)
+    }, 0)
+  }, [])
+
+  // Simple scroll listener to toggle header background
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsHeaderScrolled(window.scrollY > 50)
     }
-  }
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  // GSAP ScrollTrigger animations
+  React.useEffect(() => {
+    const ctx = gsap.context(() => {
+      // 1. General fade-in-up animations for sections/headers
+      const fadeUpElements = gsap.utils.toArray<HTMLElement>(".gsap-reveal-fade-up")
+      fadeUpElements.forEach((el) => {
+        gsap.fromTo(
+          el,
+          { opacity: 0, y: 40 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1.0,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 85%",
+              toggleActions: "play none none none",
+              fastScrollEnd: true,
+              preventOverlaps: true
+            }
+          }
+        )
+      })
+
+      // 2. Staggered grid cards animations (amenities)
+      const staggerContainers = gsap.utils.toArray<HTMLElement>(".gsap-reveal-stagger-container")
+      staggerContainers.forEach((container) => {
+        const items = container.querySelectorAll(".gsap-reveal-stagger-item")
+        gsap.fromTo(
+          items,
+          { opacity: 0, y: 50 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: container,
+              start: "top 80%",
+              toggleActions: "play none none none",
+              fastScrollEnd: true,
+              preventOverlaps: true
+            }
+          }
+        )
+      })
+
+    }, mainScopeRef)
+
+    return () => ctx.revert()
+  }, [])
+
+
 
   // Handle cinematic playlist selection
   const switchCampaign = (index: number) => {
@@ -372,12 +381,14 @@ export default function Home() {
     }
   }
 
-  // Carousel slider indices
+  // Carousel slider indices with directional tracking
   const nextSuite = () => {
+    setSlideDirection(1)
     setActiveSuiteIndex((prev) => (prev + 1) % MOCK_ROOMS.length)
   }
 
   const prevSuite = () => {
+    setSlideDirection(-1)
     setActiveSuiteIndex((prev) => (prev - 1 + MOCK_ROOMS.length) % MOCK_ROOMS.length)
   }
 
@@ -390,6 +401,23 @@ export default function Home() {
   // Hero booking submit - Map and scroll to the bottom form
   const handleHeroBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!heroVilla) {
+      toast.error("Please select a Suite or Villa for your sanctuary.")
+      return
+    }
+    if (!heroCheckIn || !heroCheckOut) {
+      toast.error("Please select your check-in and check-out dates.")
+      return
+    }
+    if (!heroGuests) {
+      toast.error("Please specify guests and occupancy.")
+      return
+    }
+    if (!heroCuration) {
+      toast.error("Please select your curation privileges tier.")
+      return
+    }
 
     setSelectedVilla(heroVilla)
     setSecurityTier(heroCuration)
@@ -466,18 +494,18 @@ export default function Home() {
   const activeSuite = MOCK_ROOMS[activeSuiteIndex]
 
   return (
-    <div className="bg-luxury-obsidian text-luxury-cream font-sans min-h-screen">
+    <div ref={mainScopeRef} className="bg-luxury-obsidian text-luxury-cream font-sans min-h-screen">
       {/* Floating Header */}
       <header
         id="mainHeader"
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 py-6 px-6 md:px-12 flex justify-between items-center ${isHeaderScrolled
-          ? "bg-luxury-obsidian/95 py-4 border-b border-luxury-gold/15 backdrop-blur-md shadow-2xl"
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 py-4 px-4 md:py-6 md:px-12 flex justify-between items-center ${isHeaderScrolled
+          ? "bg-luxury-obsidian/95 py-3 md:py-4 border-b border-luxury-gold/15 backdrop-blur-md shadow-2xl"
           : "bg-transparent"
           }`}
       >
         <div className="flex items-center gap-3 whitespace-nowrap flex-shrink-0">
           {/* Crest SVG */}
-          <svg className="w-10 h-10 text-luxury-gold filter drop-shadow" viewBox="0 0 100 100" fill="currentColor">
+          <svg className="w-7 h-7 md:w-10 md:h-10 text-luxury-gold filter drop-shadow flex-shrink-0" viewBox="0 0 100 100" fill="currentColor">
             <path d="M50 5 L85 25 L85 65 L50 95 L15 65 L15 25 Z" fill="none" stroke="#D4AF37" strokeWidth="2" />
             <path d="M50 15 L75 30 L75 60 L50 82 L25 60 L25 30 Z" fill="none" stroke="#D4AF37" strokeDasharray="2,2" />
             <circle cx="50" cy="48" r="8" fill="#D4AF37" />
@@ -485,7 +513,7 @@ export default function Home() {
           </svg>
           <span
             id="brandName"
-            className={`font-serif text-xl md:text-2xl tracking-[0.25em] uppercase font-semibold transition-colors duration-300 whitespace-nowrap ${isHeaderScrolled ? "text-luxury-cream" : "text-white"
+            className={`font-serif text-sm sm:text-base md:text-2xl tracking-[0.25em] uppercase font-semibold transition-colors duration-300 whitespace-nowrap ${isHeaderScrolled ? "text-luxury-cream" : "text-white"
               }`}
           >
             Ocean <span className="text-luxury-gold">Hill</span>
@@ -522,23 +550,7 @@ export default function Home() {
 
         {/* Sensory Toggles & Action */}
         <div className="flex items-center gap-4 flex-shrink-0">
-          {/* Audio Toggle (Procedural Waves) */}
-          <button
-            id="audioToggleBtn"
-            onClick={toggleOceanSound}
-            className={`relative border border-luxury-gold/50 hover:border-luxury-gold text-luxury-gold p-3 rounded-full transition-all duration-300 group flex items-center justify-center backdrop-blur cursor-pointer ${isAudioPlaying ? "bg-luxury-gold/20" : "bg-luxury-charcoal/40"
-              }`}
-            aria-label="Toggle Ocean Ambient Soundscape"
-          >
-            <i
-              id="audioIcon"
-              className={`fa-solid transition-transform duration-300 group-hover:scale-110 ${isAudioPlaying ? "fa-volume-high animate-pulse" : "fa-volume-xmark"
-                }`}
-            ></i>
-            <span className="absolute right-12 bg-luxury-obsidian/90 border border-luxury-gold/30 px-3 py-1 rounded text-[10px] tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none uppercase font-serif">
-              {isAudioPlaying ? "Mute Ocean Soundscape" : "Play Sea Soundscape"}
-            </span>
-          </button>
+
 
           <button
             onClick={() => handleBookClick(MOCK_ROOMS[0])}
@@ -550,206 +562,339 @@ export default function Home() {
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden text-luxury-cream hover:text-luxury-gold text-2xl p-2 transition-colors cursor-pointer"
+            className={`lg:hidden hover:text-luxury-gold p-2 transition-colors cursor-pointer z-50 relative ${isHeaderScrolled || isMobileMenuOpen ? "text-luxury-cream" : "text-white"
+              }`}
+            aria-label="Toggle Menu"
           >
-            <i className="fa-solid fa-bars-staggered"></i>
+            <div className="flex flex-col gap-1.5 items-end justify-center w-6 h-5">
+              <span className={`h-0.5 bg-current rounded transition-all duration-300 origin-center ${isMobileMenuOpen ? "w-6 rotate-45 translate-y-2" : "w-4"}`} />
+              <span className={`h-0.5 bg-current rounded transition-all duration-300 ${isMobileMenuOpen ? "w-0 opacity-0" : "w-6"}`} />
+              <span className={`h-0.5 bg-current rounded transition-all duration-300 origin-center ${isMobileMenuOpen ? "w-6 -rotate-45 -translate-y-2" : "w-5"}`} />
+            </div>
           </button>
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Backdrop overlay */}
+      <div
+        id="mobileDrawerBackdrop"
+        onClick={() => setIsMobileMenuOpen(false)}
+        className={`fixed inset-0 bg-black/30 z-30 transition-all duration-500 lg:hidden ${isMobileMenuOpen ? "opacity-100 pointer-events-auto backdrop-blur-sm visible" : "opacity-0 pointer-events-none backdrop-blur-none invisible"}`}
+      />
+
+      {/* Mobile Drawer Panel */}
       <div
         id="mobileDrawer"
-        className={`fixed inset-0 bg-luxury-obsidian/95 z-50 transform transition-transform duration-500 ease-out flex flex-col justify-center items-center gap-8 p-6 lg:hidden ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={`fixed right-0 top-0 h-full w-[85vw] max-w-[380px] bg-luxury-obsidian/95 border-l border-luxury-gold/20 z-40 transform transition-transform duration-500 ease-out shadow-2xl flex flex-col justify-between p-8 pb-10 pt-28 lg:hidden ${isMobileMenuOpen ? "translate-x-0 backdrop-blur-2xl visible" : "translate-x-full backdrop-blur-none invisible"}`}
       >
-        <button
-          onClick={() => setIsMobileMenuOpen(false)}
-          className="absolute top-8 right-8 text-luxury-gold text-3xl hover:scale-110 transition-transform cursor-pointer"
-        >
-          <i className="fa-solid fa-xmark"></i>
-        </button>
+        {/* Top Branding Section */}
+        <div className="flex flex-col items-start space-y-1.5 border-b border-luxury-cream/10 pb-6 w-full">
+          <span className="text-luxury-gold text-[9px] tracking-[0.35em] uppercase font-bold">
+            Aegean Coastline Sanctuary
+          </span>
+          <span className="font-serif text-2xl text-luxury-cream uppercase tracking-wider">
+            Ocean <span className="text-luxury-gold">Hill</span>
+          </span>
+        </div>
 
-        <svg className="w-16 h-16 text-luxury-gold mb-4" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-          <path d="M50 5 L85 25 L85 65 L50 95 L15 65 L15 25 Z" strokeWidth="2" />
-          <circle cx="50" cy="48" r="8" fill="#D4AF37" />
-        </svg>
-
-        <a href="#about" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-luxury-cream hover:text-luxury-gold">The Resort</a>
-        <a href="#campaign" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-luxury-cream hover:text-luxury-gold">The Cinema</a>
-        <a href="#villas" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-luxury-cream hover:text-luxury-gold">Suites & Villas</a>
-        <a href="#amenities" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-luxury-cream hover:text-luxury-gold">Amenities</a>
-        <a href="#location" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-luxury-cream hover:text-luxury-gold">The Beachfront</a>
-
-        <button
-          onClick={() => {
-            setIsMobileMenuOpen(false)
-            handleBookClick(MOCK_ROOMS[0])
-          }}
-          className="mt-8 bg-gold-gradient text-luxury-obsidian px-8 py-4 rounded-full font-semibold uppercase tracking-[0.25em] text-sm cursor-pointer"
-        >
-          Reserve Experience
-        </button>
-      </div>
-
-      {/* Hero scroll-wrapper */}
-      <div id="hero-scroll-wrapper" ref={heroWrapperRef} className="relative h-[300vh]">
-        <section id="hero" className="fixed top-0 left-0 h-screen w-full flex items-center justify-center overflow-hidden z-0">
-          {/* Background Loop */}
-          <div className="absolute inset-0 z-0 overflow-hidden bg-luxury-obsidian">
-            {/* Scroll-Driven Video */}
-            <video
-              id="heroVideo"
-              ref={heroVideoRef}
-              muted
-              playsInline
-              preload="auto"
-              controls={false}
-              disablePictureInPicture
-              disableRemotePlayback
-              className="absolute inset-0 w-full h-full object-cover filter brightness-[0.95]"
-            >
-              <source src="/videos/enhance_ocean_hill_villas.mp4" type="video/mp4" />
-            </video>
-          </div>
-
-          {/* Foreground content */}
-          <div
-            id="heroContent"
-            ref={heroContentRef}
-            className="relative z-10 text-center px-6 max-w-5xl mx-auto flex flex-col items-center select-none mt-16 transition-all duration-300 w-full"
+        {/* Middle Navigation Section */}
+        <div className="flex flex-col w-full py-6 select-none">
+          <a
+            href="#about"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
           >
-            <div
-              ref={heroTextsRef}
-              className="flex flex-col items-center w-full transition-all duration-300"
-            >
-              <span className="text-luxury-gold font-semibold tracking-[0.4em] uppercase text-xs md:text-sm mb-4 animate-pulse-slow">
-                <i className="fa-regular fa-star mr-2"></i> The Apex of Oceanfront Luxury <i className="fa-regular fa-star ml-2"></i>
-              </span>
-              <h1 className="font-serif text-4xl sm:text-6xl md:text-8xl tracking-wider text-white mb-6 leading-tight">
-                Where Sky Meets <br />
-                <span className="text-gold-gradient italic font-normal">Sanctuary</span>
-              </h1>
-              <p className="text-white/90 max-w-2xl text-sm md:text-lg tracking-wide font-light leading-relaxed mb-10">
-                Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.
-              </p>
-            </div>
+            <span className="flex items-center gap-3">
+              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">01</span>
+              The Resort
+            </span>
+            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+          </a>
+          <a
+            href="#campaign"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">02</span>
+              The Cinema
+            </span>
+            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+          </a>
+          <a
+            href="#villas"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">03</span>
+              Suites & Villas
+            </span>
+            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+          </a>
+          <a
+            href="#amenities"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">04</span>
+              Amenities
+            </span>
+            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+          </a>
+          <a
+            href="#location"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+          >
+            <span className="flex items-center gap-3">
+              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">05</span>
+              The Beachfront
+            </span>
+            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+          </a>
+        </div>
 
-            {/* Quick Booking Bar */}
-            <div
-              ref={bookingBarRef}
-              className="w-full max-w-6xl mt-12 bg-white/95 backdrop-blur border border-luxury-gold/40 rounded-2xl md:rounded-full p-4 shadow-2xl gold-glow text-left transition-all duration-300"
-            >
-              <form onSubmit={handleHeroBookingSubmit} className="flex flex-col md:flex-row items-center gap-4 md:gap-0 justify-between text-luxury-cream w-full">
-                {/* 1. Selection: Villa / Suite */}
-                <div className="w-full md:w-[22%] px-3 md:border-r border-luxury-cream/10">
-                  <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">SUITE / VILLA</label>
-                  <div className="flex items-center gap-2">
-                    <i className="fa-solid fa-hotel text-luxury-gold text-xs"></i>
-                    <select
-                      value={heroVilla}
-                      onChange={(e) => setHeroVilla(e.target.value)}
-                      className={`w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0 transition-colors ${!heroVilla ? "text-luxury-cream/40" : "text-luxury-cream"
-                        }`}
-                      required
-                    >
-                      <option value="" disabled hidden>Select villa...</option>
-                      <option value="royal-suite" className="text-luxury-cream bg-white">Beachfront Royal Suite</option>
-                      <option value="garden-villa" className="text-luxury-cream bg-white">Beachfront Garden Villa</option>
-                      <option value="lagoon-suite" className="text-luxury-cream bg-white">Oceanview Lagoon Suite</option>
-                    </select>
-                  </div>
-                </div>
+        {/* Bottom Booking & Tagline Section */}
+        <div className="flex flex-col items-center w-full space-y-6 pt-4 border-t border-luxury-cream/10">
+          <button
+            onClick={() => {
+              setIsMobileMenuOpen(false)
+              handleBookClick(MOCK_ROOMS[0])
+            }}
+            className="w-full bg-gold-gradient text-luxury-obsidian py-4 rounded-full font-bold uppercase tracking-[0.25em] text-xs shadow-lg hover:brightness-110 active:scale-98 transition-all cursor-pointer text-center"
+          >
+            Reserve Experience
+          </button>
 
-                {/* 2. Dates */}
-                <div className="w-full md:w-[28%] px-3 md:border-r border-luxury-cream/10">
-                  <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">CHECK IN / OUT</label>
-                  <div className="flex items-center gap-2">
-                    <i className="fa-solid fa-calendar-days text-luxury-gold text-xs"></i>
-                    <div className="flex items-center gap-1 w-full">
-                      <input
-                        type="date"
-                        required
-                        value={heroCheckIn}
-                        onChange={(e) => setHeroCheckIn(e.target.value)}
-                        className="bg-transparent text-[11px] font-semibold focus:outline-none w-1/2 cursor-pointer border-none p-0"
-                      />
-                      <span className="text-luxury-cream/30 text-xs">→</span>
-                      <input
-                        type="date"
-                        required
-                        value={heroCheckOut}
-                        onChange={(e) => setHeroCheckOut(e.target.value)}
-                        className="bg-transparent text-[11px] font-semibold focus:outline-none w-1/2 cursor-pointer border-none p-0"
-                      />
-                    </div>
-                  </div>
-                </div>
+          <div className="flex flex-col items-center space-y-1.5 text-center">
+            <span className="text-luxury-cream/40 text-[9px] uppercase tracking-[0.3em] font-semibold">
+              Curated Luxury stay
+            </span>
+            <span className="text-luxury-cream/30 text-[8px] uppercase tracking-[0.2em] font-mono">
+              © {new Date().getFullYear()} Ocean Hill Resort
+            </span>
+          </div>
+        </div>
+      </div>
 
-                {/* 3. Guests */}
-                <div className="w-full md:w-[18%] px-3 md:border-r border-luxury-cream/10">
-                  <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">ROOMS & GUESTS</label>
-                  <div className="flex items-center gap-2">
-                    <i className="fa-solid fa-user-group text-luxury-gold text-xs"></i>
-                    <select
-                      value={heroGuests}
-                      onChange={(e) => setHeroGuests(e.target.value)}
-                      className={`w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0 transition-colors ${!heroGuests ? "text-luxury-cream/40" : "text-luxury-cream"
-                        }`}
-                      required
-                    >
-                      <option value="" disabled hidden>Select guests...</option>
-                      <option value="1 Guest" className="text-luxury-cream bg-white">1 Room, 1 Guest</option>
-                      <option value="2 Guests" className="text-luxury-cream bg-white">1 Room, 2 Guests</option>
-                      <option value="4 Guests" className="text-luxury-cream bg-white">1 Room, 4 Guests</option>
-                      <option value="6 Guests" className="text-luxury-cream bg-white">2 Rooms, 6 Guests</option>
-                    </select>
-                  </div>
-                </div>
+      {/* Hero Section */}
+      <section id="hero" className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-luxury-obsidian">
+        {/* Background Loop */}
+        <div className="absolute inset-0 z-0 overflow-hidden bg-luxury-obsidian">
+          <video
+            id="heroVideo"
+            src={videoSrc || "/videos/enhance_ocean_hill_villas_mobile.mp4"}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            controls={false}
+            className="absolute inset-0 w-full h-full object-cover filter brightness-[0.8] scale-105 origin-center"
+          />
+          {/* Dark overlay for typography contrast */}
+          <div className="absolute inset-0 bg-black/40 z-10" />
+        </div>
 
-                {/* 4. Curation level */}
-                <div className="w-full md:w-[18%] px-3 md:mr-1">
-                  <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">CURATION LEVEL</label>
-                  <div className="flex items-center gap-2">
-                    <i className="fa-solid fa-star text-luxury-gold text-xs"></i>
-                    <select
-                      value={heroCuration}
-                      onChange={(e) => setHeroCuration(e.target.value)}
-                      className={`w-full bg-transparent text-xs font-semibold focus:outline-none cursor-pointer border-none p-0 transition-colors ${!heroCuration ? "text-luxury-cream/40" : "text-luxury-cream"
-                        }`}
-                      required
-                    >
-                      <option value="" disabled hidden>Select tier...</option>
-                      <option value="Standard Resort Guest" className="text-luxury-cream bg-white">Standard Resort Guest</option>
-                      <option value="VIP Beach Club Access" className="text-luxury-cream bg-white">VIP Beach Club Access</option>
-                      <option value="Presidential All-Inclusive Access" className="text-luxury-cream bg-white">Presidential Access</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* 5. Submit */}
-                <div className="w-full md:w-auto px-2">
-                  <button
-                    type="submit"
-                    className="w-full md:w-auto bg-gold-gradient text-luxury-obsidian font-bold text-[10px] uppercase tracking-[0.15em] px-6 py-2.5 rounded-xl md:rounded-full hover:brightness-110 shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
-                  >
-                    RESERVE STAY
-                  </button>
-                </div>
-              </form>
-            </div>
+        {/* Foreground content */}
+        <div
+          id="heroContent"
+          className="relative z-20 text-center px-6 max-w-5xl mx-auto flex flex-col items-center select-none pt-14 sm:pt-20 md:pt-28 transition-all duration-300 w-full"
+        >
+          <div className="flex flex-col items-center w-full space-y-2.5 sm:space-y-4 md:space-y-6">
+            <span className="text-luxury-gold font-semibold tracking-[0.4em] uppercase text-xs md:text-sm animate-pulse-slow">
+              <i className="fa-regular fa-star mr-2"></i> The Apex of Oceanfront Luxury <i className="fa-regular fa-star ml-2"></i>
+            </span>
+            <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl tracking-wider text-white leading-tight">
+              Where Sky Meets <br />
+              <span className="text-gold-gradient italic font-normal">Sanctuary</span>
+            </h1>
+            <p className="hidden sm:block text-white/80 max-w-2xl text-sm md:text-lg tracking-wide font-light leading-relaxed">
+              Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.
+            </p>
           </div>
 
+          {/* Bottom Row: Quick Booking Bar */}
+          {/* Desktop Booking Bar */}
+          <div
+            className="hidden md:block w-full mt-10 lg:mt-16 bg-white/95 backdrop-blur border border-luxury-gold/40 rounded-full p-2.5 md:p-4 shadow-2xl gold-glow text-left transition-all duration-300"
+          >
+            <form onSubmit={handleHeroBookingSubmit} className="flex flex-row items-center justify-between text-luxury-cream w-full overflow-x-auto md:overflow-x-visible scrollbar-none gap-2 md:gap-0 px-2">
+              {/* 1. Selection: Villa / Suite */}
+              <div className="flex-shrink-0 md:flex-shrink w-auto md:w-[22%] px-3 md:border-r border-luxury-cream/10">
+                <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">SUITE / VILLA</label>
+                <div className="flex items-center gap-2">
+                  <CustomSelect
+                    value={heroVilla}
+                    onChange={setHeroVilla}
+                    options={VILLA_OPTIONS}
+                    placeholder="Select villa..."
+                    icon="fa-hotel"
+                  />
+                </div>
+              </div>
 
-        </section>
-      </div>
+              {/* 2. Dates */}
+              <div className="flex-shrink-0 md:flex-shrink w-auto md:w-[28%] px-3 md:border-r border-luxury-cream/10">
+                <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">CHECK IN / OUT</label>
+                <div className="flex items-center gap-2">
+                  <i className="fa-solid fa-calendar-days text-luxury-gold text-xs"></i>
+                  <div className="flex items-center gap-1 w-full">
+                    <input
+                      type="date"
+                      required
+                      value={heroCheckIn}
+                      onChange={(e) => setHeroCheckIn(e.target.value)}
+                      className="bg-transparent text-[10px] md:text-[11px] font-semibold focus:outline-none w-1/2 cursor-pointer border-none p-0"
+                    />
+                    <span className="text-luxury-cream/30 text-xs">→</span>
+                    <input
+                      type="date"
+                      required
+                      value={heroCheckOut}
+                      onChange={(e) => setHeroCheckOut(e.target.value)}
+                      className="bg-transparent text-[10px] md:text-[11px] font-semibold focus:outline-none w-1/2 cursor-pointer border-none p-0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Guests */}
+              <div className="flex-shrink-0 md:flex-shrink w-auto md:w-[18%] px-3 md:border-r border-luxury-cream/10">
+                <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">ROOMS & GUESTS</label>
+                <div className="flex items-center gap-2">
+                  <CustomSelect
+                    value={heroGuests}
+                    onChange={setHeroGuests}
+                    options={GUEST_OPTIONS}
+                    placeholder="Select guests..."
+                    icon="fa-user-group"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Curation level */}
+              <div className="flex-shrink-0 md:flex-shrink w-auto md:w-[18%] px-3 md:mr-1">
+                <label className="block text-[9px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-1">CURATION LEVEL</label>
+                <div className="flex items-center gap-2">
+                  <CustomSelect
+                    value={heroCuration}
+                    onChange={setHeroCuration}
+                    options={CURATION_OPTIONS}
+                    placeholder="Select tier..."
+                    icon="fa-star"
+                  />
+                </div>
+              </div>
+
+              {/* 5. Submit */}
+              <div className="flex-shrink-0 w-auto px-2">
+                <button
+                  type="submit"
+                  className="w-auto bg-gold-gradient text-luxury-obsidian font-bold text-[9px] md:text-[10px] uppercase tracking-[0.15em] px-4 py-2 md:px-6 md:py-2.5 rounded-full hover:brightness-110 shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
+                >
+                  RESERVE STAY
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Mobile Vertical Booking Bar */}
+          <form onSubmit={handleHeroBookingSubmit} className="md:hidden w-full mt-5 space-y-2 px-2">
+            {/* 1. Selection: Villa / Suite */}
+            <div className="bg-white border border-luxury-cream/15 rounded-xl py-2 px-3 shadow-md text-left">
+              <label className="block text-[8px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-0.5">
+                SUITE / VILLA
+              </label>
+              <div className="flex items-center gap-2">
+                <CustomSelect
+                  value={heroVilla}
+                  onChange={setHeroVilla}
+                  options={VILLA_OPTIONS}
+                  placeholder="Select villa..."
+                  icon="fa-hotel"
+                />
+              </div>
+            </div>
+
+            {/* 2. Dates */}
+            <div className="bg-white border border-luxury-cream/15 rounded-xl py-2 px-3 shadow-md text-left">
+              <label className="block text-[8px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-0.5">
+                CHECK IN / OUT
+              </label>
+              <div className="flex items-center gap-2">
+                <i className="fa-solid fa-calendar-days text-luxury-gold text-xs flex-shrink-0"></i>
+                <div className="flex items-center gap-2 w-full justify-start text-xs font-semibold text-luxury-cream">
+                  <input
+                    type="date"
+                    required
+                    value={heroCheckIn}
+                    onChange={(e) => setHeroCheckIn(e.target.value)}
+                    className="bg-transparent focus:outline-none cursor-pointer border-none p-0 text-luxury-cream font-semibold w-[100px]"
+                  />
+                  <span className="text-luxury-cream/30">→</span>
+                  <input
+                    type="date"
+                    required
+                    value={heroCheckOut}
+                    onChange={(e) => setHeroCheckOut(e.target.value)}
+                    className="bg-transparent focus:outline-none cursor-pointer border-none p-0 text-luxury-cream font-semibold w-[100px]"
+                  />
+                </div>
+                <i className="fa-regular fa-calendar text-luxury-cream/40 text-xs flex-shrink-0 ml-auto mr-1"></i>
+              </div>
+            </div>
+
+            {/* 3. Guests */}
+            <div className="bg-white border border-luxury-cream/15 rounded-xl py-2 px-3 shadow-md text-left">
+              <label className="block text-[8px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-0.5">
+                ROOMS & GUESTS
+              </label>
+              <div className="flex items-center gap-2">
+                <CustomSelect
+                  value={heroGuests}
+                  onChange={setHeroGuests}
+                  options={GUEST_OPTIONS}
+                  placeholder="Select guests..."
+                  icon="fa-user-group"
+                />
+              </div>
+            </div>
+
+            {/* 4. Curation level */}
+            <div className="bg-white border border-luxury-cream/15 rounded-xl py-2 px-3 shadow-md text-left">
+              <label className="block text-[8px] tracking-widest text-luxury-cream/50 uppercase font-bold mb-0.5">
+                CURATION LEVEL
+              </label>
+              <div className="flex items-center gap-2">
+                <CustomSelect
+                  value={heroCuration}
+                  onChange={setHeroCuration}
+                  options={CURATION_OPTIONS}
+                  placeholder="Select tier..."
+                  icon="fa-star"
+                />
+              </div>
+            </div>
+
+            {/* 5. Submit Button */}
+            <button
+              type="submit"
+              className="w-full bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-3 rounded-full hover:brightness-110 shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
+            >
+              RESERVE STAY
+            </button>
+          </form>
+        </div>
+      </section>
 
       {/* Scrollable Page Content Layer (Slides up to cover fixed Hero background video) */}
       <div className="relative z-10 bg-luxury-obsidian">
         {/* Sanctuary Story Section */}
         <section id="about" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-obsidian to-luxury-charcoal relative">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            {/* Collage */}
             <div className="relative grid grid-cols-12 gap-4">
               <div className="col-span-8 overflow-hidden rounded-2xl border border-luxury-gold/20 gold-glow">
                 <div className="relative w-full h-[350px]">
@@ -772,7 +917,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="col-span-4 overflow-hidden rounded-2xl border border-luxury-gold/20 shadow-xl">
-                <div className="relative w-full h-[180px]">
+                <div className="relative w-full h-[220px]">
                   <Image
                     src="/images/image3.png"
                     alt="Ocean Sunset Balcony"
@@ -800,7 +945,7 @@ export default function Home() {
             </div>
 
             {/* Content */}
-            <div className="space-y-8 lg:pl-6">
+            <div className="space-y-8 lg:pl-6 gsap-reveal-fade-up">
               <div className="space-y-4">
                 <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">The Shoreline Escape</span>
                 <h2 className="font-serif text-3xl md:text-5xl text-luxury-cream leading-tight">
@@ -970,7 +1115,7 @@ export default function Home() {
         <section id="villas" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-charcoal to-luxury-obsidian relative">
           <div className="max-w-7xl mx-auto space-y-16">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 gsap-reveal-fade-up">
               <div className="space-y-4">
                 <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Select Your Domain</span>
                 <h2 className="font-serif text-4xl md:text-6xl text-luxury-cream">
@@ -983,108 +1128,145 @@ export default function Home() {
             </div>
 
             {/* Suite Showcase interface */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
-              {/* Details Box */}
-              <div className="lg:col-span-5 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-8 md:p-10 gold-glow relative overflow-hidden">
-                <div className="absolute -top-16 -right-16 w-36 h-36 bg-luxury-gold/5 rounded-full blur-2xl"></div>
-
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-4">
-                    <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] text-xs">
-                      {activeSuiteIndex === 0 ? "Oceanfront Club Wing" : activeSuiteIndex === 1 ? "West Beach Shoreline" : "East Lagoon Gardens"}
-                    </span>
-                    <span className="font-serif text-lg text-luxury-cream font-semibold">
-                      ₱{activeSuite.pricePerNight.toLocaleString()}{" "}
-                      <span className="text-[10px] font-sans text-luxury-cream/50 uppercase tracking-widest">/ Night</span>
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-3xl md:text-4xl text-luxury-cream font-bold">{activeSuite.name}</h3>
-                    <p className="text-luxury-cream/70 text-sm leading-relaxed">{activeSuite.description}</p>
-                  </div>
-
-                  {/* Amenities */}
-                  <div className="space-y-3 pt-4">
-                    <span className="text-luxury-gold font-semibold uppercase text-[10px] tracking-widest block">Suite Amenities</span>
-                    <ul className="grid grid-cols-2 gap-3 text-xs text-luxury-cream/90">
-                      {activeSuite.amenities.map((amenity, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                          <i
-                            className={`fa-solid text-luxury-gold ${i === 0 ? "fa-droplet" : i === 1 ? "fa-wine-glass" : i === 2 ? "fa-key" : "fa-spa"
-                              }`}
-                          ></i>
-                          <span>{amenity}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Dot Indicators & CTA */}
-                <div className="mt-10 pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center">
-                  <div className="flex gap-2">
-                    {MOCK_ROOMS.map((_, i) => (
-                      <span
-                        key={i}
-                        className={`h-2.5 rounded-full transition-all duration-300 ${i === activeSuiteIndex ? "w-6 bg-luxury-gold" : "w-2.5 bg-luxury-gold/20"
-                          }`}
-                      ></span>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => handleBookClick(activeSuite)}
-                    className="w-full sm:w-auto text-center bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow transition-all duration-300 hover:scale-102 cursor-pointer"
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch gsap-reveal-fade-up">
+              {/* Details Box Column Wrapper (Static) */}
+              <div className="lg:col-span-5 relative h-[500px] lg:h-[500px] w-full">
+                <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
+                  <motion.div
+                    key={activeSuiteIndex}
+                    custom={slideDirection}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: "tween", duration: 0.5, ease: "easeOut" },
+                      opacity: { duration: 0.35 }
+                    }}
+                    className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
                   >
-                    Configure Itinerary
-                  </button>
-                </div>
+                    <div className="absolute -top-16 -right-16 w-36 h-36 bg-luxury-gold/5 rounded-full blur-2xl"></div>
+
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-4">
+                        <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] text-xs">
+                          {activeSuiteIndex === 0 ? "Oceanfront Club Wing" : activeSuiteIndex === 1 ? "West Beach Shoreline" : "East Lagoon Gardens"}
+                        </span>
+                        <span className="font-serif text-lg text-luxury-cream font-semibold">
+                          ₱{activeSuite.pricePerNight.toLocaleString()}{" "}
+                          <span className="text-[10px] font-sans text-luxury-cream/50 uppercase tracking-widest">/ Night</span>
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <h3 className="font-serif text-3xl md:text-4xl text-luxury-cream font-bold">{activeSuite.name}</h3>
+                        <p className="text-luxury-cream/70 text-sm leading-relaxed">{activeSuite.description}</p>
+                      </div>
+
+                      {/* Amenities */}
+                      <div className="space-y-3 pt-4">
+                        <span className="text-luxury-gold font-semibold uppercase text-[10px] tracking-widest block">Suite Amenities</span>
+                        <ul className="grid grid-cols-2 gap-3 text-xs text-luxury-cream/90">
+                          {activeSuite.amenities.map((amenity, i) => (
+                            <li key={i} className="flex items-center gap-2">
+                              <i
+                                className={`fa-solid text-luxury-gold ${i === 0 ? "fa-droplet" : i === 1 ? "fa-wine-glass" : i === 2 ? "fa-key" : "fa-spa"
+                                  }`}
+                              ></i>
+                              <span>{amenity}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* Dot Indicators & CTA */}
+                    <div className="mt-10 pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
+                      <div className="flex gap-2">
+                        {MOCK_ROOMS.map((_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => {
+                              if (i !== activeSuiteIndex) {
+                                setSlideDirection(i > activeSuiteIndex ? 1 : -1)
+                                setActiveSuiteIndex(i)
+                              }
+                            }}
+                            className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${i === activeSuiteIndex ? "w-6 bg-luxury-gold" : "w-2.5 bg-luxury-gold/20"
+                              }`}
+                            aria-label={`Go to slide ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => handleBookClick(activeSuite)}
+                        className="w-full sm:w-auto text-center bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow transition-all duration-300 hover:scale-102 cursor-pointer"
+                      >
+                        Configure Itinerary
+                      </button>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
-              {/* Display Showcase */}
-              <div className="lg:col-span-7 relative h-[450px] lg:h-auto rounded-3xl overflow-hidden border border-luxury-gold/20">
-                <Image src={activeSuite.imageUrl} alt={activeSuite.name} fill className="object-cover transition-transform duration-1000" />
+              {/* Display Showcase Column Wrapper (Static) */}
+              <div className="lg:col-span-7 relative h-[450px] lg:h-[500px] w-full">
+                <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
+                  <motion.div
+                    key={activeSuiteIndex}
+                    custom={slideDirection}
+                    variants={slideVariants}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{
+                      x: { type: "tween", duration: 0.5, ease: "easeOut" },
+                      opacity: { duration: 0.35 }
+                    }}
+                    className="absolute inset-0 rounded-3xl overflow-hidden border border-luxury-gold/20 bg-luxury-obsidian w-full h-full"
+                  >
+                    <Image src={activeSuite.imageUrl} alt={activeSuite.name} fill className="object-cover" priority />
 
-                {/* Overlay with navigation */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-between p-6">
-                  <div className="self-end bg-luxury-obsidian/90 border border-luxury-gold/30 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-white">
-                    <i className="fa-regular fa-eye mr-1"></i> Virtual Tour Enabled
-                  </div>
+                    {/* Overlay with navigation */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-between p-6 z-10">
+                      <div className="self-end bg-luxury-obsidian/95 border border-luxury-gold/30 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-luxury-cream shadow-md">
+                        <i className="fa-regular fa-eye text-luxury-gold mr-1"></i> Virtual Tour Enabled
+                      </div>
 
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={prevSuite}
-                      className="w-12 h-12 rounded-full bg-luxury-obsidian/80 hover:bg-luxury-gold text-white hover:text-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center transition-all duration-300 transform hover:-translate-x-1 cursor-pointer"
-                      aria-label="Previous Suite"
-                    >
-                      <i className="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <button
-                      onClick={nextSuite}
-                      className="w-12 h-12 rounded-full bg-luxury-obsidian/80 hover:bg-luxury-gold text-white hover:text-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center transition-all duration-300 transform hover:translate-x-1 cursor-pointer"
-                      aria-label="Next Suite"
-                    >
-                      <i className="fa-solid fa-chevron-right"></i>
-                    </button>
-                  </div>
+                      <div className="flex justify-between items-center">
+                        <button
+                          onClick={prevSuite}
+                          className="w-12 h-12 rounded-full bg-luxury-obsidian/95 hover:bg-luxury-gold text-luxury-cream border border-luxury-gold/20 flex items-center justify-center transition-all duration-300 transform hover:-translate-x-1 cursor-pointer shadow-md"
+                          aria-label="Previous Suite"
+                        >
+                          <i className="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <button
+                          onClick={nextSuite}
+                          className="w-12 h-12 rounded-full bg-luxury-obsidian/95 hover:bg-luxury-gold text-luxury-cream border border-luxury-gold/20 flex items-center justify-center transition-all duration-300 transform hover:translate-x-1 cursor-pointer shadow-md"
+                          aria-label="Next Suite"
+                        >
+                          <i className="fa-solid fa-chevron-right"></i>
+                        </button>
+                      </div>
 
-                  <div className="flex justify-between items-center text-xs text-white bg-luxury-obsidian/90 border border-luxury-gold/20 rounded-xl p-4 backdrop-blur-sm">
-                    <span>
-                      <i className="fa-solid fa-vector-square text-luxury-gold mr-1"></i> {activeSuite.size}
-                    </span>
-                    <span>
-                      <i className="fa-solid fa-panorama text-luxury-gold mr-1"></i>{" "}
-                      {activeSuiteIndex === 0
-                        ? "180° Aegean Views"
-                        : activeSuiteIndex === 1
-                          ? "Unobstructed Sunsets"
-                          : "Lagoon & Coral Views"}
-                    </span>
-                    <span>
-                      <i className="fa-solid fa-user-group text-luxury-gold mr-1"></i> Up to {activeSuite.capacity} VIPs
-                    </span>
-                  </div>
-                </div>
+                      <div className="flex justify-around items-center gap-4 text-xs text-luxury-cream bg-luxury-obsidian/95 border border-luxury-gold/20 rounded-xl py-3 px-6 shadow-lg select-none">
+                        <span className="flex items-center gap-2 whitespace-nowrap">
+                          <i className="fa-solid fa-panorama text-luxury-gold flex-shrink-0"></i>{" "}
+                          {activeSuiteIndex === 0
+                            ? "180° Aegean Views"
+                            : activeSuiteIndex === 1
+                              ? "Unobstructed Sunsets"
+                              : "Lagoon & Coral Views"}
+                        </span>
+                        <span className="flex items-center gap-2 whitespace-nowrap">
+                          <i className="fa-solid fa-user-group text-luxury-gold flex-shrink-0"></i> Up to {activeSuite.capacity} VIPs
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
               </div>
             </div>
           </div>
@@ -1096,7 +1278,7 @@ export default function Home() {
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-luxury-gold/5 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="max-w-7xl mx-auto space-y-16">
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 gsap-reveal-fade-up">
               <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Tailored Lifestyles</span>
               <h2 className="font-serif text-4xl md:text-6xl text-luxury-cream">
                 Your Absolute <span className="text-gold-gradient italic">Prerogative</span>
@@ -1107,9 +1289,9 @@ export default function Home() {
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 gsap-reveal-stagger-container">
               {/* Card 1 */}
-              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group">
+              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group gsap-reveal-stagger-item">
                 <div className="space-y-6">
                   <div className="w-14 h-14 rounded-xl bg-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center text-luxury-gold text-2xl group-hover:bg-luxury-gold group-hover:text-luxury-obsidian transition-colors duration-300">
                     <i className="fa-solid fa-umbrella-beach"></i>
@@ -1125,7 +1307,7 @@ export default function Home() {
               </div>
 
               {/* Card 2 */}
-              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group">
+              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group gsap-reveal-stagger-item">
                 <div className="space-y-6">
                   <div className="w-14 h-14 rounded-xl bg-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center text-luxury-gold text-2xl group-hover:bg-luxury-gold group-hover:text-luxury-obsidian transition-colors duration-300">
                     <i className="fa-solid fa-ship"></i>
@@ -1141,7 +1323,7 @@ export default function Home() {
               </div>
 
               {/* Card 3 */}
-              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group">
+              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group gsap-reveal-stagger-item">
                 <div className="space-y-6">
                   <div className="w-14 h-14 rounded-xl bg-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center text-luxury-gold text-2xl group-hover:bg-luxury-gold group-hover:text-luxury-obsidian transition-colors duration-300">
                     <i className="fa-solid fa-utensils"></i>
@@ -1157,7 +1339,7 @@ export default function Home() {
               </div>
 
               {/* Card 4 */}
-              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group">
+              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group gsap-reveal-stagger-item">
                 <div className="space-y-6">
                   <div className="w-14 h-14 rounded-xl bg-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center text-luxury-gold text-2xl group-hover:bg-luxury-gold group-hover:text-luxury-obsidian transition-colors duration-300">
                     <i className="fa-solid fa-water"></i>
@@ -1173,7 +1355,7 @@ export default function Home() {
               </div>
 
               {/* Card 5 */}
-              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group">
+              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group gsap-reveal-stagger-item">
                 <div className="space-y-6">
                   <div className="w-14 h-14 rounded-xl bg-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center text-luxury-gold text-2xl group-hover:bg-luxury-gold group-hover:text-luxury-obsidian transition-colors duration-300">
                     <i className="fa-solid fa-spa"></i>
@@ -1189,7 +1371,7 @@ export default function Home() {
               </div>
 
               {/* Card 6 */}
-              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group">
+              <div className="bg-luxury-charcoal/40 border border-luxury-cream/10 rounded-2xl p-8 hover:border-luxury-gold/40 transition-all duration-300 gold-glow-hover flex flex-col justify-between group gsap-reveal-stagger-item">
                 <div className="space-y-6">
                   <div className="w-14 h-14 rounded-xl bg-luxury-obsidian border border-luxury-gold/30 flex items-center justify-center text-luxury-gold text-2xl group-hover:bg-luxury-gold group-hover:text-luxury-obsidian transition-colors duration-300">
                     <i className="fa-solid fa-martini-glass-citrus"></i>
