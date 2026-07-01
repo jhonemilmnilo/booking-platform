@@ -6,15 +6,21 @@ import { differenceInDays, isBefore, startOfDay } from "date-fns"
 // Mock rooms database for server-side rate calculation (Single Source of Truth)
 const MOCK_ROOMS = [
   {
-    id: "villa-1",
-    name: "Luxury Garden Villa",
-    pricePerNight: 8500,
-    capacity: 2,
+    id: "royal-suite",
+    name: "The Beachfront Royal Suite",
+    pricePerNight: 15500,
+    capacity: 6,
   },
   {
-    id: "bungalow-1",
-    name: "Overwater Bungalow Suite",
-    pricePerNight: 15000,
+    id: "garden-villa",
+    name: "The Beachfront Garden Villa",
+    pricePerNight: 18200,
+    capacity: 8,
+  },
+  {
+    id: "lagoon-suite",
+    name: "The Oceanview Lagoon Suite",
+    pricePerNight: 12000,
     capacity: 4,
   },
 ]
@@ -70,7 +76,7 @@ export async function createBookingAction(formData: BookingInput) {
   }
 
   const totalPrice = room.pricePerNight * nights
-  const bookingReference = `TALA-${Math.floor(100000 + Math.random() * 900000)}`
+  const bookingReference = `OHR-${Math.floor(100000 + Math.random() * 900000)}`
 
   return {
     success: true,
@@ -81,7 +87,8 @@ export async function createBookingAction(formData: BookingInput) {
       nights,
       pricePerNight: room.pricePerNight,
       totalPrice,
-      status: "CONFIRMED", // Directly confirmed because PayMongo is bypassed for now
+      status: "CONFIRMED",
     },
   }
 }
+
