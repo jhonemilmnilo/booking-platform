@@ -434,7 +434,7 @@ export default function Home() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: el,
-              start: "top 85%",
+              start: "top 50%",
               toggleActions: "play none none none",
               fastScrollEnd: true,
               preventOverlaps: true
@@ -458,7 +458,7 @@ export default function Home() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: container,
-              start: "top 80%",
+              start: "top 50%",
               toggleActions: "play none none none",
               fastScrollEnd: true,
               preventOverlaps: true
@@ -691,17 +691,12 @@ export default function Home() {
         <div className="flex items-center gap-4 flex-shrink-0">
 
 
-          <button
-            onClick={() => handleBookClick(MOCK_ROOMS[0])}
-            className="hidden sm:inline-block bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-semibold text-xs uppercase tracking-[0.2em] px-6 py-2 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
-          >
-            Reserve Experience
-          </button>
-
           {isLoggedIn && (
             <button
               onClick={handleLogOut}
-              className="hidden sm:inline-block border border-luxury-gold/50 hover:bg-luxury-gold/10 text-luxury-cream font-semibold text-xs uppercase tracking-[0.2em] px-6 py-3.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
+              className={`hidden sm:inline-block border border-luxury-gold/50 hover:bg-luxury-gold/10 ${
+                isHeaderScrolled ? "text-luxury-cream" : "text-white"
+              } font-semibold text-xs uppercase tracking-[0.2em] px-6 py-2.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap`}
             >
               Log Out
             </button>
@@ -964,7 +959,7 @@ export default function Home() {
                   type="submit"
                   className="w-auto bg-gold-gradient text-luxury-obsidian font-bold text-[9px] md:text-[10px] uppercase tracking-[0.15em] px-4 py-2 md:px-6 md:py-2.5 rounded-full hover:brightness-110 shadow-md active:scale-98 transition-all flex items-center justify-center gap-2 whitespace-nowrap cursor-pointer"
                 >
-                  RESERVE STAY
+                  RESERVE
                 </button>
               </div>
             </form>
@@ -1053,7 +1048,7 @@ export default function Home() {
               type="submit"
               className="w-full bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-3 rounded-full hover:brightness-110 shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
-              RESERVE STAY
+              RESERVE
             </button>
           </form>
         </div>
