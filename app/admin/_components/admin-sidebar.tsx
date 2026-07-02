@@ -45,6 +45,8 @@ export default function AdminSidebar() {
     { name: "Rooms & Suites", href: "/admin/rooms", icon: "fa-hotel", comingSoon: true },
   ]
 
+  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({})
+
   const handleSignOut = async () => {
     try {
       await signOutAction()
