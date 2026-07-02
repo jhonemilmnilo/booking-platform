@@ -13,7 +13,7 @@ export default function Header() {
         <Link href="/" className="flex items-center gap-2 group">
           <Compass className="h-6 w-6 text-primary transition-transform group-hover:rotate-45" />
           <span className="text-xl font-bold tracking-tight text-foreground">
-            Tala <span className="text-secondary">Resort</span>
+            Booking <span className="text-secondary">Platform</span>
           </span>
         </Link>
 

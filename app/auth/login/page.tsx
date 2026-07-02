@@ -136,7 +136,7 @@ function LoginContent() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
         <Image
           src="/images/auth-bg.png"
-          alt="Tala Resort Overwater Villa"
+          alt="Booking Platform Overwater Villa"
           fill
           priority
           sizes="50vw"
@@ -150,7 +150,7 @@ function LoginContent() {
             <span className="text-xs font-bold tracking-widest uppercase text-emerald-300">Premium Tropical Sanctuary</span>
           </div>
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
-            Experience Tala Resort
+            Experience Booking Platform
           </h2>
           <p className="text-sm font-medium text-emerald-100/90 max-w-md leading-relaxed">
             Welcome to your digital portal. Sign in to view reservation queues, manage stay durations, and access exclusive oceanfront amenities.
@@ -165,7 +165,7 @@ function LoginContent() {
           <div className="space-y-2 text-left">
             <div className="flex items-center gap-2 mb-2 lg:hidden">
               <Compass className="h-7 w-7 text-primary" />
-              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Tala Portal</span>
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Booking Platform</span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
               Sign In

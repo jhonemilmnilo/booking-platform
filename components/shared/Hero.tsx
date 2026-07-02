@@ -27,7 +27,7 @@ export default function Hero() {
   return (
     <section className="relative w-full h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden">
       {/* Background Image with Dark Green/Sand overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-10000 ease-out scale-105"
         style={{ backgroundImage: `url('/resort_hero.png')` }}
       />
@@ -45,7 +45,7 @@ export default function Hero() {
             Welcome to Paradise
           </span>
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl max-w-3xl leading-[1.15]">
-            Find Your Sanctuary at <span className="text-accent">Tala Resort</span>
+            Find Your Sanctuary at <span className="text-accent">OceanHilling Platform</span>
           </h1>
           <p className="max-w-2xl mx-auto text-lg text-white/80 font-light md:text-xl">
             Escape the noise and immerse yourself in private beachside villas, crystal turquoise waters, and organic modern luxury.
@@ -89,7 +89,7 @@ export default function Hero() {
 
           {/* Search Button */}
           <div className="w-full md:w-auto self-end">
-            <Button 
+            <Button
               onClick={handleSearch}
               className="w-full md:w-auto h-11 px-8 bg-primary hover:bg-primary/95 text-primary-foreground font-semibold flex items-center justify-center gap-2 rounded-xl"
             >

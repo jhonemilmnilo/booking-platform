@@ -1,4 +1,4 @@
-name: CI - Tala Booking Platform
+name: CI - OceanHill Booking Platform
 
 on:
   push:
