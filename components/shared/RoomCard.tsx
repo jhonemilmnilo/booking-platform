@@ -16,6 +16,7 @@ export interface Room {
   imageUrl: string
   size: string
   amenities: string[]
+  images?: string[]
 }
 
 interface RoomCardProps {

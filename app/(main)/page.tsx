@@ -16,38 +16,64 @@ import Image from "next/image"
 import BookingModal from "@/components/shared/BookingModal"
 import { createBookingAction } from "@/app/actions/booking"
 import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
+import { getRoomsAction } from "@/app/admin/rooms_suites/action"
 import { toast } from "sonner"
 
 const MOCK_ROOMS: Room[] = [
   {
-    id: "royal-suite",
-    name: "The Beachfront Royal Suite",
-    description: "Steps from the water, this exquisite royal suite features a private swim-up pool, outdoor lounge overlooking the waves, and a dedicated personal beach concierge.",
-    pricePerNight: 15500,
-    capacity: 6,
+    id: "5br-6ba-private-pool-villa",
+    name: "5BR/6BA Private Pool Villa",
+    description: "Our premier signature resort residence. Boasts 5 luxurious bedrooms, 6 bathrooms, a private pool, a complete kitchen, and a spacious package inclusive of breakfast for 18 guests. Enjoy ocean views and elite comfort.",
+    pricePerNight: 55000,
+    capacity: 25,
     imageUrl: "/images/image7.webp",
-    size: "6,800 Sq Ft",
-    amenities: ["Private Swim-up Pool", "Beachfront Daybeds", "Personal Concierge", "Outdoor Spa Deck"],
+    size: "5 Bedrooms / 6 Baths",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image7.webp", "/images/image.png", "/images/image5.png", "/images/image4.png"],
   },
   {
-    id: "garden-villa",
-    name: "The Beachfront Garden Villa",
-    description: "Optimized for spectacular sunsets, this spacious villa boasts a private beachfront deck, custom fire pits directly on the sand, and access to the resort's yacht charter launch.",
-    pricePerNight: 18200,
-    capacity: 8,
+    id: "3br-3ba-private-pool-villa",
+    name: "3BR/3BA Private Pool Villa",
+    description: "A gorgeous coastal retreat featuring 3 beautifully appointed bedrooms, 3 bathrooms, and a private pool. The package includes breakfast for 12 guests, perfect for families and small groups.",
+    pricePerNight: 41000,
+    capacity: 20,
     imageUrl: "/images/image1.png",
-    size: "8,200 Sq Ft",
-    amenities: ["Beachfront Deck", "Outdoor Sand Firepit", "Deep-Immersion Tub", "Speedboat Charters"],
+    size: "3 Bedrooms / 3 Baths",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image1.png", "/images/image3.png", "/images/image4.png", "/images/image.png"],
   },
   {
-    id: "lagoon-suite",
-    name: "The Oceanview Lagoon Suite",
-    description: "A secluded garden sanctuary nestled next to our private lagoon pools. Excellent views of the palms and ocean reefs, perfect for a peaceful tropical getaway.",
-    pricePerNight: 12000,
-    capacity: 4,
+    id: "2br-2ba-private-pool-villa-a",
+    name: "2BR/2BA Private Pool Villa A",
+    description: "Sleek and comfortable private villa hosting 2 bedrooms, 2 bathrooms, a private pool, and breakfast for 6 guests. Ideal for close-knit groups seeking a peaceful getaway.",
+    pricePerNight: 21000,
+    capacity: 8,
     imageUrl: "/images/image2.png",
-    size: "4,500 Sq Ft",
-    amenities: ["Lagoon Swim Access", "Tropical Garden Room", "Reef Snorkeling Kit", "Private Yoga Coach"],
+    size: "2 Bedrooms / 2 Baths (A)",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image2.png", "/images/image6.png", "/images/image5.png", "/images/image3.png"],
+  },
+  {
+    id: "2br-2ba-private-pool-villa-b",
+    name: "2BR/2BA Private Pool Villa B",
+    description: "A larger alternative to Villa A, featuring 2 bedrooms, 2 bathrooms, and a private pool. Accommodates up to 10 guests and includes breakfast for 6 guests.",
+    pricePerNight: 23000,
+    capacity: 10,
+    imageUrl: "/images/image3.png",
+    size: "2 Bedrooms / 2 Baths (B)",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image3.png", "/images/image4.png", "/images/image5.png", "/images/image6.png"],
+  },
+  {
+    id: "1br-1ba-private-pool-villa",
+    name: "1BR/1BA Private Pool Villa",
+    description: "An intimate romantic sanctuary featuring 1 bedroom, 1 bathroom, and a private pool. The package includes breakfast for 2 guests, perfect for couples.",
+    pricePerNight: 13000,
+    capacity: 5,
+    imageUrl: "/images/image4.png",
+    size: "1 Bedroom / 1 Bath",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image4.png", "/images/image5.png", "/images/image6.png", "/images/image.png"],
   },
 ]
 
@@ -75,11 +101,7 @@ const CAMPAIGN_REELS = [
   }
 ]
 
-const VILLA_OPTIONS = [
-  { value: "royal-suite", label: "Royal Suite" },
-  { value: "garden-villa", label: "Garden Villa" },
-  { value: "lagoon-suite", label: "Lagoon Suite" }
-]
+
 
 const GUEST_OPTIONS = [
   { value: "1 Guest", label: "1 Room, 1 Guest" },
@@ -198,6 +220,32 @@ export default function Home() {
   const [isModalOpen, setIsModalOpen] = React.useState(false)
   const [isLoggedIn, setIsLoggedIn] = React.useState(false)
 
+  // Database-backed rooms list state
+  const [rooms, setRooms] = React.useState<Room[]>(MOCK_ROOMS)
+
+  // Gallery Lightbox Modal States
+  const [galleryRoom, setGalleryRoom] = React.useState<Room | null>(null)
+  const [activeGalleryImageIndex, setActiveGalleryImageIndex] = React.useState(0)
+
+  // Keyboard event listeners for the Gallery lightbox modal
+  React.useEffect(() => {
+    if (!galleryRoom) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const imgs = galleryRoom.images || [galleryRoom.imageUrl]
+      if (e.key === "ArrowLeft") {
+        setActiveGalleryImageIndex((prev) => (prev - 1 + imgs.length) % imgs.length)
+      } else if (e.key === "ArrowRight") {
+        setActiveGalleryImageIndex((prev) => (prev + 1) % imgs.length)
+      } else if (e.key === "Escape") {
+        setGalleryRoom(null)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [galleryRoom])
+
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -233,7 +281,7 @@ export default function Home() {
 
 
   // Hero Booking search bar states
-  const [heroVilla, setHeroVilla] = React.useState("royal-suite")
+  const [heroVilla, setHeroVilla] = React.useState("5br-6ba-private-pool-villa")
   const [heroCheckIn, setHeroCheckIn] = React.useState("")
   const [heroCheckOut, setHeroCheckOut] = React.useState("")
   const [heroGuests, setHeroGuests] = React.useState("2 Guests")
@@ -243,7 +291,7 @@ export default function Home() {
   const [fullName, setFullName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [phone, setPhone] = React.useState("")
-  const [selectedVilla, setSelectedVilla] = React.useState("royal-suite")
+  const [selectedVilla, setSelectedVilla] = React.useState("5br-6ba-private-pool-villa")
   const [addon, setAddon] = React.useState("Private Airport Shuttle Only")
   const [duration, setDuration] = React.useState("3 Nights")
   const [securityTier, setSecurityTier] = React.useState("Standard Resort Guest")
@@ -259,6 +307,14 @@ export default function Home() {
     nights: number
     totalPrice: number
   } | null>(null)
+
+  // Dynamically mapped villa selection options for custom selects
+  const villaOptions = React.useMemo(() => {
+    return rooms.map((r) => ({
+      value: r.id,
+      label: r.name.replace("The Beachfront ", "").replace("The Oceanview ", ""),
+    }))
+  }, [rooms])
 
   // Initialize Dates, Video Source, and Header Scroll Listeners
   React.useEffect(() => {
@@ -305,6 +361,16 @@ export default function Home() {
         })
         .catch((err) => {
           console.warn("[Settings] Failed to load dynamic settings, using defaults", err)
+        })
+
+      getRoomsAction()
+        .then((res) => {
+          if (res.success && res.data && res.data.length > 0) {
+            setRooms(res.data as Room[])
+          }
+        })
+        .catch((err) => {
+          console.warn("[Rooms] Failed to load dynamic rooms, using fallback list:", err)
         })
 
       // Preload all critical page assets/images in the background for zero-latency scrolling
@@ -440,12 +506,12 @@ export default function Home() {
   // Carousel slider indices with directional tracking
   const nextSuite = () => {
     setSlideDirection(1)
-    setActiveSuiteIndex((prev) => (prev + 1) % MOCK_ROOMS.length)
+    setActiveSuiteIndex((prev) => (prev + 1) % rooms.length)
   }
 
   const prevSuite = () => {
     setSlideDirection(-1)
-    setActiveSuiteIndex((prev) => (prev - 1 + MOCK_ROOMS.length) % MOCK_ROOMS.length)
+    setActiveSuiteIndex((prev) => (prev - 1 + rooms.length) % rooms.length)
   }
 
   // Trigger global room booking modal
@@ -564,21 +630,21 @@ export default function Home() {
     }
   }
 
-  const activeSuite = MOCK_ROOMS[activeSuiteIndex]
+  const activeSuite = rooms[activeSuiteIndex] || MOCK_ROOMS[0]
 
   return (
     <div ref={mainScopeRef} className="bg-luxury-obsidian text-luxury-cream font-sans min-h-screen">
       {/* Floating Header */}
       <header
         id="mainHeader"
-        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 py-4 px-4 md:py-6 md:px-12 flex justify-between items-center ${isHeaderScrolled
-          ? "bg-luxury-obsidian/95 py-3 md:py-4 border-b border-luxury-gold/15 backdrop-blur-md shadow-2xl"
+        className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 py-3 px-4 md:py-4 md:px-12 flex justify-between items-center ${isHeaderScrolled
+          ? "bg-luxury-obsidian/95 py-2 md:py-2.5 border-b border-luxury-gold/15 backdrop-blur-md shadow-2xl"
           : "bg-transparent"
           }`}
       >
         <div className="flex items-center gap-3 whitespace-nowrap flex-shrink-0">
           {/* Crest SVG */}
-          <svg className="w-7 h-7 md:w-10 md:h-10 text-luxury-gold filter drop-shadow flex-shrink-0" viewBox="0 0 100 100" fill="currentColor">
+          <svg className="w-7 h-7 md:w-8 md:h-8 text-luxury-gold filter drop-shadow flex-shrink-0" viewBox="0 0 100 100" fill="currentColor">
             <path d="M50 5 L85 25 L85 65 L50 95 L15 65 L15 25 Z" fill="none" stroke="#D4AF37" strokeWidth="2" />
             <path d="M50 15 L75 30 L75 60 L50 82 L25 60 L25 30 Z" fill="none" stroke="#D4AF37" strokeDasharray="2,2" />
             <circle cx="50" cy="48" r="8" fill="#D4AF37" />
@@ -586,7 +652,7 @@ export default function Home() {
           </svg>
           <span
             id="brandName"
-            className={`font-serif text-sm sm:text-base md:text-2xl tracking-[0.25em] uppercase font-semibold transition-colors duration-300 whitespace-nowrap ${isHeaderScrolled ? "text-luxury-cream" : "text-white"
+            className={`font-serif text-sm sm:text-base md:text-xl tracking-[0.25em] uppercase font-semibold transition-colors duration-300 whitespace-nowrap ${isHeaderScrolled ? "text-luxury-cream" : "text-white"
               }`}
           >
             Ocean <span className="text-luxury-gold">Hill</span>
@@ -627,7 +693,7 @@ export default function Home() {
 
           <button
             onClick={() => handleBookClick(MOCK_ROOMS[0])}
-            className="hidden sm:inline-block bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-semibold text-xs uppercase tracking-[0.2em] px-6 py-3.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
+            className="hidden sm:inline-block bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-semibold text-xs uppercase tracking-[0.2em] px-6 py-2 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
           >
             Reserve Experience
           </button>
@@ -832,7 +898,7 @@ export default function Home() {
                   <CustomSelect
                     value={heroVilla}
                     onChange={setHeroVilla}
-                    options={VILLA_OPTIONS}
+                    options={villaOptions}
                     placeholder="Select villa..."
                     icon="fa-hotel"
                   />
@@ -915,7 +981,7 @@ export default function Home() {
                 <CustomSelect
                   value={heroVilla}
                   onChange={setHeroVilla}
-                  options={VILLA_OPTIONS}
+                  options={villaOptions}
                   placeholder="Select villa..."
                   icon="fa-hotel"
                 />
@@ -1286,7 +1352,7 @@ export default function Home() {
                     {/* Dot Indicators & CTA */}
                     <div className="mt-10 pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
                       <div className="flex gap-2">
-                        {MOCK_ROOMS.map((_, i) => (
+                        {rooms.map((_, i) => (
                           <button
                             key={i}
                             type="button"
@@ -1333,8 +1399,21 @@ export default function Home() {
 
                     {/* Overlay with navigation */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-between p-6 z-10">
-                      <div className="self-end bg-luxury-obsidian/95 border border-luxury-gold/30 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-luxury-cream shadow-md">
-                        <i className="fa-regular fa-eye text-luxury-gold mr-1"></i> Virtual Tour Enabled
+                      <div className="flex justify-between items-center w-full">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGalleryRoom(activeSuite)
+                            setActiveGalleryImageIndex(0)
+                          }}
+                          className="bg-luxury-obsidian/95 border border-luxury-gold/30 hover:bg-luxury-gold text-luxury-cream hover:text-luxury-cream px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold flex items-center gap-1.5 transition-all duration-300 shadow-md cursor-pointer hover:scale-105"
+                        >
+                          <i className="fa-regular fa-images text-luxury-gold"></i> View Gallery
+                        </button>
+
+                        <div className="bg-luxury-obsidian/95 border border-luxury-gold/30 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-luxury-cream shadow-md">
+                          <i className="fa-regular fa-eye text-luxury-gold mr-1"></i> Virtual Tour Enabled
+                        </div>
                       </div>
 
                       <div className="flex justify-between items-center">
@@ -1649,9 +1728,9 @@ export default function Home() {
                     onChange={(e) => setSelectedVilla(e.target.value)}
                     className="w-full bg-luxury-charcoal border border-luxury-cream/15 focus:border-luxury-gold rounded-xl px-4 py-3 text-sm text-luxury-cream focus:outline-none transition-all cursor-pointer"
                   >
-                    <option value="royal-suite">The Beachfront Royal Suite</option>
-                    <option value="garden-villa">The Beachfront Garden Villa</option>
-                    <option value="lagoon-suite">The Oceanview Lagoon Suite</option>
+                    {rooms.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
                   </select>
                 </div>
 
@@ -1897,6 +1976,119 @@ export default function Home() {
 
       {/* Existing Booking Modal Integration */}
       <BookingModal room={selectedRoom} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      {/* Premium Gallery Lightbox Modal */}
+      <AnimatePresence>
+        {galleryRoom && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col justify-between bg-black/95 p-4 md:p-8 backdrop-blur-md select-none"
+          >
+            {/* Header: Close Button and Room Name */}
+            <div className="flex justify-between items-center w-full max-w-7xl mx-auto z-10">
+              <div>
+                <span className="text-luxury-gold uppercase tracking-[0.2em] text-[10px] md:text-xs font-semibold block">
+                  Suite Collection Gallery
+                </span>
+                <h3 className="font-serif text-lg md:text-2xl text-white font-bold">
+                  {galleryRoom.name}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setGalleryRoom(null)}
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/5 hover:bg-luxury-gold text-white hover:text-luxury-obsidian border border-white/10 flex items-center justify-center transition-all duration-300 cursor-pointer"
+                aria-label="Close Gallery"
+              >
+                <i className="fa-solid fa-xmark text-lg"></i>
+              </button>
+            </div>
+
+            {/* Main Stage: Large Image + Chevrons */}
+            <div className="relative flex-1 w-full max-w-5xl mx-auto flex items-center justify-center my-6">
+              {/* Left Arrow */}
+              <button
+                type="button"
+                onClick={() => {
+                  const imgs = galleryRoom.images || [galleryRoom.imageUrl];
+                  setActiveGalleryImageIndex((prev) => (prev - 1 + imgs.length) % imgs.length);
+                }}
+                className="absolute left-2 md:left-4 z-10 w-12 h-12 rounded-full bg-white/5 hover:bg-luxury-gold text-white hover:text-luxury-obsidian border border-white/10 flex items-center justify-center transition-all duration-300 cursor-pointer"
+                aria-label="Previous Image"
+              >
+                <i className="fa-solid fa-chevron-left"></i>
+              </button>
+
+              {/* Main Image Frame */}
+              <div className="relative w-full h-full max-h-[60vh] md:max-h-[70vh] rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeGalleryImageIndex}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={
+                        (galleryRoom.images || [galleryRoom.imageUrl])[activeGalleryImageIndex]
+                      }
+                      alt={`${galleryRoom.name} Gallery Image`}
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Right Arrow */}
+              <button
+                type="button"
+                onClick={() => {
+                  const imgs = galleryRoom.images || [galleryRoom.imageUrl];
+                  setActiveGalleryImageIndex((prev) => (prev + 1) % imgs.length);
+                }}
+                className="absolute right-2 md:right-4 z-10 w-12 h-12 rounded-full bg-white/5 hover:bg-luxury-gold text-white hover:text-luxury-obsidian border border-white/10 flex items-center justify-center transition-all duration-300 cursor-pointer"
+                aria-label="Next Image"
+              >
+                <i className="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+
+            {/* Bottom Panel: Thumbnail Bar */}
+            <div className="w-full max-w-4xl mx-auto text-center pb-4 z-10">
+              <div className="flex justify-center gap-2 md:gap-4 overflow-x-auto py-2">
+                {(galleryRoom.images || [galleryRoom.imageUrl]).map((img, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setActiveGalleryImageIndex(i)}
+                    className={`relative w-16 h-12 md:w-24 md:h-16 rounded-lg overflow-hidden border transition-all duration-300 flex-shrink-0 cursor-pointer ${
+                      i === activeGalleryImageIndex
+                        ? "border-luxury-gold scale-105 ring-2 ring-luxury-gold/30"
+                        : "border-white/20 opacity-50 hover:opacity-100"
+                    }`}
+                  >
+                    <Image
+                      src={img}
+                      alt="Gallery Thumbnail"
+                      fill
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+              <span className="text-[10px] md:text-xs text-white/50 tracking-widest uppercase mt-3 block">
+                Image {activeGalleryImageIndex + 1} of {(galleryRoom.images || [galleryRoom.imageUrl]).length}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

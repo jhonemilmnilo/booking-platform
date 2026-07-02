@@ -33,3 +33,35 @@ model SystemSettings {
   key   String @id
   value String
 }
+
+model Room {
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  pricePerNight Float
+  capacity      Int
+  imageUrl      String
+  size          String
+  amenities     String[]
+  images        String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Booking {
+  id            String   @id @default(uuid())
+  reference     String   @unique
+  guestName     String
+  guestEmail    String?
+  guestPhone    String?
+  roomId        String
+  roomName      String
+  pricePerNight Float
+  checkIn       DateTime
+  checkOut      DateTime
+  nights        Int
+  totalPrice    Float
+  status        String   @default("CONFIRMED")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
