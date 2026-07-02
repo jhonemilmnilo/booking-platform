@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showToast } from "@/components/shared/Toast"
 import { Loader2, Compass, Mail, Lock, User, Eye, EyeOff } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -28,13 +28,53 @@ function SignUpContent() {
   const [isLoading, setIsLoading] = React.useState(false)
   const [isPending, startTransition] = React.useTransition()
   const [showPassword, setShowPassword] = React.useState(false)
-  
+
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const errorParam = searchParams.get("error")
+
+  React.useEffect(() => {
+    if (errorParam) {
+      showToast.error(errorParam)
+      const url = new URL(window.location.href)
+      url.searchParams.delete("error")
+      window.history.replaceState({}, "", url.pathname)
+    }
+  }, [errorParam])
 
   // Focus states
   const [isEmailFocused, setIsEmailFocused] = React.useState(false)
   const [isPasswordFocused, setIsPasswordFocused] = React.useState(false)
   const [isNameFocused, setIsNameFocused] = React.useState(false)
+
+  // Handle BFCache spinner freeze and active OTP check
+  React.useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        setIsLoading(false)
+      }
+    }
+    window.addEventListener("pageshow", handlePageShow)
+
+    const pendingEmail = localStorage.getItem("pending_otp_email")
+    const pendingTime = localStorage.getItem("pending_otp_timestamp")
+    const isBypassed = sessionStorage.getItem("otp_bypassed") === "true"
+    if (pendingEmail && pendingTime && !isBypassed) {
+      const elapsed = Date.now() - parseInt(pendingTime, 10)
+      if (elapsed < 5 * 60 * 1000) {
+        showToast.info("Verification in Progress", "We already sent an OTP code. Please check your inbox or spam folder.")
+        router.push(`/auth/verify?email=${encodeURIComponent(pendingEmail)}`)
+        return
+      } else {
+        localStorage.removeItem("pending_otp_email")
+        localStorage.removeItem("pending_otp_timestamp")
+      }
+    }
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow)
+    }
+  }, [router])
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -43,6 +83,7 @@ function SignUpContent() {
 
   const handleEmailSignUp = (values: z.infer<typeof signUpSchema>) => {
     setIsLoading(true)
+    sessionStorage.removeItem("otp_bypassed")
     startTransition(async () => {
       const result = await signUpWithEmailAction(values)
       if (result.success) {
@@ -57,9 +98,10 @@ function SignUpContent() {
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
     setIsLoading(true)
+    sessionStorage.removeItem("otp_bypassed")
     startTransition(async () => {
       const origin = window.location.origin
-      const result = await getSocialLoginUrlAction(provider, origin)
+      const result = await getSocialLoginUrlAction(provider, origin, true)
       if (result.success && result.url) {
         window.location.href = result.url
       } else {
@@ -77,21 +119,21 @@ function SignUpContent() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
         <Image
           src="/images/auth-bg.png"
-          alt="Tala Resort Overwater Villa"
+          alt="OceanHilling Platform Overwater Villa"
           fill
           priority
           sizes="50vw"
           className="object-cover object-center opacity-85 saturate-[1.1] contrast-[1.05]"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-transparent" />
-        
+
         <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
           <div className="flex items-center gap-2">
             <Compass className="h-6 w-6 text-emerald-400 animate-spin-slow" />
             <span className="text-xs font-bold tracking-widest uppercase text-emerald-300">Premium Tropical Sanctuary</span>
           </div>
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
-            Experience Tala Resort
+            Experience OceanHilling Platform
           </h2>
           <p className="text-sm font-medium text-emerald-100/90 max-w-md leading-relaxed">
             Welcome to your digital portal. Sign in to view reservation queues, manage stay durations, and access exclusive oceanfront amenities.
@@ -102,11 +144,11 @@ function SignUpContent() {
       {/* Right side: Login Card Section */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 md:p-16 bg-muted/10">
         <div className="w-full max-w-[420px] space-y-6">
-          
+
           <div className="space-y-2 text-left">
             <div className="flex items-center gap-2 mb-2 lg:hidden">
               <Compass className="h-7 w-7 text-primary" />
-              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Tala Portal</span>
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">OceanHilling Platform</span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
               Create Account
@@ -167,8 +209,8 @@ function SignUpContent() {
             <div className="space-y-1.5 text-left">
               <Label htmlFor="signup-name" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Full Name</Label>
               <div className="relative flex items-center">
-                <User 
-                  className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                <User
+                  className="absolute left-3 h-4 w-4 transition-colors duration-200"
                   style={{ color: isNameFocused ? themeColor : undefined }}
                 />
                 <Input
@@ -193,8 +235,8 @@ function SignUpContent() {
             <div className="space-y-1.5 text-left">
               <Label htmlFor="signup-email" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Email Address</Label>
               <div className="relative flex items-center">
-                <Mail 
-                  className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                <Mail
+                  className="absolute left-3 h-4 w-4 transition-colors duration-200"
                   style={{ color: isEmailFocused ? themeColor : undefined }}
                 />
                 <Input
@@ -220,8 +262,8 @@ function SignUpContent() {
             <div className="space-y-1.5 text-left">
               <Label htmlFor="signup-password" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Password</Label>
               <div className="relative flex items-center">
-                <Lock 
-                  className="absolute left-3 h-4 w-4 transition-colors duration-200" 
+                <Lock
+                  className="absolute left-3 h-4 w-4 transition-colors duration-200"
                   style={{ color: isPasswordFocused ? themeColor : undefined }}
                 />
                 <Input

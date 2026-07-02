@@ -1,4 +1,4 @@
-name: CI - Tala Booking Platform
+name: CI - OceanHill Booking Platform
 
 on:
   push:
@@ -14,12 +14,17 @@ jobs:
       - name: 📂 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 📦 Install pnpm
-        uses: pnpm/action-setup@v4
+      - name: 🟢 Setup Node.js (Base)
+        uses: actions/setup-node@v4
         with:
-          version: 11.9.0
+          node-version: '22'
 
-      - name: 🟢 Setup Node.js
+      - name: 📦 Enable Corepack & Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.9.0 --activate
+
+      - name: 🟢 Enable pnpm Cache
         uses: actions/setup-node@v4
         with:
           node-version: '22'

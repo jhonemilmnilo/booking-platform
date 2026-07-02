@@ -27,3 +27,8 @@ These rules must be strictly followed when writing database schema, server actio
 ## 7. Authentication & Registration Flow
 - **Social Login Pre-Registration Requirement**: If a user signs in via Google or Facebook but they do not have an existing user record in our `prisma.user` table, the system must abort the login, sign them out, and direct them to the sign-up page with a message stating they must register/sign up first. Do not auto-register users.
 - **Enforced OTP Verification**: All authentication flows (both standard credentials and social logins) must be validated with an **8-digit OTP** sent to their email.
+
+## 8. Logging Rules & Security
+- **No Sensitive Log data**: Do not print or write passwords, OAuth access tokens, session keys, or personal identifying information (PII) in console logs.
+- **Intentional Error Catching**: Always place error logs inside `catch (error)` statements for all database operations, third-party integrations (PayMongo, SMTP, Supabase calls), and authentication helpers to guarantee error-tracing capabilities in production.
+- **Log Noise Reduction**: Do not include redundant console log statements for standard UI components, hover actions, or loop renders. Use logs exclusively for critical process flows, warnings, and system errors.

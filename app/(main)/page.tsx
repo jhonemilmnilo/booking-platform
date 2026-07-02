@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger"
@@ -13,6 +15,7 @@ import { Room } from "@/components/shared/RoomCard"
 import Image from "next/image"
 import BookingModal from "@/components/shared/BookingModal"
 import { createBookingAction } from "@/app/actions/booking"
+import { getHeroVideoUrlsAction } from "@/app/auth/actions"
 import { toast } from "sonner"
 
 const MOCK_ROOMS: Room[] = [
@@ -189,9 +192,11 @@ const slideVariants = {
 
 
 export default function Home() {
+  const router = useRouter()
   // Modal Booking States
   const [selectedRoom, setSelectedRoom] = React.useState<Room | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false)
 
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
@@ -261,14 +266,23 @@ export default function Home() {
 
       // Determine optimized video source based on screen size and WebM support asynchronously
       const isMobile = window.matchMedia("(max-width: 768px)").matches
-      const videoTest = document.createElement("video")
-      const supportsWebm = videoTest.canPlayType('video/webm; codecs="vp9"') !== ""
 
-      if (isMobile) {
-        setVideoSrc(supportsWebm ? "/videos/enhance_ocean_hill_villas_mobile.webm" : "/videos/enhance_ocean_hill_villas_mobile.mp4")
-      } else {
-        setVideoSrc(supportsWebm ? "/videos/enhance_ocean_hill_villas.webm" : "/videos/enhance_ocean_hill_villas.mp4")
-      }
+      getHeroVideoUrlsAction()
+        .then((urls) => {
+          if (isMobile) {
+            setVideoSrc(urls.mobileUrl)
+          } else {
+            setVideoSrc(urls.desktopUrl)
+          }
+        })
+        .catch((err) => {
+          console.warn("[Video] Failed to load dynamic video sources, falling back to static", err)
+          if (isMobile) {
+            setVideoSrc("/videos/enhance_ocean_hill_villas_mobile.mp4")
+          } else {
+            setVideoSrc("/videos/enhance_ocean_hill_villas.mp4")
+          }
+        })
 
       // Preload all critical page assets/images in the background for zero-latency scrolling
       const imagesToPreload = [
@@ -285,6 +299,25 @@ export default function Home() {
         img.src = src
       })
     }, 0)
+  }, [])
+
+  // Check and subscribe to auth state changes to dynamically display logout button
+  React.useEffect(() => {
+    const supabase = createClient()
+    
+    const checkInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsLoggedIn(!!session)
+    }
+    checkInitialSession()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
   // Simple scroll listener to toggle header background
@@ -393,9 +426,26 @@ export default function Home() {
   }
 
   // Trigger global room booking modal
-  const handleBookClick = (room: Room) => {
+  const handleBookClick = async (room: Room) => {
+    const supabase = createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      toast.info("Authentication required", {
+        description: "Please sign in or register to book a luxury suite reservation."
+      })
+      router.push("/auth/login")
+      return
+    }
     setSelectedRoom(room)
     setIsModalOpen(true)
+  }
+
+  // Trigger guest account logout
+  const handleLogOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    toast.success("Successfully logged out.")
+    router.refresh()
   }
 
   // Hero booking submit - Map and scroll to the bottom form
@@ -559,6 +609,15 @@ export default function Home() {
             Reserve Experience
           </button>
 
+          {isLoggedIn && (
+            <button
+              onClick={handleLogOut}
+              className="hidden sm:inline-block border border-luxury-gold/50 hover:bg-luxury-gold/10 text-luxury-cream font-semibold text-xs uppercase tracking-[0.2em] px-6 py-3.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
+            >
+              Log Out
+            </button>
+          )}
+
           {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -667,6 +726,18 @@ export default function Home() {
           >
             Reserve Experience
           </button>
+
+          {isLoggedIn && (
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false)
+                handleLogOut()
+              }}
+              className="w-full border border-luxury-gold/50 text-luxury-cream py-4 rounded-full font-bold uppercase tracking-[0.25em] text-xs shadow-lg hover:bg-luxury-gold/10 active:scale-98 transition-all cursor-pointer text-center"
+            >
+              Log Out
+            </button>
+          )}
 
           <div className="flex flex-col items-center space-y-1.5 text-center">
             <span className="text-luxury-cream/40 text-[9px] uppercase tracking-[0.3em] font-semibold">
