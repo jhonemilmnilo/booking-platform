@@ -7,3 +7,4 @@
 - **Contribution 5**: Configured live preview toggle state to default to hidden on modal load.
 - **Contribution 6**: Consolidated villa size, guests capacity, and price per night inputs into a 3-column specs row.
 - **Contribution 7**: Redesigned primary cover image input block with larger preview frame and hover controls.
+- **Contribution 8**: Combined cover image and gallery images into a unified e-commerce style Media Gallery component.
