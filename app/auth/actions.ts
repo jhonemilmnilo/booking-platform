@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import prisma from "@/lib/prisma/client"
 import { isRateLimited, incrementOtpSendAttempts, resetOtpSendLimits, maskEmail, checkLockout } from "@/lib/rate-limit"
-import { getSystemSetting } from "@/lib/settings"
+import { getSystemSetting, setSystemSetting } from "@/lib/settings"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -316,6 +316,7 @@ export async function verifyOtpAction(email: string, code: string) {
 
   // 2. Profile Syncing: Ensure profile exists in public.User table
   const user = data.user
+  let role = "GUEST"
   if (user) {
     const exists = await prisma.user.findUnique({
       where: { id: user.id }
@@ -323,7 +324,7 @@ export async function verifyOtpAction(email: string, code: string) {
 
     if (!exists) {
       // Create user record in our public table if it doesn't exist
-      await prisma.user.create({
+      const newUser = await prisma.user.create({
         data: {
           id: user.id,
           email: user.email!,
@@ -331,10 +332,13 @@ export async function verifyOtpAction(email: string, code: string) {
           role: "GUEST"
         }
       })
+      role = newUser.role
+    } else {
+      role = exists.role
     }
   }
 
-  return { success: true }
+  return { success: true, role }
 }
 
 export async function getSocialLoginUrlAction(provider: "google" | "facebook", origin: string, isSignup?: boolean) {
@@ -431,3 +435,57 @@ export async function getHeroVideoUrlsAction() {
   const mobileUrl = await getSystemSetting("hero_video_url_mobile", "/videos/enhance_ocean_hill_villas_mobile.mp4")
   return { desktopUrl, mobileUrl }
 }
+
+export async function getSystemSettingsAction() {
+  try {
+    const heroSubtitle = await getSystemSetting("hero_subtitle", "The Apex of Oceanfront Luxury")
+    const heroTitleLine1 = await getSystemSetting("hero_title_line_1", "Where Sky Meets")
+    const heroTitleLine2 = await getSystemSetting("hero_title_line_2", "Sanctuary")
+    const heroDescription = await getSystemSetting("hero_description", "Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+    
+    const themeColorPrimary = await getSystemSetting("theme_color_primary", "#D4AF37")
+    const themeColorSecondary = await getSystemSetting("theme_color_secondary", "#FFFFFF")
+    const themeColorAccent = await getSystemSetting("theme_color_accent", "#1C1A17")
+
+    const heroVideoUrl = await getSystemSetting("hero_video_url", "/videos/enhance_ocean_hill_villas.mp4")
+    const heroVideoUrlMobile = await getSystemSetting("hero_video_url_mobile", "/videos/enhance_ocean_hill_villas_mobile.mp4")
+
+    return {
+      heroSubtitle,
+      heroTitleLine1,
+      heroTitleLine2,
+      heroDescription,
+      themeColorPrimary,
+      themeColorSecondary,
+      themeColorAccent,
+      heroVideoUrl,
+      heroVideoUrlMobile,
+    }
+  } catch (error) {
+    console.error("[SettingsAction] Failed to retrieve system settings:", error)
+    return {
+      heroSubtitle: "The Apex of Oceanfront Luxury",
+      heroTitleLine1: "Where Sky Meets",
+      heroTitleLine2: "Sanctuary",
+      heroDescription: "Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
+      themeColorPrimary: "#D4AF37",
+      themeColorSecondary: "#FFFFFF",
+      themeColorAccent: "#1C1A17",
+      heroVideoUrl: "/videos/enhance_ocean_hill_villas.mp4",
+      heroVideoUrlMobile: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+    }
+  }
+}
+
+export async function updateSystemSettingsAction(settings: Record<string, string>) {
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      await setSystemSetting(key, value)
+    }
+    return { success: true }
+  } catch (error) {
+    console.error("[SettingsAction] Failed to update system settings:", error)
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error occurred" }
+  }
+}
+
