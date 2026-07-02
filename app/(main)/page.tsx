@@ -159,9 +159,8 @@ function CustomSelect({ value, onChange, options, placeholder, icon }: CustomSel
           </span>
         </div>
         <i
-          className={`fa-solid fa-chevron-down text-luxury-gold/50 text-[10px] ml-2 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`fa-solid fa-chevron-down text-luxury-gold/50 text-[10px] ml-2 transition-transform duration-300 ${isOpen ? "rotate-180" : ""
+            }`}
         ></i>
       </button>
 
@@ -182,9 +181,8 @@ function CustomSelect({ value, onChange, options, placeholder, icon }: CustomSel
                   onChange(option.value)
                   setIsOpen(false)
                 }}
-                className={`w-full flex items-center justify-between text-left px-4 py-2.5 text-xs hover:bg-luxury-gold/10 transition-colors ${
-                  option.value === value ? "text-luxury-gold font-bold bg-luxury-gold/5" : "text-luxury-cream"
-                }`}
+                className={`w-full flex items-center justify-between text-left px-4 py-2.5 text-xs hover:bg-luxury-gold/10 transition-colors ${option.value === value ? "text-luxury-gold font-bold bg-luxury-gold/5" : "text-luxury-cream"
+                  }`}
               >
                 <span>{option.label}</span>
                 {option.value === value && <i className="fa-solid fa-check text-luxury-gold text-xs"></i>}
@@ -393,7 +391,7 @@ export default function Home() {
   // Check and subscribe to auth state changes to dynamically display logout button
   React.useEffect(() => {
     const supabase = createClient()
-    
+
     const checkInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       setIsLoggedIn(!!session)
@@ -434,10 +432,8 @@ export default function Home() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: el,
-              start: "top 50%",
-              toggleActions: "play none none none",
-              fastScrollEnd: true,
-              preventOverlaps: true
+              start: "top 90%",
+              toggleActions: "play none none none"
             }
           }
         )
@@ -458,10 +454,8 @@ export default function Home() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: container,
-              start: "top 50%",
-              toggleActions: "play none none none",
-              fastScrollEnd: true,
-              preventOverlaps: true
+              start: "top 90%",
+              toggleActions: "play none none none"
             }
           }
         )
@@ -694,9 +688,8 @@ export default function Home() {
           {isLoggedIn && (
             <button
               onClick={handleLogOut}
-              className={`hidden sm:inline-block border border-luxury-gold/50 hover:bg-luxury-gold/10 ${
-                isHeaderScrolled ? "text-luxury-cream" : "text-white"
-              } font-semibold text-xs uppercase tracking-[0.2em] px-6 py-2.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap`}
+              className={`hidden sm:inline-block border border-luxury-gold/50 hover:bg-luxury-gold/10 ${isHeaderScrolled ? "text-luxury-cream" : "text-white"
+                } font-semibold text-xs uppercase tracking-[0.2em] px-6 py-2.5 rounded-full shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap`}
             >
               Log Out
             </button>
@@ -854,7 +847,8 @@ export default function Home() {
         </div>
 
         {/* Dynamic theme style overrides */}
-        <style dangerouslySetInnerHTML={{__html: `
+        <style dangerouslySetInnerHTML={{
+          __html: `
           :root {
             --color-luxury-gold: ${themeColorPrimary};
             --color-luxury-obsidian: ${themeColorSecondary};
@@ -1156,7 +1150,7 @@ export default function Home() {
         <section id="campaign" className="py-24 md:py-36 px-6 md:px-12 bg-luxury-obsidian relative">
           <div className="max-w-7xl mx-auto space-y-12">
             {/* Header */}
-            <div className="text-center space-y-4">
+            <div className="text-center space-y-4 gsap-reveal-fade-up">
               <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Exclusive Campaigns</span>
               <h2 className="font-serif text-4xl md:text-6xl text-luxury-cream">
                 The Cinematic <span className="text-gold-gradient italic">Showcase</span>
@@ -1167,7 +1161,7 @@ export default function Home() {
             </div>
 
             {/* Player Grid */}
-            <div className="bg-luxury-charcoal/40 border border-luxury-gold/30 rounded-3xl overflow-hidden p-4 md:p-8 gold-glow">
+            <div className="bg-luxury-charcoal/40 border border-luxury-gold/30 rounded-3xl overflow-hidden p-4 md:p-8 gold-glow gsap-reveal-fade-up">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                 {/* Major Player */}
                 <div className="lg:col-span-8 flex flex-col justify-between space-y-4">
@@ -2062,11 +2056,10 @@ export default function Home() {
                     key={i}
                     type="button"
                     onClick={() => setActiveGalleryImageIndex(i)}
-                    className={`relative w-16 h-12 md:w-24 md:h-16 rounded-lg overflow-hidden border transition-all duration-300 flex-shrink-0 cursor-pointer ${
-                      i === activeGalleryImageIndex
+                    className={`relative w-16 h-12 md:w-24 md:h-16 rounded-lg overflow-hidden border transition-all duration-300 flex-shrink-0 cursor-pointer ${i === activeGalleryImageIndex
                         ? "border-luxury-gold scale-105 ring-2 ring-luxury-gold/30"
                         : "border-white/20 opacity-50 hover:opacity-100"
-                    }`}
+                      }`}
                   >
                     <Image
                       src={img}
