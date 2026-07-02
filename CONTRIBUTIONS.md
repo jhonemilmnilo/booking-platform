@@ -9,3 +9,4 @@
 - **Contribution 7**: Redesigned primary cover image input block with larger preview frame and hover controls.
 - **Contribution 8**: Combined cover image and gallery images into a unified e-commerce style Media Gallery component.
 - **Contribution 9**: Adjusted GSAP trigger offset to trigger fade-in animations at top 90% (10% viewport height from bottom).
+- **Contribution 10**: Enabled GSAP ScrollTrigger fade-in animations on the Cinematic Showcase section.
