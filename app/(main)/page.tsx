@@ -15,7 +15,7 @@ import { Room } from "@/components/shared/RoomCard"
 import Image from "next/image"
 import BookingModal from "@/components/shared/BookingModal"
 import { createBookingAction } from "@/app/actions/booking"
-import { getHeroVideoUrlsAction } from "@/app/auth/actions"
+import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
 import { toast } from "sonner"
 
 const MOCK_ROOMS: Room[] = [
@@ -204,6 +204,15 @@ export default function Home() {
   // Video source state (Mobile vs Desktop)
   const [videoSrc, setVideoSrc] = React.useState("")
 
+  // Dynamic Settings States
+  const [heroSubtitle, setHeroSubtitle] = React.useState("The Apex of Oceanfront Luxury")
+  const [heroTitleLine1, setHeroTitleLine1] = React.useState("Where Sky Meets")
+  const [heroTitleLine2, setHeroTitleLine2] = React.useState("Sanctuary")
+  const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+  const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
+  const [themeColorSecondary, setThemeColorSecondary] = React.useState("#FFFFFF")
+  const [themeColorAccent, setThemeColorAccent] = React.useState("#1C1A17")
+
   // Floating Header Scroll state
   const [isHeaderScrolled, setIsHeaderScrolled] = React.useState(false)
 
@@ -282,6 +291,20 @@ export default function Home() {
           } else {
             setVideoSrc("/videos/enhance_ocean_hill_villas.mp4")
           }
+        })
+
+      getSystemSettingsAction()
+        .then((settings) => {
+          setHeroSubtitle(settings.heroSubtitle)
+          setHeroTitleLine1(settings.heroTitleLine1)
+          setHeroTitleLine2(settings.heroTitleLine2)
+          setHeroDescription(settings.heroDescription)
+          setThemeColorPrimary(settings.themeColorPrimary)
+          setThemeColorSecondary(settings.themeColorSecondary)
+          setThemeColorAccent(settings.themeColorAccent)
+        })
+        .catch((err) => {
+          console.warn("[Settings] Failed to load dynamic settings, using defaults", err)
         })
 
       // Preload all critical page assets/images in the background for zero-latency scrolling
@@ -769,6 +792,15 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/40 z-10" />
         </div>
 
+        {/* Dynamic theme style overrides */}
+        <style dangerouslySetInnerHTML={{__html: `
+          :root {
+            --color-luxury-gold: ${themeColorPrimary};
+            --color-luxury-obsidian: ${themeColorSecondary};
+            --color-luxury-cream: ${themeColorAccent};
+          }
+        `}} />
+
         {/* Foreground content */}
         <div
           id="heroContent"
@@ -776,14 +808,14 @@ export default function Home() {
         >
           <div className="flex flex-col items-center w-full space-y-2.5 sm:space-y-4 md:space-y-6">
             <span className="text-luxury-gold font-semibold tracking-[0.4em] uppercase text-xs md:text-sm animate-pulse-slow">
-              <i className="fa-regular fa-star mr-2"></i> The Apex of Oceanfront Luxury <i className="fa-regular fa-star ml-2"></i>
+              <i className="fa-regular fa-star mr-2"></i> {heroSubtitle} <i className="fa-regular fa-star ml-2"></i>
             </span>
             <h1 className="font-serif text-3xl sm:text-6xl md:text-7xl tracking-wider text-white leading-tight">
-              Where Sky Meets <br />
-              <span className="text-gold-gradient italic font-normal">Sanctuary</span>
+              {heroTitleLine1} <br />
+              <span className="text-gold-gradient italic font-normal">{heroTitleLine2}</span>
             </h1>
             <p className="hidden sm:block text-white/80 max-w-2xl text-sm md:text-lg tracking-wide font-light leading-relaxed">
-              Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.
+              {heroDescription}
             </p>
           </div>
 

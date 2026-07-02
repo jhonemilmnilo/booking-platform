@@ -99,7 +99,11 @@ function VerifyOtpContent() {
         localStorage.removeItem("pending_otp_timestamp")
         localStorage.removeItem(`otp_resend_expiry:${email}`)
         showToast.success("Identity verified successfully!")
-        router.push("/")
+        if (result.role === "ADMIN") {
+          router.push("/admin/settings")
+        } else {
+          router.push("/")
+        }
         router.refresh()
       } else {
         showToast.error(result.error || "Verification failed.")
