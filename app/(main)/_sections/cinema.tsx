@@ -2,67 +2,70 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 
 const CAMPAIGN_REELS = [
   {
-    tag: "Ad Feature: Sunset Horizon",
-    title: "Campaign Reel I: Coastal Sunrise",
+    title: "Coastal Sunrise",
+    scene: "Beachfront",
     duration: "14 sec Loop",
     previewUrl: "/images/image3.png",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-luxury-resort-swimming-pool-under-palm-trees-42521-large.mp4"
+    videoUrl: "/videos/enhance_ocean_hill_villas.mp4",
+    description: "A breathtaking aerial sweep across our private beachfront at golden hour. Witness the seamless blend of oceanfront architecture, shimmering lagoon pools, and the untouched Aegean horizon as day melts into evening."
   },
   {
-    tag: "Ad Feature: Sea Sanctuary",
-    title: "Campaign Reel II: Lagoon Splendor",
+    title: "Lagoon Splendor",
+    scene: "Poolside",
     duration: "18 sec Loop",
     previewUrl: "/images/image6.png",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-villa-with-swimming-pool-and-palm-trees-during-sunset-42520-large.mp4"
+    videoUrl: "/videos/enhance_ocean_hill_villas_original.mp4",
+    description: "Step inside the world of absolute luxury as our resort's signature overwater villas and private lagoon pools come to life. Explore the lush tropical environments and exclusive beach club lounges curated for a select few."
   },
   {
-    tag: "Ad Feature: Champagne Dusk",
-    title: "Campaign Reel III: Seaside Sunset",
+    title: "Seaside Sunset",
+    scene: "Sunset Dining",
     duration: "11 sec Loop",
     previewUrl: "/images/image5.png",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-crystal-clear-swimming-pool-by-the-sea-40502-large.mp4"
+    videoUrl: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+    description: "The golden hour reel. As champagne is poured on your private balcony terrace, the ocean turns to glass. This is the essence of Ocean Hill — where every sunset is your personal cinematic experience."
+  },
+  {
+    title: "Ocean Drift",
+    scene: "Yacht Harbor",
+    duration: "15 sec Loop",
+    previewUrl: "/images/image4.png",
+    videoUrl: "/videos/enhance_ocean_hill_villas.webm",
+    description: "A fluid drift through our private yacht harbor and overwater bungalows at blue hour. The stillness of the sea mirrors the absolute serenity of a stay at Ocean Hill Villas."
+  },
+  {
+    title: "Sky & Shore",
+    scene: "Aerial Vista",
+    duration: "10 sec Loop",
+    previewUrl: "/images/image7.webp",
+    videoUrl: "/videos/enhance_ocean_hill_villas_mobile.webm",
+    description: "A bird's-eye cinematic sweep over our pristine peninsula coastline and cliffside infinity pools. Shot exclusively during the resort's private golden hour window."
   }
 ]
 
 export default function Cinema() {
   const [activeCampaignIndex, setActiveCampaignIndex] = React.useState(0)
-  const [isVideoPlaying, setIsVideoPlaying] = React.useState(false)
   const mainVideoPlayerRef = React.useRef<HTMLVideoElement | null>(null)
 
-  // Handle cinematic playlist selection
+  // Handle playlist selection
   const switchCampaign = (index: number) => {
     setActiveCampaignIndex(index)
-    setIsVideoPlaying(false)
-    const player = mainVideoPlayerRef.current
-    if (player) {
-      player.src = CAMPAIGN_REELS[index].videoUrl
-      player.load()
-      player.pause()
-    }
   }
 
-  // Play/pause campaign video
-  const togglePlayState = () => {
-    const player = mainVideoPlayerRef.current
-    if (!player) return
-
-    if (isVideoPlaying) {
-      player.pause()
-      setIsVideoPlaying(false)
-    } else {
-      player.play().then(() => {
-        setIsVideoPlaying(true)
-      }).catch(err => {
-        console.warn("Autoplay blocked. Loaded muted.", err)
-      })
-    }
+  // Auto-advance playlist when video ends (loops continuously)
+  const handleVideoEnded = () => {
+    setActiveCampaignIndex((prev) => (prev + 1) % CAMPAIGN_REELS.length)
   }
+
+  // Safe autoplay: useEffect only needed to handle auto-advance after onEnded
+  // The key={activeCampaignIndex} on the <video> handles src switching on click
 
   return (
-    <section id="campaign" className="py-24 md:py-36 px-6 md:px-12 bg-luxury-obsidian relative">
+    <section id="campaign" className="pt-12 md:pt-16 pb-12 md:pb-16 px-6 md:px-12 bg-luxury-obsidian relative">
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -76,78 +79,54 @@ export default function Cinema() {
         </div>
 
         {/* Player Grid */}
-        <div className="bg-luxury-charcoal/40 border border-luxury-gold/30 rounded-3xl overflow-hidden p-4 md:p-8 gold-glow">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-            {/* Major Player */}
-            <div className="lg:col-span-8 flex flex-col justify-between space-y-4">
-              <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-luxury-gold/10 group shadow-inner">
-                {/* Preview Image */}
-                <div className={`absolute inset-0 transition-transform duration-700 brightness-[0.85] ${isVideoPlaying ? "hidden" : "block group-hover:scale-102"}`}>
-                  <Image
-                    id="mainVideoPreview"
-                    src={CAMPAIGN_REELS[activeCampaignIndex].previewUrl}
-                    alt="Cinematic Preview"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* Major Player (Left side) */}
+          <div className="lg:col-span-8 flex flex-col h-full lg:order-1">
+            <div className="relative h-full min-h-[300px] md:min-h-[420px] w-full rounded-3xl overflow-hidden bg-black border-2 border-luxury-gold shadow-2xl gold-glow">
+              {/* HTML5 Video Player */}
+              <video
+                key={activeCampaignIndex}
+                ref={mainVideoPlayerRef}
+                src={CAMPAIGN_REELS[activeCampaignIndex].videoUrl}
+                className="absolute inset-0 w-full h-full object-cover"
+                autoPlay
+                muted
+                playsInline
+                onEnded={handleVideoEnded}
+              ></video>
 
-                {/* Gradient shadow overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-
-                {/* HTML5 Video Player */}
-                <video
-                  id="mainVideoPlayer"
-                  ref={mainVideoPlayerRef}
-                  className={`absolute inset-0 w-full h-full object-cover ${isVideoPlaying ? "block" : "hidden"}`}
-                  loop
-                  muted
-                  playsInline
-                ></video>
-
-                {/* Play Overlay */}
-                <button
-                  id="playBtnOverlay"
-                  onClick={togglePlayState}
-                  className={`absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/20 transition-all duration-300 group/btn cursor-pointer ${
-                    isVideoPlaying ? "opacity-0 hover:opacity-100" : "opacity-100"
-                  }`}
-                >
-                  <div className="w-20 h-20 rounded-full bg-gold-gradient text-luxury-obsidian flex items-center justify-center shadow-2xl transform group-hover/btn:scale-110 transition-transform duration-300">
-                    <i id="playBtnIcon" className={`fa-solid text-2xl ${isVideoPlaying ? "fa-pause" : "fa-play ml-1"}`}></i>
-                  </div>
-                </button>
-
-                {/* Badge */}
-                <div className="absolute top-4 left-4 bg-luxury-obsidian/95 border border-luxury-gold/40 text-[10px] tracking-[0.2em] uppercase text-luxury-gold px-3.5 py-1.5 rounded-full font-semibold backdrop-blur flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                  <span id="campaignTag">{CAMPAIGN_REELS[activeCampaignIndex].tag}</span>
-                </div>
-
-                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10">
-                  <span id="campaignTitle" className="font-serif text-lg text-white font-semibold drop-shadow-md">
-                    {CAMPAIGN_REELS[activeCampaignIndex].title}
-                  </span>
-                  <span id="campaignDuration" className="text-xs text-luxury-lightGold font-semibold">
+              {/* Overlay: gradient + text inside the video */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 space-y-2 pointer-events-none">
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-white/50 uppercase tracking-widest">
                     {CAMPAIGN_REELS[activeCampaignIndex].duration}
                   </span>
                 </div>
+                <h3 className="font-serif text-xl md:text-2xl text-luxury-gold drop-shadow-lg">
+                  {CAMPAIGN_REELS[activeCampaignIndex].title}
+                </h3>
+                <p className="text-white/70 text-xs md:text-sm leading-relaxed font-light max-w-xl">
+                  {CAMPAIGN_REELS[activeCampaignIndex].description}
+                </p>
               </div>
             </div>
+          </div>
 
-            {/* Tracks (Right side) */}
-            <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
+          {/* Tracks Card Wrapper (Right side) */}
+          <div className="lg:col-span-4 flex flex-col justify-between p-6 bg-luxury-charcoal/40 border border-luxury-gold/30 rounded-3xl shadow-2xl gold-glow lg:order-2">
+            <div className="space-y-4">
+              <span className="text-luxury-gold uppercase tracking-[0.2em] text-[11px] font-bold block mb-1">Select Campaign Reel</span>
+
               <div className="space-y-3">
-                <span className="text-luxury-gold uppercase tracking-[0.2em] text-[11px] font-bold block mb-1">Select Campaign Reel</span>
-
                 {CAMPAIGN_REELS.map((reel, index) => (
                   <button
                     key={index}
                     onClick={() => switchCampaign(index)}
-                    className={`w-full text-left rounded-xl p-4 transition-all duration-300 flex items-center gap-4 group cursor-pointer ${
+                    className={`w-full text-left rounded-xl p-4 transition-all duration-300 flex items-center gap-4 cursor-pointer shadow-md ${
                       index === activeCampaignIndex
-                        ? "bg-luxury-obsidian border border-luxury-gold border-gold-gradient shadow-md"
-                        : "bg-luxury-charcoal/20 border border-white/10 hover:border-luxury-gold/40"
+                        ? "bg-luxury-obsidian border border-luxury-gold shadow-lg gold-glow scale-[1.01]"
+                        : "bg-luxury-charcoal/20 border border-luxury-gold/15"
                     }`}
                   >
                     <div className="relative w-16 h-12 rounded overflow-hidden flex-shrink-0 bg-luxury-charcoal">
@@ -156,32 +135,32 @@ export default function Cinema() {
                         <i className="fa-solid fa-circle-play text-white/90 text-sm"></i>
                       </div>
                     </div>
-                    <div className="overflow-hidden">
-                      <h4 className="font-serif text-sm text-luxury-cream group-hover:text-luxury-gold transition-colors truncate">
-                        {reel.title.replace("Campaign Reel ", "")}
+                    <div className="overflow-hidden flex-1 space-y-1">
+                      <h4 className="font-serif text-sm text-luxury-cream transition-colors truncate">
+                        {reel.title}
                       </h4>
-                      <p className="text-[10px] text-luxury-cream/50 uppercase tracking-widest mt-0.5">
-                        {index === 0 ? "Beachfront Lounge" : index === 1 ? "Poolside Cabanas" : "Beachfront Dining"}
-                      </p>
+                      <div className="flex justify-between items-center text-[10px] text-luxury-cream/50 uppercase tracking-widest">
+                        <span>{reel.scene}</span>
+                        <span className="text-luxury-gold/60">{reel.duration}</span>
+                      </div>
                     </div>
                   </button>
                 ))}
               </div>
-
-              {/* Specs */}
-              <div className="p-4 bg-luxury-obsidian rounded-xl border border-luxury-gold/15 space-y-2">
-                <span className="text-luxury-gold font-semibold uppercase text-[10px] tracking-widest block">Featured Spec</span>
-                <div className="flex items-center gap-2 text-xs text-luxury-cream/80">
-                  <i className="fa-solid fa-camera-retro text-luxury-gold"></i>
-                  <span>Filmed in 8K Ultra-High Dynamic Range</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-luxury-cream/80">
-                  <i className="fa-solid fa-headphones text-luxury-gold"></i>
-                  <span>Surround-Sound Spatial Design</span>
-                </div>
-              </div>
             </div>
+
+            {/* No specs card */}
           </div>
+        </div>
+
+        {/* Explore CTA */}
+        <div className="flex justify-center pt-4">
+          <Link
+            href="/villas"
+            className="inline-flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
+          >
+            Explore Our Villas <i className="fa-solid fa-arrow-right text-xs"></i>
+          </Link>
         </div>
       </div>
     </section>

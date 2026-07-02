@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { MapPin, Loader2 } from "lucide-react"
 
@@ -59,7 +60,7 @@ export default function About() {
   }, [isPaused])
 
   return (
-    <section id="about" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-obsidian to-luxury-charcoal relative">
+    <section id="about" className="pt-24 md:pt-36 pb-12 md:pb-16 px-6 md:px-12 bg-gradient-to-b from-luxury-obsidian to-luxury-charcoal relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-16 items-center">
         {/* Spotlight Masonry Gallery (Based on EMapandan logic) */}
         <div 
@@ -97,34 +98,24 @@ export default function About() {
           </p>
 
           <div className="pt-2">
-            <button
-              onClick={() => {
-                const villasSection = document.getElementById("villas")
-                if (villasSection) {
-                  villasSection.scrollIntoView({ behavior: "smooth" })
-                }
-              }}
-              className="hidden lg:flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 cursor-pointer border-none"
+            <Link
+              href="/tour"
+              className="hidden lg:inline-flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
             >
               Explore More <i className="fa-solid fa-arrow-right text-xs"></i>
-            </button>
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Mobile-only Explore More button at the very bottom */}
       <div className="mt-8 flex justify-center lg:hidden w-full px-6">
-        <button
-          onClick={() => {
-            const villasSection = document.getElementById("villas")
-            if (villasSection) {
-              villasSection.scrollIntoView({ behavior: "smooth" })
-            }
-          }}
-          className="w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer border-none"
+        <Link
+          href="/tour"
+          className="w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 border-none text-center"
         >
           Explore More <i className="fa-solid fa-arrow-right text-xs"></i>
-        </button>
+        </Link>
       </div>
     </section>
   )
