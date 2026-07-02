@@ -37,16 +37,15 @@ export default function AdminSidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({})
+  const sidebarItems: SidebarItem[] = [
+    { name: "Overview", href: "/admin", icon: "fa-chart-pie" },
+    { name: "Hero Editor", href: "/admin/settings", icon: "fa-sliders" },
+    { name: "System Settings", href: "/admin/system", icon: "fa-gears" },
+    { name: "Bookings", href: "/admin/bookings", icon: "fa-calendar-days", comingSoon: true },
+    { name: "Rooms & Suites", href: "/admin/rooms", icon: "fa-hotel", comingSoon: true },
+  ]
 
-  // Automatically expand parent item if current route matches a sub-item
-  React.useEffect(() => {
-    sidebarItems.forEach((item) => {
-      if (item.subItems?.some((sub) => pathname === sub.href)) {
-        setExpandedItems((prev) => ({ ...prev, [item.name]: true }))
-      }
-    })
-  }, [pathname])
+  const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({})
 
   const handleSignOut = async () => {
     try {
