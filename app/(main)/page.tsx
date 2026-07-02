@@ -220,6 +220,7 @@ export default function Home() {
 
   // Database-backed rooms list state
   const [rooms, setRooms] = React.useState<Room[]>(MOCK_ROOMS)
+  const [activeSection, setActiveSection] = React.useState("")
 
   // Gallery Lightbox Modal States
   const [galleryRoom, setGalleryRoom] = React.useState<Room | null>(null)
@@ -243,6 +244,32 @@ export default function Home() {
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [galleryRoom])
+
+  // ScrollSpy effect to highlight active navigation link
+  React.useEffect(() => {
+    const sections = ["about", "campaign", "villas", "amenities", "location"]
+    const observerOptions = {
+      root: null,
+      rootMargin: "-25% 0px -55% 0px",
+      threshold: 0
+    }
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id)
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions)
+    sections.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [])
 
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
@@ -659,25 +686,40 @@ export default function Home() {
           className={`hidden lg:flex items-center gap-4 xl:gap-8 text-[11px] xl:text-xs uppercase tracking-[0.2em] font-semibold transition-colors duration-300 whitespace-nowrap ${isHeaderScrolled ? "text-luxury-cream" : "text-white"
             }`}
         >
-          <a href="#about" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+          <a
+            href="#about"
+            className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+          >
             The Resort
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+            <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "about" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
           </a>
-          <a href="#campaign" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+          <a
+            href="#campaign"
+            className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "campaign" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+          >
             The Cinema
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+            <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "campaign" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
           </a>
-          <a href="#villas" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+          <a
+            href="#villas"
+            className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "villas" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+          >
             Suites & Villas
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+            <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "villas" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
           </a>
-          <a href="#amenities" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+          <a
+            href="#amenities"
+            className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "amenities" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+          >
             Amenities
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+            <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "amenities" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
           </a>
-          <a href="#location" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+          <a
+            href="#location"
+            className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "location" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+          >
             The Beachfront
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+            <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "location" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
           </a>
         </nav>
 
@@ -738,57 +780,57 @@ export default function Home() {
           <a
             href="#about"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+            className={`group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 font-serif text-base tracking-widest transition-colors duration-300 ${activeSection === "about" ? "text-luxury-gold font-bold" : "text-luxury-cream hover:text-luxury-gold"}`}
           >
             <span className="flex items-center gap-3">
-              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">01</span>
+              <span className={`text-[10px] font-sans tracking-normal font-bold ${activeSection === "about" ? "text-luxury-gold" : "text-luxury-gold/60"}`}>01</span>
               The Resort
             </span>
-            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+            <i className={`fa-solid fa-arrow-right text-[10px] transform transition-all duration-300 ${activeSection === "about" ? "text-luxury-gold translate-x-0 opacity-100" : "text-luxury-gold/60 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"}`}></i>
           </a>
           <a
             href="#campaign"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+            className={`group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 font-serif text-base tracking-widest transition-colors duration-300 ${activeSection === "campaign" ? "text-luxury-gold font-bold" : "text-luxury-cream hover:text-luxury-gold"}`}
           >
             <span className="flex items-center gap-3">
-              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">02</span>
+              <span className={`text-[10px] font-sans tracking-normal font-bold ${activeSection === "campaign" ? "text-luxury-gold" : "text-luxury-gold/60"}`}>02</span>
               The Cinema
             </span>
-            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+            <i className={`fa-solid fa-arrow-right text-[10px] transform transition-all duration-300 ${activeSection === "campaign" ? "text-luxury-gold translate-x-0 opacity-100" : "text-luxury-gold/60 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"}`}></i>
           </a>
           <a
             href="#villas"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+            className={`group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 font-serif text-base tracking-widest transition-colors duration-300 ${activeSection === "villas" ? "text-luxury-gold font-bold" : "text-luxury-cream hover:text-luxury-gold"}`}
           >
             <span className="flex items-center gap-3">
-              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">03</span>
+              <span className={`text-[10px] font-sans tracking-normal font-bold ${activeSection === "villas" ? "text-luxury-gold" : "text-luxury-gold/60"}`}>03</span>
               Suites & Villas
             </span>
-            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+            <i className={`fa-solid fa-arrow-right text-[10px] transform transition-all duration-300 ${activeSection === "villas" ? "text-luxury-gold translate-x-0 opacity-100" : "text-luxury-gold/60 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"}`}></i>
           </a>
           <a
             href="#amenities"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+            className={`group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 font-serif text-base tracking-widest transition-colors duration-300 ${activeSection === "amenities" ? "text-luxury-gold font-bold" : "text-luxury-cream hover:text-luxury-gold"}`}
           >
             <span className="flex items-center gap-3">
-              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">04</span>
+              <span className={`text-[10px] font-sans tracking-normal font-bold ${activeSection === "amenities" ? "text-luxury-gold" : "text-luxury-gold/60"}`}>04</span>
               Amenities
             </span>
-            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+            <i className={`fa-solid fa-arrow-right text-[10px] transform transition-all duration-300 ${activeSection === "amenities" ? "text-luxury-gold translate-x-0 opacity-100" : "text-luxury-gold/60 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"}`}></i>
           </a>
           <a
             href="#location"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 text-luxury-cream font-serif text-base tracking-widest hover:text-luxury-gold transition-colors duration-300"
+            className={`group flex items-center justify-between py-3.5 border-b border-luxury-cream/5 font-serif text-base tracking-widest transition-colors duration-300 ${activeSection === "location" ? "text-luxury-gold font-bold" : "text-luxury-cream hover:text-luxury-gold"}`}
           >
             <span className="flex items-center gap-3">
-              <span className="text-[10px] text-luxury-gold/60 font-sans tracking-normal font-bold">05</span>
+              <span className={`text-[10px] font-sans tracking-normal font-bold ${activeSection === "location" ? "text-luxury-gold" : "text-luxury-gold/60"}`}>05</span>
               The Beachfront
             </span>
-            <i className="fa-solid fa-arrow-right text-[10px] text-luxury-gold/60 transform -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300"></i>
+            <i className={`fa-solid fa-arrow-right text-[10px] transform transition-all duration-300 ${activeSection === "location" ? "text-luxury-gold translate-x-0 opacity-100" : "text-luxury-gold/60 -translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"}`}></i>
           </a>
         </div>
 
