@@ -118,6 +118,12 @@ async function main() {
       { key: "theme_color_accent", value: "#1C1A17" },
       { key: "hero_video_url", value: "/videos/enhance_ocean_hill_villas.mp4" },
       { key: "hero_video_url_mobile", value: "/videos/enhance_ocean_hill_villas_mobile.mp4" },
+      { key: "brand_name", value: "Ocean Hill" },
+      { key: "brand_logo", value: "" },
+      { key: "social_facebook", value: "https://facebook.com" },
+      { key: "social_instagram", value: "https://instagram.com" },
+      { key: "social_tiktok", value: "https://tiktok.com" },
+      { key: "social_twitter", value: "https://twitter.com" },
     ]
 
     for (const setting of defaultSettings) {

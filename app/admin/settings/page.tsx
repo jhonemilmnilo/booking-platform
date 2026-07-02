@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { getSystemSettingsAction, updateSystemSettingsAction } from "@/app/auth/actions"
+import { createClient } from "@/lib/supabase/client"
 
 export default function AdminSettingsPage() {
   const router = useRouter()
@@ -22,7 +23,91 @@ export default function AdminSettingsPage() {
   const [heroVideoUrlMobile, setHeroVideoUrlMobile] = React.useState("/videos/enhance_ocean_hill_villas_mobile.mp4")
   
   const [isLoading, setIsLoading] = React.useState(true)
-  const [isSaving, setIsSaving] = React.useState(false)
+  const [isUploadingDesktop, setIsUploadingDesktop] = React.useState(false)
+  const [isUploadingMobile, setIsUploadingMobile] = React.useState(false)
+
+  const saveSettingDirectly = async (key: string, value: string) => {
+    try {
+      const result = await updateSystemSettingsAction({ [key]: value })
+      if (result.success) {
+        toast.success(`Successfully saved!`)
+      } else {
+        toast.error(`Auto-save failed: ${result.error}`)
+      }
+    } catch (err) {
+      console.error("[AutoSave] Error:", err)
+      toast.error("Auto-save failed.")
+    }
+  }
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "desktop" | "mobile") => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 1. Validate File Size (strictly limit to 50MB for video)
+    const MAX_SIZE = 50 * 1024 * 1024 // 50MB
+    if (file.size > MAX_SIZE) {
+      toast.error("File size exceeds 50MB limit.")
+      return
+    }
+
+    // 2. Validate format (video types or image types)
+    if (!file.type.startsWith("video/") && !file.type.startsWith("image/")) {
+      toast.error("Invalid file format. Please upload a video or image file.")
+      return
+    }
+
+    if (type === "desktop") {
+      setIsUploadingDesktop(true)
+    } else {
+      setIsUploadingMobile(true)
+    }
+
+    const toastId = toast.loading(`Uploading asset to storage...`)
+
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split(".").pop()
+      const fileName = `${type}_video_${Date.now()}.${fileExt}`
+      const filePath = `hero/${fileName}`
+
+      // Upload file to Supabase Storage
+      const { error } = await supabase.storage
+        .from("system-settings")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        })
+
+      if (error) {
+        throw error
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("system-settings")
+        .getPublicUrl(filePath)
+
+      if (type === "desktop") {
+        setHeroVideoUrl(publicUrl)
+        await saveSettingDirectly("hero_video_url", publicUrl)
+        toast.success("Desktop video loop uploaded and updated!", { id: toastId })
+      } else {
+        setHeroVideoUrlMobile(publicUrl)
+        await saveSettingDirectly("hero_video_url_mobile", publicUrl)
+        toast.success("Mobile video loop uploaded and updated!", { id: toastId })
+      }
+    } catch (error) {
+      console.error(`[Upload] Failed to upload asset for ${type}:`, error)
+      toast.error(error instanceof Error ? error.message : "Failed to upload asset.", { id: toastId })
+    } finally {
+      if (type === "desktop") {
+        setIsUploadingDesktop(false)
+      } else {
+        setIsUploadingMobile(false)
+      }
+    }
+  }
 
   // Fetch current settings on mount
   React.useEffect(() => {
@@ -46,38 +131,6 @@ export default function AdminSettingsPage() {
         setIsLoading(false)
       })
   }, [])
-
-  // Handle form save
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSaving(true)
-
-    const payload = {
-      hero_subtitle: heroSubtitle,
-      hero_title_line_1: heroTitleLine1,
-      hero_title_line_2: heroTitleLine2,
-      hero_description: heroDescription,
-      theme_color_primary: themeColorPrimary,
-      theme_color_secondary: themeColorSecondary,
-      theme_color_accent: themeColorAccent,
-      hero_video_url: heroVideoUrl,
-      hero_video_url_mobile: heroVideoUrlMobile,
-    }
-
-    try {
-      const result = await updateSystemSettingsAction(payload)
-      if (result.success) {
-        toast.success("System configurations successfully saved!")
-      } else {
-        toast.error(result.error || "Failed to update configurations.")
-      }
-    } catch (err) {
-      console.error("[AdminSettings] Save error:", err)
-      toast.error("An unexpected error occurred while saving.")
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   if (isLoading) {
     return (
@@ -110,8 +163,8 @@ export default function AdminSettingsPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-6 mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Editor Form */}
-        <form onSubmit={handleSave} className="lg:col-span-7 space-y-8 bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur shadow-xl">
+        {/* Editor Form container */}
+        <div className="lg:col-span-7 space-y-8 bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur shadow-xl">
           <div>
             <h2 className="font-serif text-2xl text-white tracking-wide border-b border-white/10 pb-3 mb-6">
               Resort Configuration Editor
@@ -130,8 +183,9 @@ export default function AdminSettingsPage() {
                 <input
                   type="text"
                   required
-                  value={heroSubtitle}
+                 value={heroSubtitle}
                   onChange={(e) => setHeroSubtitle(e.target.value)}
+                  onBlur={(e) => saveSettingDirectly("hero_subtitle", e.target.value)}
                   className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white"
                 />
               </div>
@@ -144,6 +198,7 @@ export default function AdminSettingsPage() {
                     required
                     value={heroTitleLine1}
                     onChange={(e) => setHeroTitleLine1(e.target.value)}
+                    onBlur={(e) => saveSettingDirectly("hero_title_line_1", e.target.value)}
                     className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white"
                   />
                 </div>
@@ -154,6 +209,7 @@ export default function AdminSettingsPage() {
                     required
                     value={heroTitleLine2}
                     onChange={(e) => setHeroTitleLine2(e.target.value)}
+                    onBlur={(e) => saveSettingDirectly("hero_title_line_2", e.target.value)}
                     className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white"
                   />
                 </div>
@@ -164,8 +220,9 @@ export default function AdminSettingsPage() {
                 <textarea
                   required
                   rows={4}
-                  value={heroDescription}
+                   value={heroDescription}
                   onChange={(e) => setHeroDescription(e.target.value)}
+                  onBlur={(e) => saveSettingDirectly("hero_description", e.target.value)}
                   className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white resize-none"
                 />
               </div>
@@ -180,116 +237,108 @@ export default function AdminSettingsPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wide">Desktop Video URL</label>
-                <input
-                  type="text"
-                  required
-                  value={heroVideoUrl}
-                  onChange={(e) => setHeroVideoUrl(e.target.value)}
-                  className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white font-mono"
-                />
+                <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wide">Desktop Video Loop</label>
+                <div className="flex items-center gap-4 bg-[#16171b] border border-white/10 rounded-xl p-4">
+                  <div className="relative flex-1">
+                    {heroVideoUrl ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/60 truncate max-w-xs md:max-w-md font-mono">
+                          {heroVideoUrl.split("/").pop()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeroVideoUrl("")
+                            saveSettingDirectly("hero_video_url", "")
+                          }}
+                          className="text-red-500 hover:text-red-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                        >
+                          <i className="fa-solid fa-trash-can"></i> Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-white/40 italic">No video loop uploaded</span>
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    id="desktopVideoFile"
+                    accept="video/*,image/*"
+                    disabled={isUploadingDesktop}
+                    onChange={(e) => handleUpload(e, "desktop")}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="desktopVideoFile"
+                    className="bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 text-white font-semibold py-3 px-6 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 disabled:opacity-50"
+                  >
+                    {isUploadingDesktop ? (
+                      <>
+                        <i className="fa-solid fa-spinner fa-spin"></i> Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37]"></i> Upload File
+                      </>
+                    )}
+                  </label>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wide">Mobile Video URL</label>
-                <input
-                  type="text"
-                  required
-                  value={heroVideoUrlMobile}
-                  onChange={(e) => setHeroVideoUrlMobile(e.target.value)}
-                  className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white font-mono"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Section: Palette */}
-          <div className="space-y-6 pt-4">
-            <h3 className="text-xs font-bold tracking-widest text-[#D4AF37] uppercase flex items-center gap-2">
-              <i className="fa-solid fa-palette"></i> Brand Theme Colors
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Primary Color */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white/60 uppercase tracking-wide">Primary (Gold)</label>
-                <div className="flex gap-2">
+                <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wide">Mobile Video Loop</label>
+                <div className="flex items-center gap-4 bg-[#16171b] border border-white/10 rounded-xl p-4">
+                  <div className="relative flex-1">
+                    {heroVideoUrlMobile ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-white/60 truncate max-w-xs md:max-w-md font-mono">
+                          {heroVideoUrlMobile.split("/").pop()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setHeroVideoUrlMobile("")
+                            saveSettingDirectly("hero_video_url_mobile", "")
+                          }}
+                          className="text-red-500 hover:text-red-400 text-xs font-semibold uppercase tracking-wider flex items-center gap-1 cursor-pointer"
+                        >
+                          <i className="fa-solid fa-trash-can"></i> Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-white/40 italic">No mobile video loop uploaded</span>
+                    )}
+                  </div>
                   <input
-                    type="color"
-                    value={themeColorPrimary}
-                    onChange={(e) => setThemeColorPrimary(e.target.value)}
-                    className="w-12 h-10 bg-[#16171b] border border-white/10 rounded-lg cursor-pointer p-1"
+                    type="file"
+                    id="mobileVideoFile"
+                    accept="video/*,image/*"
+                    disabled={isUploadingMobile}
+                    onChange={(e) => handleUpload(e, "mobile")}
+                    className="hidden"
                   />
-                  <input
-                    type="text"
-                    required
-                    value={themeColorPrimary}
-                    onChange={(e) => setThemeColorPrimary(e.target.value)}
-                    className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-lg px-2 text-xs focus:outline-none text-white font-mono uppercase"
-                  />
-                </div>
-              </div>
-
-              {/* Secondary Color */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white/60 uppercase tracking-wide">Secondary (Light)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={themeColorSecondary}
-                    onChange={(e) => setThemeColorSecondary(e.target.value)}
-                    className="w-12 h-10 bg-[#16171b] border border-white/10 rounded-lg cursor-pointer p-1"
-                  />
-                  <input
-                    type="text"
-                    required
-                    value={themeColorSecondary}
-                    onChange={(e) => setThemeColorSecondary(e.target.value)}
-                    className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-lg px-2 text-xs focus:outline-none text-white font-mono uppercase"
-                  />
-                </div>
-              </div>
-
-              {/* Accent Color */}
-              <div className="space-y-2">
-                <label className="block text-xs font-semibold text-white/60 uppercase tracking-wide">Accent (Dark)</label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={themeColorAccent}
-                    onChange={(e) => setThemeColorAccent(e.target.value)}
-                    className="w-12 h-10 bg-[#16171b] border border-white/10 rounded-lg cursor-pointer p-1"
-                  />
-                  <input
-                    type="text"
-                    required
-                    value={themeColorAccent}
-                    onChange={(e) => setThemeColorAccent(e.target.value)}
-                    className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-lg px-2 text-xs focus:outline-none text-white font-mono uppercase"
-                  />
+                  <label
+                    htmlFor="mobileVideoFile"
+                    className="bg-white/5 border border-white/10 hover:border-[#D4AF37]/50 hover:bg-[#D4AF37]/10 text-white font-semibold py-3 px-6 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 disabled:opacity-50"
+                  >
+                    {isUploadingMobile ? (
+                      <>
+                        <i className="fa-solid fa-spinner fa-spin"></i> Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37]"></i> Upload File
+                      </>
+                    )}
+                  </label>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="pt-6 border-t border-white/10 flex items-center justify-end">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full sm:w-auto bg-[#D4AF37] hover:bg-[#AA7C11] text-[#1c1a17] font-bold py-3.5 px-8 rounded-full shadow-lg transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? (
-                <>
-                  <i className="fa-solid fa-spinner fa-spin"></i> Saving Settings...
-                </>
-              ) : (
-                <>
-                  <i className="fa-solid fa-floppy-disk"></i> Publish System Changes
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+
+
+        </div>
 
         {/* Live Preview Panel */}
         <div className="lg:col-span-5 space-y-6">
@@ -303,8 +352,27 @@ export default function AdminSettingsPage() {
 
             {/* Simulated Hero Section */}
             <div className="relative border border-white/5 rounded-2xl aspect-video w-full overflow-hidden bg-[#0b0c10] flex items-center justify-center p-6 text-center select-none shadow-inner">
-              {/* Simulated dark overlay */}
-              <div className="absolute inset-0 bg-black/55 z-0" />
+              {/* Background Video Loop */}
+              <div className="absolute inset-0 z-0 overflow-hidden">
+                {heroVideoUrl ? (
+                  <video
+                    key={heroVideoUrl}
+                    src={heroVideoUrl}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.5] scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-0">
+                    <span className="text-xs text-white/40 italic">No video loop active</span>
+                  </div>
+                )}
+                {/* Simulated dark overlay */}
+                <div className="absolute inset-0 bg-black/45 z-10" />
+              </div>
 
               <div className="relative z-10 space-y-3 w-full">
                 {/* Subtitle */}
@@ -350,15 +418,7 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* Custom CSS Variable Inspector */}
-            <div className="bg-black/20 rounded-xl p-4 border border-white/5 space-y-2">
-              <h4 className="text-[10px] uppercase tracking-wider text-white/50 font-semibold font-mono">Injected Design Tokens</h4>
-              <div className="font-mono text-[10px] space-y-1 text-white/75">
-                <div><span className="text-[#D4AF37]">--color-luxury-gold:</span> {themeColorPrimary}</div>
-                <div><span className="text-white/60">--color-luxury-obsidian:</span> {themeColorSecondary}</div>
-                <div><span className="text-[#AA7C11]">--color-luxury-cream:</span> {themeColorAccent}</div>
-              </div>
-            </div>
+
           </div>
         </div>
       </main>

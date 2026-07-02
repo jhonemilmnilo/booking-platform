@@ -450,6 +450,14 @@ export async function getSystemSettingsAction() {
     const heroVideoUrl = await getSystemSetting("hero_video_url", "/videos/enhance_ocean_hill_villas.mp4")
     const heroVideoUrlMobile = await getSystemSetting("hero_video_url_mobile", "/videos/enhance_ocean_hill_villas_mobile.mp4")
 
+    const brandName = await getSystemSetting("brand_name", "Ocean Hill")
+    const brandLogo = await getSystemSetting("brand_logo", "")
+
+    const socialFacebook = await getSystemSetting("social_facebook", "https://facebook.com")
+    const socialInstagram = await getSystemSetting("social_instagram", "https://instagram.com")
+    const socialTiktok = await getSystemSetting("social_tiktok", "https://tiktok.com")
+    const socialTwitter = await getSystemSetting("social_twitter", "https://twitter.com")
+
     return {
       heroSubtitle,
       heroTitleLine1,
@@ -460,6 +468,12 @@ export async function getSystemSettingsAction() {
       themeColorAccent,
       heroVideoUrl,
       heroVideoUrlMobile,
+      brandName,
+      brandLogo,
+      socialFacebook,
+      socialInstagram,
+      socialTiktok,
+      socialTwitter,
     }
   } catch (error) {
     console.error("[SettingsAction] Failed to retrieve system settings:", error)
@@ -473,6 +487,12 @@ export async function getSystemSettingsAction() {
       themeColorAccent: "#1C1A17",
       heroVideoUrl: "/videos/enhance_ocean_hill_villas.mp4",
       heroVideoUrlMobile: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+      brandName: "Ocean Hill",
+      brandLogo: "",
+      socialFacebook: "https://facebook.com",
+      socialInstagram: "https://instagram.com",
+      socialTiktok: "https://tiktok.com",
+      socialTwitter: "https://twitter.com",
     }
   }
 }
@@ -486,6 +506,50 @@ export async function updateSystemSettingsAction(settings: Record<string, string
   } catch (error) {
     console.error("[SettingsAction] Failed to update system settings:", error)
     return { success: false, error: error instanceof Error ? error.message : "Unknown error occurred" }
+  }
+}
+
+import { createClient as createSupabaseServiceClient } from "@supabase/supabase-js"
+
+export async function uploadBrandLogoAction(formData: FormData) {
+  try {
+    const file = formData.get("file") as File;
+    if (!file) {
+      return { success: false, error: "No file provided" };
+    }
+
+    const supabase = createSupabaseServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `brand_logo_${Date.now()}.${fileExt}`;
+    const filePath = `branding/${fileName}`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    const { error } = await supabase.storage
+      .from("system-settings")
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("system-settings")
+      .getPublicUrl(filePath);
+
+    return { success: true, publicUrl };
+  } catch (error) {
+    console.error("[UploadAction] Failed to upload logo via service role:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Upload failed" };
   }
 }
 
