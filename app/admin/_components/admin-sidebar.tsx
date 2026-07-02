@@ -5,12 +5,33 @@ import { useRouter, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { signOutAction } from "@/app/auth/actions"
 
-interface SidebarItem {
+interface SubItem {
   name: string
   href: string
-  icon: string
   comingSoon?: boolean
 }
+
+interface SidebarItem {
+  name: string
+  href?: string
+  icon: string
+  comingSoon?: boolean
+  subItems?: SubItem[]
+}
+
+const sidebarItems: SidebarItem[] = [
+  { name: "Overview", href: "/admin", icon: "fa-chart-pie" },
+  { name: "System Settings", href: "/admin/settings", icon: "fa-sliders" },
+  {
+    name: "Booking & Ledger",
+    icon: "fa-calendar-days",
+    subItems: [
+      { name: "Active Bookings", href: "/admin/bookings" },
+      { name: "Ledger", href: "/admin/ledger" },
+    ],
+  },
+  { name: "Rooms & Suites", href: "/admin/rooms_suites", icon: "fa-hotel" },
+]
 
 export default function AdminSidebar() {
   const router = useRouter()
@@ -53,34 +74,80 @@ export default function AdminSidebar() {
         {/* Menu Items */}
         <nav className="p-4 space-y-1.5">
           {sidebarItems.map((item) => {
-            const isActive = pathname === item.href
+            const hasSubItems = !!item.subItems && item.subItems.length > 0
+            const isParentActive = hasSubItems && item.subItems!.some((sub) => pathname === sub.href)
+            const isActive = !hasSubItems && pathname === item.href
+            const isExpanded = !!expandedItems[item.name]
+
             return (
-              <button
-                key={item.name}
-                onClick={() => {
-                  if (!item.comingSoon) {
-                    router.push(item.href)
-                  } else {
-                    toast.info(`${item.name} panel is coming soon!`)
-                  }
-                }}
-                disabled={item.comingSoon}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-medium transition-all duration-300 ${
-                  isActive
+              <div key={item.name} className="space-y-1">
+                <button
+                  onClick={() => {
+                    if (hasSubItems) {
+                      setExpandedItems((prev) => ({
+                        ...prev,
+                        [item.name]: !prev[item.name],
+                      }))
+                    } else if (!item.comingSoon && item.href) {
+                      router.push(item.href)
+                    } else {
+                      toast.info(`${item.name} panel is coming soon!`)
+                    }
+                  }}
+                  disabled={item.comingSoon}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-medium transition-all duration-300 ${isActive
                     ? "bg-[#D4AF37] text-[#1c1a17] font-bold shadow-lg"
-                    : "text-white/60 hover:text-white hover:bg-white/5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <i className={`fa-solid ${item.icon} text-sm ${isActive ? "text-[#1c1a17]" : "text-[#D4AF37]/80"}`}></i>
-                  <span>{item.name}</span>
-                </div>
-                {item.comingSoon && (
-                  <span className="text-[8px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
-                    Soon
-                  </span>
+                    : isParentActive
+                      ? "text-white bg-white/5"
+                      : "text-white/60 hover:text-white hover:bg-white/5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <i className={`fa-solid ${item.icon} text-sm ${isActive ? "text-[#1c1a17]" : "text-[#D4AF37]/80"}`}></i>
+                    <span>{item.name}</span>
+                  </div>
+                  {hasSubItems ? (
+                    <i className={`fa-solid fa-chevron-down text-[10px] transition-transform duration-300 ${isExpanded ? "rotate-180" : ""} ${isParentActive ? "text-white animate-pulse" : "text-white/40"}`}></i>
+                  ) : item.comingSoon ? (
+                    <span className="text-[8px] bg-white/10 text-white/50 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
+                      Soon
+                    </span>
+                  ) : null}
+                </button>
+
+                {/* Sub Items */}
+                {hasSubItems && isExpanded && (
+                  <div className="pl-6 space-y-1 mt-1">
+                    {item.subItems!.map((sub) => {
+                      const isSubActive = pathname === sub.href
+                      return (
+                        <button
+                          key={sub.name}
+                          onClick={() => {
+                            if (!sub.comingSoon) {
+                              router.push(sub.href)
+                            } else {
+                              toast.info(`${sub.name} panel is coming soon!`)
+                            }
+                          }}
+                          disabled={sub.comingSoon}
+                          className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[11px] font-medium transition-all duration-300 ${isSubActive
+                            ? "bg-[#D4AF37] text-[#1c1a17] font-bold shadow-md"
+                            : "text-white/50 hover:text-white hover:bg-white/5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            }`}
+                        >
+                          <span>{sub.name}</span>
+                          {sub.comingSoon && (
+                            <span className="text-[7px] bg-white/10 text-white/50 px-1 py-0.5 rounded uppercase font-bold tracking-wider">
+                              Soon
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
                 )}
-              </button>
+              </div>
             )
           })}
         </nav>

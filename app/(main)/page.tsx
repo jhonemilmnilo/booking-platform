@@ -24,39 +24,90 @@ import Inquiry from "./_sections/inquiry"
 
 const MOCK_ROOMS: Room[] = [
   {
-    id: "royal-suite",
-    name: "The Beachfront Royal Suite",
-    description: "Steps from the water, this exquisite royal suite features a private swim-up pool, outdoor lounge overlooking the waves, and a dedicated personal beach concierge.",
-    pricePerNight: 15500,
-    capacity: 6,
+    id: "5br-6ba-private-pool-villa",
+    name: "5BR/6BA Private Pool Villa",
+    description: "Our premier signature resort residence. Boasts 5 luxurious bedrooms, 6 bathrooms, a private pool, a complete kitchen, and a spacious package inclusive of breakfast for 18 guests. Enjoy ocean views and elite comfort.",
+    pricePerNight: 55000,
+    capacity: 25,
     imageUrl: "/images/image7.webp",
-    size: "6,800 Sq Ft",
-    amenities: ["Private Swim-up Pool", "Beachfront Daybeds", "Personal Concierge", "Outdoor Spa Deck"],
+    size: "5 Bedrooms / 6 Baths",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image7.webp", "/images/image.png", "/images/image5.png", "/images/image4.png"],
   },
   {
-    id: "garden-villa",
-    name: "The Beachfront Garden Villa",
-    description: "Optimized for spectacular sunsets, this spacious villa boasts a private beachfront deck, custom fire pits directly on the sand, and access to the resort's yacht charter launch.",
-    pricePerNight: 18200,
-    capacity: 8,
+    id: "3br-3ba-private-pool-villa",
+    name: "3BR/3BA Private Pool Villa",
+    description: "A gorgeous coastal retreat featuring 3 beautifully appointed bedrooms, 3 bathrooms, and a private pool. The package includes breakfast for 12 guests, perfect for families and small groups.",
+    pricePerNight: 41000,
+    capacity: 20,
     imageUrl: "/images/image1.png",
-    size: "8,200 Sq Ft",
-    amenities: ["Beachfront Deck", "Outdoor Sand Firepit", "Deep-Immersion Tub", "Speedboat Charters"],
+    size: "3 Bedrooms / 3 Baths",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image1.png", "/images/image3.png", "/images/image4.png", "/images/image.png"],
   },
   {
-    id: "lagoon-suite",
-    name: "The Oceanview Lagoon Suite",
-    description: "A secluded garden sanctuary nestled next to our private lagoon pools. Excellent views of the palms and ocean reefs, perfect for a peaceful tropical getaway.",
-    pricePerNight: 12000,
-    capacity: 4,
+    id: "2br-2ba-private-pool-villa-a",
+    name: "2BR/2BA Private Pool Villa A",
+    description: "Sleek and comfortable private villa hosting 2 bedrooms, 2 bathrooms, a private pool, and breakfast for 6 guests. Ideal for close-knit groups seeking a peaceful getaway.",
+    pricePerNight: 21000,
+    capacity: 8,
     imageUrl: "/images/image2.png",
-    size: "4,500 Sq Ft",
-    amenities: ["Lagoon Swim Access", "Tropical Garden Room", "Reef Snorkeling Kit", "Private Yoga Coach"],
+    size: "2 Bedrooms / 2 Baths (A)",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image2.png", "/images/image6.png", "/images/image5.png", "/images/image3.png"],
+  },
+  {
+    id: "2br-2ba-private-pool-villa-b",
+    name: "2BR/2BA Private Pool Villa B",
+    description: "A larger alternative to Villa A, featuring 2 bedrooms, 2 bathrooms, and a private pool. Accommodates up to 10 guests and includes breakfast for 6 guests.",
+    pricePerNight: 23000,
+    capacity: 10,
+    imageUrl: "/images/image3.png",
+    size: "2 Bedrooms / 2 Baths (B)",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image3.png", "/images/image4.png", "/images/image5.png", "/images/image6.png"],
+  },
+  {
+    id: "1br-1ba-private-pool-villa",
+    name: "1BR/1BA Private Pool Villa",
+    description: "An intimate romantic sanctuary featuring 1 bedroom, 1 bathroom, and a private pool. The package includes breakfast for 2 guests, perfect for couples.",
+    pricePerNight: 13000,
+    capacity: 5,
+    imageUrl: "/images/image4.png",
+    size: "1 Bedroom / 1 Bath",
+    amenities: ["Private Pool", "Breakfast Included", "Private Kitchen", "Access to Main Pool & View Deck", "Airconditioning", "Pet-friendly", "TV", "Linens & Towels"],
+    images: ["/images/image4.png", "/images/image5.png", "/images/image6.png", "/images/image.png"],
   },
 ]
 
 export default function Home() {
   const handleBookClick = React.useContext(BookingContext)
+
+  // Database-backed rooms list state
+  const [rooms, setRooms] = React.useState<Room[]>(MOCK_ROOMS)
+
+  // Gallery Lightbox Modal States
+  const [galleryRoom, setGalleryRoom] = React.useState<Room | null>(null)
+  const [activeGalleryImageIndex, setActiveGalleryImageIndex] = React.useState(0)
+
+  // Keyboard event listeners for the Gallery lightbox modal
+  React.useEffect(() => {
+    if (!galleryRoom) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const imgs = galleryRoom.images || [galleryRoom.imageUrl]
+      if (e.key === "ArrowLeft") {
+        setActiveGalleryImageIndex((prev) => (prev - 1 + imgs.length) % imgs.length)
+      } else if (e.key === "ArrowRight") {
+        setActiveGalleryImageIndex((prev) => (prev + 1) % imgs.length)
+      } else if (e.key === "Escape") {
+        setGalleryRoom(null)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [galleryRoom])
 
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
@@ -139,10 +190,8 @@ export default function Home() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: el,
-              start: "top 85%",
-              toggleActions: "play none none none",
-              fastScrollEnd: true,
-              preventOverlaps: true
+              start: "top 90%",
+              toggleActions: "play none none none"
             }
           }
         )
@@ -163,10 +212,8 @@ export default function Home() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: container,
-              start: "top 80%",
-              toggleActions: "play none none none",
-              fastScrollEnd: true,
-              preventOverlaps: true
+              start: "top 90%",
+              toggleActions: "play none none none"
             }
           }
         )
