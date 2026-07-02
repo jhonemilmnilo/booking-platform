@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
@@ -13,22 +12,38 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Ocean Hill Resort | Bespoke Luxury Oceanfront Escape",
-  description: "Nestled along the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
-};
+import { getSystemSettingsAction } from "@/app/auth/actions";
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let settings;
+  try {
+    settings = await getSystemSettingsAction();
+  } catch {
+    settings = {
+      brandName: "Ocean Hill",
+      brandLogo: "",
+      heroDescription: "Nestled along the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation."
+    };
+  }
+
+  const brandName = settings.brandName || "Ocean Hill";
+  const brandLogo = settings.brandLogo || "/favicon.svg";
+  const pageTitle = `${brandName} | Bespoke Luxury Escape`;
+  const pageDescription = settings.heroDescription || "Nestled along the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools.";
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <link rel="icon" href={brandLogo} />
         {/* Google Fonts: Playfair Display & Montserrat - loaded via link tag for App Router compatibility */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
