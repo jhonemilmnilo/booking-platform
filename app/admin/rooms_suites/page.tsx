@@ -38,6 +38,22 @@ const PRESET_AMENITIES = [
   "Private Yoga Coach",
 ]
 
+const getAmenityIcon = (name: string) => {
+  const norm = name.toLowerCase()
+  if (norm.includes("pool") || norm.includes("swim")) return "fa-droplet"
+  if (norm.includes("breakfast") || norm.includes("dining") || norm.includes("kitchen")) return "fa-utensils"
+  if (norm.includes("ac") || norm.includes("air") || norm.includes("wind")) return "fa-wind"
+  if (norm.includes("tv") || norm.includes("television")) return "fa-tv"
+  if (norm.includes("pet")) return "fa-paw"
+  if (norm.includes("spa") || norm.includes("massage") || norm.includes("yoga") || norm.includes("coach")) return "fa-spa"
+  if (norm.includes("view") || norm.includes("sunset") || norm.includes("panorama")) return "fa-mountain-sun"
+  if (norm.includes("wifi") || norm.includes("internet")) return "fa-wifi"
+  if (norm.includes("beach") || norm.includes("daybeds")) return "fa-umbrella-beach"
+  if (norm.includes("concierge") || norm.includes("personal")) return "fa-user-tie"
+  if (norm.includes("boat") || norm.includes("charter")) return "fa-ship"
+  return "fa-circle-check"
+}
+
 export default function AdminRoomsPage() {
   const [rooms, setRooms] = React.useState<Room[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
@@ -55,7 +71,7 @@ export default function AdminRoomsPage() {
   const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>([])
   const [customAmenity, setCustomAmenity] = React.useState("")
   const [galleryImages, setGalleryImages] = React.useState<string[]>([""])
-  const [previewMode, setPreviewMode] = React.useState<"showcase" | "card">("showcase")
+  const [showPreview, setShowPreview] = React.useState(false)
   const handleFileUpload = async (
     file: File,
     onUploadSuccess: (url: string) => void,
@@ -396,18 +412,28 @@ export default function AdminRoomsPage() {
                   {editingRoom ? "Update assets database record" : "Configure new property details"}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
-              >
-                <i className="fa-solid fa-xmark"></i>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="px-3.5 py-1.5 rounded-xl border border-[#D4AF37]/35 bg-[#D4AF37]/5 hover:bg-[#D4AF37] hover:text-[#1c1a17] text-[10px] font-bold uppercase tracking-wider text-[#D4AF37] transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <i className={`fa-solid ${showPreview ? "fa-eye-slash" : "fa-eye"}`}></i>
+                  {showPreview ? "Hide Preview" : "Show Preview"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Column: Form Editor */}
-              <form onSubmit={handleSubmit} className="lg:col-span-7 space-y-6 flex flex-col justify-between">
+              <form onSubmit={handleSubmit} className={`${showPreview ? "lg:col-span-5" : "lg:col-span-12"} space-y-6 flex flex-col justify-between`}>
                 
                 {/* Form Fields */}
                 <div className="space-y-4">
@@ -423,9 +449,8 @@ export default function AdminRoomsPage() {
                       className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
                     />
                   </div>
-
-                  {/* Size and Capacity Row */}
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Size, Capacity, and Price Row */}
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Villa Size</label>
                       <input
@@ -438,7 +463,7 @@ export default function AdminRoomsPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Max Guests Capacity</label>
+                      <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Max Guests</label>
                       <input
                         type="number"
                         value={capacity}
@@ -448,10 +473,6 @@ export default function AdminRoomsPage() {
                         className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
                       />
                     </div>
-                  </div>
-
-                  {/* Price and Primary Image Row */}
-                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Price Per Night (₱)</label>
                       <input
@@ -462,59 +483,6 @@ export default function AdminRoomsPage() {
                         min={0}
                         className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Primary Cover Image</label>
-                      <div className="flex gap-3 items-center">
-                        <div className="relative w-12 h-9 rounded-lg overflow-hidden bg-black/45 border border-[#D4AF37]/25 flex-shrink-0 flex items-center justify-center">
-                          {imageUrl === "UPLOADING" ? (
-                            <i className="fa-solid fa-spinner fa-spin text-white/50 text-xs"></i>
-                          ) : imageUrl.trim() ? (
-                            <Image
-                              src={imageUrl}
-                              alt="Cover Preview"
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
-                          ) : (
-                            <i className="fa-regular fa-image text-white/20 text-xs"></i>
-                          )}
-                        </div>
-
-                        <div className="flex-1 flex gap-2">
-                          <label className="flex-1 flex items-center justify-center bg-black/40 hover:bg-black/60 border border-[#D4AF37]/25 hover:border-[#D4AF37] rounded-xl px-4 py-2 text-xs text-[#D4AF37] font-semibold cursor-pointer transition-all duration-300">
-                            <i className="fa-solid fa-cloud-arrow-up mr-2"></i> {imageUrl && imageUrl !== "UPLOADING" ? "Change Image" : "Upload Image"}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              disabled={imageUrl === "UPLOADING"}
-                              onChange={async (e) => {
-                                const file = e.target.files?.[0]
-                                if (file) {
-                                  const prev = imageUrl
-                                  await handleFileUpload(
-                                    file,
-                                    (url) => setImageUrl(url),
-                                    () => setImageUrl("UPLOADING"),
-                                    () => setImageUrl(prev)
-                                  )
-                                }
-                              }}
-                            />
-                          </label>
-                          {imageUrl && imageUrl !== "UPLOADING" && (
-                            <button
-                              type="button"
-                              onClick={() => setImageUrl("")}
-                              className="bg-white/5 border border-white/10 px-3 py-2 rounded-xl text-xs hover:text-[#ff4a4a] hover:bg-[#ff4a4a]/10 cursor-pointer transition-all"
-                            >
-                              Clear
-                            </button>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </div>
 
@@ -573,79 +541,165 @@ export default function AdminRoomsPage() {
                     </div>
                   </div>
 
-                  {/* Gallery Images */}
-                  <div className="space-y-2">
-                    <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Gallery Images (Extra Assets)</label>
-                    <div className="flex flex-wrap gap-3 max-h-48 overflow-y-auto bg-black/20 border border-white/5 rounded-xl p-3">
-                      {galleryImages.map((img, i) => (
-                        <div key={i} className="relative group w-24 h-16 rounded-xl overflow-hidden bg-black/45 border border-white/10 flex-shrink-0 flex items-center justify-center">
-                          {img === "UPLOADING" ? (
-                            <div className="flex flex-col items-center justify-center">
-                              <i className="fa-solid fa-spinner fa-spin text-white/50 text-xs mb-1"></i>
-                              <span className="text-[7px] text-white/40 uppercase tracking-wider font-semibold">Uploading</span>
-                            </div>
-                          ) : img.trim() ? (
-                            <>
-                              <Image
-                                src={img}
-                                alt="Preview"
-                                fill
-                                className="object-cover"
-                                unoptimized
+                  {/* Media Gallery (Product Details Style) */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Media Gallery</label>
+                    
+                    {/* Main Cover Image (Large) */}
+                    <div className="space-y-1.5">
+                      <span className="text-[8px] text-white/50 uppercase tracking-widest block">Primary Cover Image</span>
+                      {imageUrl && imageUrl !== "UPLOADING" ? (
+                        <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-lg bg-black/40 group">
+                          <Image
+                            src={imageUrl}
+                            alt="Cover Preview"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                          {/* Hover action overlay */}
+                          <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-3 transition-opacity duration-200">
+                            <label className="px-4 py-2 bg-gold-gradient hover:brightness-110 text-[#1c1a17] text-xs font-bold uppercase tracking-wider rounded-xl cursor-pointer flex items-center gap-1.5 transition-transform hover:scale-105">
+                              <i className="fa-solid fa-cloud-arrow-up"></i> Change Cover
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    const prev = imageUrl
+                                    await handleFileUpload(
+                                      file,
+                                      (url) => setImageUrl(url),
+                                      () => setImageUrl("UPLOADING"),
+                                      () => setImageUrl(prev)
+                                    )
+                                  }
+                                }}
                               />
-                              {/* Hover delete overlay */}
-                              <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200">
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setImageUrl("")}
+                              className="px-4 py-2 bg-[#ff4a4a] hover:bg-[#ff3838] text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition-transform hover:scale-105 cursor-pointer"
+                            >
+                              <i className="fa-solid fa-trash-can"></i> Remove
+                            </button>
+                          </div>
+                          {/* Top Badge */}
+                          <div className="absolute top-3 left-3 bg-black/70 border border-[#D4AF37]/30 px-2 py-0.5 rounded text-[8px] font-bold text-[#D4AF37] uppercase tracking-widest select-none">
+                            Primary Cover
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="w-full h-44 sm:h-52 flex flex-col items-center justify-center border border-dashed border-[#D4AF37]/35 hover:border-[#D4AF37] bg-black/25 hover:bg-black/35 rounded-2xl cursor-pointer transition-all text-center">
+                          {imageUrl === "UPLOADING" ? (
+                            <div className="flex flex-col items-center justify-center">
+                              <i className="fa-solid fa-spinner fa-spin text-[#D4AF37] text-3xl mb-2"></i>
+                              <span className="text-xs text-white font-bold uppercase tracking-wider">Uploading cover image...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37] text-3xl mb-2 animate-pulse"></i>
+                              <span className="text-xs text-white font-bold uppercase tracking-wider">Upload Cover Image</span>
+                              <span className="text-[8px] text-white/40 uppercase tracking-widest mt-1">Recommended size: 1200 x 800 (Max 5MB)</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            disabled={imageUrl === "UPLOADING"}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (file) {
+                                await handleFileUpload(
+                                  file,
+                                  (url) => setImageUrl(url),
+                                  () => setImageUrl("UPLOADING")
+                                )
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    {/* Extra Gallery Images (Below) */}
+                    <div className="space-y-1.5 pt-2">
+                      <span className="text-[8px] text-white/50 uppercase tracking-widest block">Gallery Slideshow Assets</span>
+                      <div className="grid grid-cols-4 gap-2.5">
+                        {galleryImages.map((img, i) => (
+                          <div key={i} className="relative group aspect-[3/2] rounded-xl overflow-hidden bg-black/45 border border-white/10 flex items-center justify-center">
+                            {img === "UPLOADING" ? (
+                              <div className="flex flex-col items-center justify-center">
+                                <i className="fa-solid fa-spinner fa-spin text-[#D4AF37] text-[10px] mb-1"></i>
+                                <span className="text-[6px] text-white/40 uppercase tracking-wider font-semibold">Uploading</span>
+                              </div>
+                            ) : img.trim() ? (
+                              <>
+                                <Image
+                                  src={img}
+                                  alt="Preview"
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                                {/* Hover delete overlay */}
+                                <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all duration-200">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveGalleryImageField(i)}
+                                    className="w-7 h-7 rounded-full bg-[#ff4a4a] hover:bg-[#ff3838] text-white flex items-center justify-center transition-transform hover:scale-110 cursor-pointer shadow-md"
+                                    title="Remove Image"
+                                  >
+                                    <i className="fa-solid fa-trash-can text-xs"></i>
+                                  </button>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full h-full p-1.5 flex flex-col justify-between items-center bg-black/20">
+                                <label className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 rounded-lg border border-dashed border-white/10 transition-colors">
+                                  <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37] text-[10px] mb-0.5"></i>
+                                  <span className="text-[7px] text-white/50 uppercase tracking-widest font-semibold">Upload</span>
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0]
+                                      if (file) {
+                                        await handleFileUpload(
+                                          file,
+                                          (url) => handleUpdateGalleryImage(i, url),
+                                          () => handleUpdateGalleryImage(i, "UPLOADING"),
+                                          () => handleRemoveGalleryImageField(i)
+                                        )
+                                      }
+                                    }}
+                                  />
+                                </label>
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveGalleryImageField(i)}
-                                  className="w-7 h-7 rounded-full bg-[#ff4a4a] hover:bg-[#ff3838] text-white flex items-center justify-center transition-transform hover:scale-110 cursor-pointer shadow-md"
-                                  title="Remove Image"
+                                  className="text-[#ff4a4a]/85 hover:text-[#ff3838] text-[7px] font-bold tracking-wider uppercase mt-1"
                                 >
-                                  <i className="fa-solid fa-trash-can text-xs"></i>
+                                  Cancel
                                 </button>
                               </div>
-                            </>
-                          ) : (
-                            <div className="w-full h-full p-1.5 flex flex-col justify-between items-center bg-black/20">
-                              <label className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 rounded-lg border border-dashed border-white/10 transition-colors">
-                                <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37] text-[10px] mb-0.5"></i>
-                                <span className="text-[7px] text-white/50 uppercase tracking-widest font-semibold">Upload</span>
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  className="hidden"
-                                  onChange={async (e) => {
-                                    const file = e.target.files?.[0]
-                                    if (file) {
-                                      await handleFileUpload(
-                                        file,
-                                        (url) => handleUpdateGalleryImage(i, url),
-                                        () => handleUpdateGalleryImage(i, "UPLOADING"),
-                                        () => handleRemoveGalleryImageField(i)
-                                      )
-                                    }
-                                  }}
-                                />
-                              </label>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveGalleryImageField(i)}
-                                className="text-[#ff4a4a]/85 hover:text-[#ff3838] text-[7px] font-bold tracking-wider uppercase mt-1"
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddGalleryImageField}
+                        className="text-[10px] text-[#D4AF37] hover:underline font-semibold flex items-center gap-1 cursor-pointer pt-1"
+                      >
+                        <i className="fa-solid fa-plus text-[8px]"></i> Add Extra Image Field
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleAddGalleryImageField}
-                      className="text-xs text-[#D4AF37] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                    >
-                      <i className="fa-solid fa-plus text-[10px]"></i> Add Extra Image Field
-                    </button>
                   </div>
                 </div>
 
@@ -670,171 +724,117 @@ export default function AdminRoomsPage() {
               </form>
 
               {/* Right Column: Live Preview Panel */}
-              <div className="lg:col-span-5 border border-[#D4AF37]/15 bg-black/30 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
-                <div className="flex justify-between items-center border-b border-[#D4AF37]/10 pb-3">
-                  <span className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                    Live Preview
-                  </span>
-                  <div className="flex bg-white/5 rounded-lg p-0.5 border border-white/5">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewMode("showcase")}
-                      className={`text-[9px] uppercase tracking-widest px-2.5 py-1 rounded font-bold transition-all cursor-pointer ${
-                        previewMode === "showcase"
-                          ? "bg-[#D4AF37] text-[#1c1a17]"
-                          : "text-white/55 hover:text-white"
-                      }`}
-                    >
-                      Showcase
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPreviewMode("card")}
-                      className={`text-[9px] uppercase tracking-widest px-2.5 py-1 rounded font-bold transition-all cursor-pointer ${
-                        previewMode === "card"
-                          ? "bg-[#D4AF37] text-[#1c1a17]"
-                          : "text-white/55 hover:text-white"
-                      }`}
-                    >
-                      Card
-                    </button>
+              {showPreview && (
+                <div className="lg:col-span-7 border border-[#D4AF37]/15 bg-black/30 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
+                  <div className="flex justify-between items-center border-b border-[#D4AF37]/10 pb-3">
+                    <span className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                      Live Preview
+                    </span>
                   </div>
-                </div>
 
-                {/* Preview Frame */}
-                <div className="rounded-xl overflow-hidden shadow-2xl border border-white/5">
-                  {previewMode === "showcase" ? (
-                    /* Showcase Preview */
-                    <div className="bg-[#1c1a17] text-[#EAE5D9] p-6 border border-[#D4AF37]/20 rounded-xl relative overflow-hidden space-y-4">
-                      {/* Cover Photo */}
-                      <div className="relative h-40 w-full rounded-lg overflow-hidden bg-black/45">
-                        {imageUrl && imageUrl !== "UPLOADING" ? (
-                          <Image src={imageUrl} alt={name || "Suite Preview"} fill className="object-cover" unoptimized />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/20">
-                            <i className="fa-regular fa-image text-3xl"></i>
-                          </div>
-                        )}
-                        <div className="absolute top-2 right-2 bg-black/85 border border-[#D4AF37]/30 px-2 py-0.5 rounded text-[8px] font-bold text-[#D4AF37] uppercase tracking-widest">
-                          ₱{pricePerNight.toLocaleString()} / Night
+                  {/* Preview Frame */}
+                  <div className="bg-[#FCFBF8] text-[#1c1a17] p-5 md:p-6 border border-[#D4AF37]/20 rounded-[2.5rem] relative overflow-hidden grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch shadow-md">
+                    {/* Left: Details Card */}
+                    <div className="md:col-span-5 flex flex-col justify-between bg-white border border-[#D4AF37]/20 rounded-[2rem] p-6 relative overflow-hidden min-h-[350px] shadow-sm">
+                      <div className="space-y-5">
+                        <div className="flex justify-between items-center border-b border-[#D4AF37]/10 pb-3 text-[10px]">
+                          <span className="text-[#D4AF37] font-bold uppercase tracking-[0.25em] truncate max-w-[50%]">
+                            {size || "OCEANFRONT CLUB WING"}
+                          </span>
+                          <span className="font-serif text-sm text-[#1c1a17] font-semibold">
+                            ₱{pricePerNight.toLocaleString()}{" "}
+                            <span className="text-[8px] font-sans text-black/40 uppercase tracking-widest">/ Night</span>
+                          </span>
                         </div>
-                      </div>
 
-                      {/* Header details */}
-                      <div className="space-y-1">
-                        <span className="text-[#D4AF37] font-bold uppercase tracking-[0.2em] text-[9px] block">
-                          {size || "Villa Size"}
-                        </span>
-                        <h3 className="font-serif text-xl text-white font-bold tracking-wide truncate">
-                          {name || "Suite Name"}
-                        </h3>
-                        <p className="text-[10px] text-white/50 font-sans tracking-wide uppercase font-semibold">
-                          Max Guests: {capacity} VIPs
-                        </p>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-white/60 text-xs leading-relaxed line-clamp-3 min-h-[4.5em]">
-                        {description || "Suite description goes here..."}
-                      </p>
-
-                      {/* Amenities */}
-                      <div className="space-y-1.5 pt-2 border-t border-[#D4AF37]/10">
-                        <span className="text-[#D4AF37] font-semibold uppercase text-[9px] tracking-wider block">Key Amenities</span>
-                        <div className="flex flex-wrap gap-1">
-                          {selectedAmenities.length > 0 ? (
-                            selectedAmenities.slice(0, 4).map((a, idx) => (
-                              <span key={idx} className="bg-[#D4AF37]/5 border border-[#D4AF37]/20 px-2 py-0.5 rounded text-[8px] text-white/80">
-                                {a}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-[8px] text-white/30 italic">No amenities selected</span>
-                          )}
-                          {selectedAmenities.length > 4 && (
-                            <span className="bg-white/5 px-2 py-0.5 rounded text-[8px] text-white/40">
-                              +{selectedAmenities.length - 4} More
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Action Button */}
-                      <div className="pt-2">
-                        <div className="w-full text-center bg-gold-gradient text-luxury-obsidian font-bold text-[10px] uppercase tracking-widest py-2.5 rounded-lg select-none">
-                          Configure Itinerary
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Card Preview */
-                    <div className="bg-[#16171b] border border-white/5 rounded-xl overflow-hidden flex flex-col justify-between space-y-4 p-0">
-                      {/* Image Frame */}
-                      <div className="relative h-44 w-full bg-black/40 overflow-hidden">
-                        {imageUrl && imageUrl !== "UPLOADING" ? (
-                          <Image src={imageUrl} alt={name || "Suite Preview"} fill className="object-cover" unoptimized />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white/25">
-                            <i className="fa-regular fa-image text-3xl"></i>
-                          </div>
-                        )}
-                        <div className="absolute top-3 right-3 bg-black/85 border border-[#D4AF37]/30 px-2 py-0.5 rounded text-[8px] tracking-widest uppercase font-bold text-white">
-                          ₱{pricePerNight.toLocaleString()} / night
-                        </div>
-                      </div>
-
-                      {/* Content block */}
-                      <div className="px-5 pb-5 space-y-4 flex-1 flex flex-col justify-between">
                         <div className="space-y-2">
-                          <h3 className="text-base font-bold text-white tracking-tight truncate">
-                            {name || "Suite Name"}
+                          <h3 className="font-serif text-xl md:text-2xl text-[#1c1a17] font-bold leading-tight tracking-tight line-clamp-2">
+                            {name || "1BR/1BA Private Pool Villa"}
                           </h3>
-                          <p className="text-xs text-white/60 line-clamp-2 leading-relaxed min-h-[3em]">
-                            {description || "Suite description goes here..."}
+                          <p className="text-[#1c1a17]/70 text-[10.5px] leading-relaxed font-sans line-clamp-3">
+                            {description || "An intimate romantic sanctuary featuring 1 bedroom, 1 bathroom, and a private pool. The package includes breakfast for 2 guests, perfect for couples."}
                           </p>
+                        </div>
 
-                          {/* Info Specs */}
-                          <div className="flex items-center gap-4 mt-2 text-[10px] text-white/40">
-                            <span className="flex items-center gap-1">
-                              <i className="fa-solid fa-users text-[#D4AF37] text-[9px]"></i>
-                              Up to {capacity} Guests
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <i className="fa-solid fa-expand text-[#D4AF37] text-[9px]"></i>
-                              {size || "Villa Size"}
-                            </span>
-                          </div>
-
-                          {/* Amenities Badges */}
-                          <div className="flex flex-wrap gap-1 mt-3">
+                        {/* Suite Amenities */}
+                        <div className="space-y-2.5 pt-1">
+                          <span className="text-[#D4AF37] font-bold uppercase text-[9px] tracking-[0.15em] block">Suite Amenities</span>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] text-[#1c1a17]/90 font-medium font-sans">
                             {selectedAmenities.length > 0 ? (
-                              selectedAmenities.slice(0, 3).map((a) => (
-                                <span key={a} className="inline-flex items-center gap-1 text-[8px] font-semibold uppercase tracking-wider text-white/50 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                                  <i className="fa-solid fa-circle-check text-emerald-500 text-[7px]"></i>
-                                  {a}
-                                </span>
+                              selectedAmenities.slice(0, 8).map((a, idx) => (
+                                <div key={idx} className="flex items-center gap-1.5 min-w-0">
+                                  <i className={`fa-solid ${getAmenityIcon(a)} text-[#D4AF37] text-[9px] flex-shrink-0`}></i>
+                                  <span className="truncate">{a}</span>
+                                </div>
                               ))
                             ) : (
-                              <span className="text-[8px] text-white/30 italic">No amenities selected</span>
+                              <>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-droplet text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Private Pool</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-wine-glass text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Breakfast Included</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-key text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Private Kitchen</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-spa text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Access to Main Pool</span></div>
+                              </>
                             )}
                           </div>
                         </div>
+                      </div>
+                    </div>
 
-                        {/* Request booking button */}
-                        <div className="w-full bg-white/10 text-white font-semibold text-center py-2.5 rounded-lg text-xs hover:bg-white/20 select-none">
-                          Request Booking
+                    {/* Right: Display Carousel Preview */}
+                    <div className="md:col-span-7 relative min-h-[350px] rounded-[2rem] overflow-hidden border border-[#D4AF37]/20 bg-[#1c1a17]">
+                      {imageUrl && imageUrl !== "UPLOADING" ? (
+                        <Image src={imageUrl} alt={name || "Suite Preview"} fill className="object-cover" unoptimized />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/20">
+                          <i className="fa-regular fa-image text-3xl"></i>
+                        </div>
+                      )}
+
+                      {/* Overlays */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent flex flex-col justify-between p-5 z-10">
+                        {/* Top pills */}
+                        <div className="flex justify-between items-center w-full gap-2">
+                          <button
+                            type="button"
+                            className="bg-white hover:scale-105 text-[#1c1a17] px-3.5 py-1.5 rounded-full text-[8px] tracking-widest uppercase font-bold flex items-center gap-1 shadow-md transition-all cursor-pointer border border-[#D4AF37]/15"
+                          >
+                            <i className="fa-regular fa-images text-[#D4AF37]"></i> View Gallery
+                          </button>
+                          <div className="bg-white text-[#1c1a17] px-3.5 py-1.5 rounded-full text-[8px] tracking-widest uppercase font-bold shadow-md border border-[#D4AF37]/15">
+                            <i className="fa-regular fa-eye text-[#D4AF37] mr-1"></i> Virtual Tour Enabled
+                          </div>
+                        </div>
+
+                        {/* Arrows */}
+                        <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between items-center z-10">
+                          <div className="w-9 h-9 rounded-full bg-white text-[#1c1a17] flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-105 border border-black/5">
+                            <i className="fa-solid fa-chevron-left text-[10px]"></i>
+                          </div>
+                          <div className="w-9 h-9 rounded-full bg-white text-[#1c1a17] flex items-center justify-center shadow-md cursor-pointer transition-transform hover:scale-105 border border-black/5">
+                            <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                          </div>
+                        </div>
+
+                        {/* Bottom Stats overlay */}
+                        <div className="flex justify-between items-center gap-2 text-[9px] text-[#1c1a17] bg-white rounded-full py-2.5 px-5 shadow-lg select-none mx-1 font-sans font-bold">
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <i className="fa-solid fa-panorama text-[#D4AF37] flex-shrink-0"></i> 180° Aegean Views
+                          </span>
+                          <span className="flex items-center gap-1.5 whitespace-nowrap">
+                            <i className="fa-solid fa-user-group text-[#D4AF37] flex-shrink-0"></i> Up to {capacity} VIPs
+                          </span>
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  </div>
 
-                {/* Additional Guidance text */}
-                <p className="text-[9px] text-white/30 leading-normal italic text-center">
-                  * Live preview shows real-time changes to text, pricing, cover image, and amenities configurations.
-                </p>
-              </div>
+                  {/* Additional Guidance text */}
+                  <p className="text-[9px] text-white/30 leading-normal italic text-center">
+                    * Live preview shows real-time changes to text, pricing, cover image, and amenities configurations.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
