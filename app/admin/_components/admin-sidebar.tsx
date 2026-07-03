@@ -21,7 +21,8 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   { name: "Overview", href: "/admin", icon: "fa-chart-pie" },
-  { name: "System Settings", href: "/admin/settings", icon: "fa-sliders" },
+  { name: "Hero Editor", href: "/admin/settings", icon: "fa-sliders" },
+  { name: "System Settings", href: "/admin/system", icon: "fa-gears" },
   {
     name: "Booking & Ledger",
     icon: "fa-calendar-days",
