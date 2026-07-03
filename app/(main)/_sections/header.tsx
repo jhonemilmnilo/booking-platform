@@ -26,6 +26,7 @@ export default function Header({
   const [isHeaderScrolled, setIsHeaderScrolled] = React.useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isHeaderVisible, setIsHeaderVisible] = React.useState(true)
+  const [activeSection, setActiveSection] = React.useState("")
   const lastScrollY = React.useRef(0)
 
   React.useEffect(() => {
@@ -47,6 +48,34 @@ export default function Header({
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  // ScrollSpy effect to highlight active navigation link
+  React.useEffect(() => {
+    if (pathname !== "/") return
+
+    const sections = ["about", "campaign", "villas", "amenities", "location"]
+    const observerOptions = {
+      root: null,
+      rootMargin: "-25% 0px -55% 0px",
+      threshold: 0
+    }
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id)
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions)
+    sections.forEach((id) => {
+      const el = document.getElementById(id)
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [pathname])
 
   const showSolidHeader = isHeaderScrolled || isMobileMenuOpen || pathname !== "/"
 
@@ -94,25 +123,40 @@ export default function Header({
           showSolidHeader ? "text-luxury-cream" : "text-white"
         }`}
       >
-        <Link href="/#about" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+        <Link
+          href="/#about"
+          className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+        >
           The Resort
-          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+          <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "about" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
         </Link>
-        <Link href="/#campaign" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+        <Link
+          href="/#campaign"
+          className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "campaign" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+        >
           The Cinema
-          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+          <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "campaign" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
         </Link>
-        <Link href="/#villas" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+        <Link
+          href="/#villas"
+          className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "villas" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+        >
           Suites & Villas
-          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+          <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "villas" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
         </Link>
-        <Link href="/#amenities" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+        <Link
+          href="/#amenities"
+          className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "amenities" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+        >
           Amenities
-          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+          <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "amenities" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
         </Link>
-        <Link href="/#location" className="relative hover:text-luxury-gold transition-all duration-300 py-1 group/navlink">
+        <Link
+          href="/#location"
+          className={`relative transition-all duration-300 py-1 group/navlink ${activeSection === "location" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}
+        >
           The Beachfront
-          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold scale-x-0 group-hover/navlink:scale-x-100 transition-transform duration-300 origin-left" />
+          <span className={`absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold transition-transform duration-300 origin-left ${activeSection === "location" ? "scale-x-100" : "scale-x-0 group-hover/navlink:scale-x-100"}`} />
         </Link>
       </nav>
 
@@ -165,19 +209,19 @@ export default function Header({
       {/* Mobile Drawer Menu */}
       {isMobileMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold lg:hidden shadow-2xl backdrop-blur-md">
-          <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5">
+          <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
             The Resort
           </Link>
-          <Link href="/#campaign" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5">
+          <Link href="/#campaign" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "campaign" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
             The Cinema
           </Link>
-          <Link href="/#villas" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5">
+          <Link href="/#villas" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "villas" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
             Suites & Villas
           </Link>
-          <Link href="/#amenities" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5">
+          <Link href="/#amenities" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "amenities" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
             Amenities
           </Link>
-          <Link href="/#location" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5">
+          <Link href="/#location" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "location" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
             The Beachfront
           </Link>
           <Link href="/tour" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5 text-luxury-gold">

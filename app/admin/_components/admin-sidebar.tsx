@@ -37,13 +37,6 @@ export default function AdminSidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  const sidebarItems: SidebarItem[] = [
-    { name: "Overview", href: "/admin", icon: "fa-chart-pie" },
-    { name: "Hero Editor", href: "/admin/settings", icon: "fa-sliders" },
-    { name: "System Settings", href: "/admin/system", icon: "fa-gears" },
-    { name: "Bookings", href: "/admin/bookings", icon: "fa-calendar-days", comingSoon: true },
-    { name: "Rooms & Suites", href: "/admin/rooms", icon: "fa-hotel", comingSoon: true },
-  ]
 
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({})
 

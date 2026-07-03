@@ -83,58 +83,6 @@ const MOCK_ROOMS: Room[] = [
 export default function Home() {
   const handleBookClick = React.useContext(BookingContext)
 
-  // Database-backed rooms list state
-  const [rooms, setRooms] = React.useState<Room[]>(MOCK_ROOMS)
-  const [activeSection, setActiveSection] = React.useState("")
-
-  // Gallery Lightbox Modal States
-  const [galleryRoom, setGalleryRoom] = React.useState<Room | null>(null)
-  const [activeGalleryImageIndex, setActiveGalleryImageIndex] = React.useState(0)
-
-  // Keyboard event listeners for the Gallery lightbox modal
-  React.useEffect(() => {
-    if (!galleryRoom) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const imgs = galleryRoom.images || [galleryRoom.imageUrl]
-      if (e.key === "ArrowLeft") {
-        setActiveGalleryImageIndex((prev) => (prev - 1 + imgs.length) % imgs.length)
-      } else if (e.key === "ArrowRight") {
-        setActiveGalleryImageIndex((prev) => (prev + 1) % imgs.length)
-      } else if (e.key === "Escape") {
-        setGalleryRoom(null)
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [galleryRoom])
-
-  // ScrollSpy effect to highlight active navigation link
-  React.useEffect(() => {
-    const sections = ["about", "campaign", "villas", "amenities", "location"]
-    const observerOptions = {
-      root: null,
-      rootMargin: "-25% 0px -55% 0px",
-      threshold: 0
-    }
-
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setActiveSection(entry.target.id)
-        }
-      })
-    }
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions)
-    sections.forEach((id) => {
-      const el = document.getElementById(id)
-      if (el) observer.observe(el)
-    })
-
-    return () => observer.disconnect()
-  }, [])
 
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
