@@ -68,19 +68,19 @@ export default function Location() {
                   <button
                     key={index}
                     onClick={() => setSelectedSpot(spot)}
-                    className={`w-full text-left flex justify-between border-b border-luxury-gold/10 pb-2 hover:text-luxury-gold transition-colors duration-300 group cursor-pointer ${
+                    className={`w-full text-left grid grid-cols-12 gap-2 border-b border-luxury-gold/10 pb-2 hover:text-luxury-gold transition-colors duration-300 group cursor-pointer ${
                       isActive ? "text-luxury-gold font-bold" : ""
                     }`}
                   >
-                    <span className="flex items-center gap-2">
-                      <i className={`fa-solid fa-location-dot text-[10px] transition-transform duration-300 ${
+                    <span className="flex items-start gap-2 col-span-7 md:col-span-8">
+                      <i className={`fa-solid fa-location-dot text-[10px] mt-1 transition-transform duration-300 ${
                         isActive ? "text-luxury-gold scale-125" : "text-luxury-gold/40 group-hover:scale-125 group-hover:text-luxury-gold"
                       }`}></i>
-                      {spot.name}
+                      <span className="leading-snug">{spot.name}</span>
                     </span>
-                    <span className="text-luxury-gold font-semibold text-xs flex items-center gap-1">
-                      {spot.distance}
-                      <i className="fa-solid fa-chevron-right text-[9px] opacity-0 group-hover:opacity-100 transition-opacity ml-1"></i>
+                    <span className="text-luxury-gold font-semibold text-xs text-right col-span-5 md:col-span-4 pt-0.5 flex items-start justify-end gap-1">
+                      <span className="leading-snug">{spot.distance}</span>
+                      <i className="fa-solid fa-chevron-right text-[9px] opacity-0 group-hover:opacity-100 transition-opacity mt-1"></i>
                     </span>
                   </button>
                 )
