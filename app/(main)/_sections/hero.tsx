@@ -183,10 +183,10 @@ export default function Hero({
         <div className="pt-6 md:pt-10 max-w-4xl mx-auto animate-fade-in-up delay-400">
           <form
             onSubmit={handleSubmit}
-            className="bg-white/95 backdrop-blur-md border border-luxury-gold/20 rounded-3xl md:rounded-full p-4 md:py-3.5 md:px-8 grid grid-cols-1 md:grid-cols-5 gap-6 items-center shadow-2xl relative gold-glow-soft text-luxury-cream"
+            className="bg-white/95 backdrop-blur-md border border-luxury-gold/20 rounded-3xl md:rounded-full p-4 md:py-3.5 md:pl-8 md:pr-16 grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 items-center shadow-2xl relative gold-glow-soft text-luxury-cream"
           >
             {/* Suite/Villa Selection */}
-            <div className="flex flex-col gap-1 text-left md:border-r border-luxury-gold/20 pr-2">
+            <div className="col-span-2 md:col-span-1 flex flex-col gap-1 text-left bg-white/40 border border-luxury-gold/10 rounded-2xl p-3 md:bg-transparent md:border-none md:p-0 md:border-r border-luxury-gold/20 md:pr-2">
               <span className="text-[9px] uppercase tracking-widest font-bold text-luxury-gold">Select Sanctuary</span>
               <CustomSelect
                 value={heroVilla}
@@ -198,7 +198,7 @@ export default function Hero({
             </div>
 
             {/* Check-In Input */}
-            <div className="flex flex-col gap-1 text-left md:border-r border-luxury-gold/20 pr-2">
+            <div className="col-span-1 md:col-span-1 flex flex-col gap-1 text-left bg-white/40 border border-luxury-gold/10 rounded-2xl p-3 md:bg-transparent md:border-none md:p-0 md:border-r border-luxury-gold/20 md:pr-2">
               <span className="text-[9px] uppercase tracking-widest font-bold text-luxury-gold">Check-in</span>
               <div className="flex items-center gap-2 relative w-full">
                 <i className="fa-solid fa-calendar-plus text-luxury-gold text-xs flex-shrink-0"></i>
@@ -213,7 +213,7 @@ export default function Hero({
             </div>
 
             {/* Check-Out Input */}
-            <div className="flex flex-col gap-1 text-left md:border-r border-luxury-gold/20 pr-2">
+            <div className="col-span-1 md:col-span-1 flex flex-col gap-1 text-left bg-white/40 border border-luxury-gold/10 rounded-2xl p-3 md:bg-transparent md:border-none md:p-0 md:border-r border-luxury-gold/20 md:pr-2">
               <span className="text-[9px] uppercase tracking-widest font-bold text-luxury-gold">Check-out</span>
               <div className="flex items-center gap-2 relative w-full">
                 <i className="fa-solid fa-calendar-minus text-luxury-gold text-xs flex-shrink-0"></i>
@@ -228,7 +228,7 @@ export default function Hero({
             </div>
 
             {/* Guests Count select dropdown */}
-            <div className="flex flex-col gap-1 text-left md:border-r border-luxury-gold/20 pr-2">
+            <div className="col-span-1 md:col-span-1 flex flex-col gap-1 text-left bg-white/40 border border-luxury-gold/10 rounded-2xl p-3 md:bg-transparent md:border-none md:p-0 md:border-r border-luxury-gold/20 md:pr-2">
               <span className="text-[9px] uppercase tracking-widest font-bold text-luxury-gold">Occupancy</span>
               <CustomSelect
                 value={heroGuests}
@@ -240,7 +240,7 @@ export default function Hero({
             </div>
 
             {/* Custom privileges curation select dropdown */}
-            <div className="flex flex-col gap-1 text-left">
+            <div className="col-span-1 md:col-span-1 flex flex-col gap-1 text-left bg-white/40 border border-luxury-gold/10 rounded-2xl p-3 md:bg-transparent md:border-none md:p-0">
               <span className="text-[9px] uppercase tracking-widest font-bold text-luxury-gold">Bespoke Privilege</span>
               <CustomSelect
                 value={heroCuration}
@@ -251,13 +251,13 @@ export default function Hero({
               />
             </div>
 
-            {/* Float Absolute Submit Button on Desktop */}
+            {/* Submit Button */}
             <button
               type="submit"
-              style={{ backgroundColor: themeColorPrimary }}
-              className="md:absolute right-2 top-1/2 md:-translate-y-1/2 w-full md:w-12 md:h-12 rounded-full flex items-center justify-center text-luxury-obsidian hover:scale-105 transition-transform shadow-lg cursor-pointer py-3 md:py-0"
+              className="col-span-2 md:absolute md:right-2 md:top-1/2 md:-translate-y-1/2 w-full md:w-12 md:h-12 h-12 rounded-2xl md:rounded-full bg-gold-gradient text-luxury-obsidian hover:scale-105 transition-all shadow-lg cursor-pointer flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-[0.15em] border-none"
               aria-label="Confirm Booking Configuration"
             >
+              <span className="md:hidden">Check Availability</span>
               <i className="fa-solid fa-arrow-right text-sm"></i>
             </button>
           </form>

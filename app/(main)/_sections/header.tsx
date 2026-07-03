@@ -188,17 +188,17 @@ export default function Header({
         >
           <div className="w-6 h-[16px] flex flex-col justify-between items-end relative overflow-hidden">
             <span
-              className={`w-full h-[2px] bg-current rounded-full transition-all duration-300 transform origin-left ${
+              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${
                 isMobileMenuOpen ? "rotate-45 translate-x-[3px] translate-y-[-1px]" : ""
               }`}
             ></span>
             <span
-              className={`w-2/3 h-[2px] bg-current rounded-full transition-all duration-300 transform ${
+              className={`w-2/3 h-[2.5px] bg-current rounded-full transition-all duration-300 ${
                 isMobileMenuOpen ? "opacity-0 translate-x-[15px]" : ""
               }`}
             ></span>
             <span
-              className={`w-full h-[2px] bg-current rounded-full transition-all duration-300 transform origin-left ${
+              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${
                 isMobileMenuOpen ? "-rotate-45 translate-x-[3px] translate-y-[1px]" : ""
               }`}
             ></span>
