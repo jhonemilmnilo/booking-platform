@@ -51,16 +51,6 @@ export default function Location() {
               referrerPolicy="no-referrer-when-downgrade"
             />
 
-            {/* Pin Overlay (Aesthetic marker over the map center) */}
-            <div className="absolute pointer-events-none z-10 flex flex-col items-center top-[40%]">
-              <div className="bg-gold-gradient p-2.5 rounded-full text-luxury-obsidian shadow-2xl relative">
-                <i className="fa-solid fa-anchor text-sm"></i>
-                <span className="absolute -inset-1.5 rounded-full border border-luxury-gold animate-ping opacity-30"></span>
-              </div>
-              <span className="mt-1.5 bg-luxury-obsidian/95 border border-luxury-gold text-luxury-cream text-[9px] tracking-widest uppercase font-serif px-2.5 py-1 rounded-lg shadow-lg">
-                The Oceanhill Villas
-              </span>
-            </div>
 
             {/* Coordinates */}
             <div className="absolute bottom-4 left-4 bg-luxury-obsidian/95 border border-luxury-gold/25 px-3.5 py-2 rounded-xl text-[10px] tracking-wider text-luxury-gold font-mono backdrop-blur-md shadow-xl z-20">
