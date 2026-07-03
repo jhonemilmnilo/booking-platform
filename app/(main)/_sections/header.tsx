@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Room } from "@/components/shared/RoomCard"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface HeaderProps {
   brandName: string;
@@ -207,28 +208,36 @@ export default function Header({
       </div>
 
       {/* Mobile Drawer Menu */}
-      {isMobileMenuOpen && (
-        <div className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold lg:hidden shadow-2xl backdrop-blur-md">
-          <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
-            The Resort
-          </Link>
-          <Link href="/#campaign" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "campaign" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
-            The Cinema
-          </Link>
-          <Link href="/#villas" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "villas" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
-            Suites & Villas
-          </Link>
-          <Link href="/#amenities" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "amenities" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
-            Amenities
-          </Link>
-          <Link href="/#location" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "location" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
-            The Beachfront
-          </Link>
-          <Link href="/tour" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5 text-luxury-gold">
-            Virtual Tour
-          </Link>
-        </div>
-      )}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold lg:hidden shadow-2xl backdrop-blur-md"
+          >
+            <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
+              The Resort
+            </Link>
+            <Link href="/#campaign" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "campaign" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
+              The Cinema
+            </Link>
+            <Link href="/#villas" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "villas" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
+              Suites & Villas
+            </Link>
+            <Link href="/#amenities" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "amenities" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
+              Amenities
+            </Link>
+            <Link href="/#location" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "location" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
+              The Beachfront
+            </Link>
+            <Link href="/tour" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-luxury-gold transition-colors py-2 border-b border-luxury-gold/5 text-luxury-gold">
+              Virtual Tour
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   )
 }
