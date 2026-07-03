@@ -95,7 +95,7 @@ export default function Home() {
   const [heroTitleLine2, setHeroTitleLine2] = React.useState("Sanctuary")
   const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
   const [dbRooms, setDbRooms] = React.useState<Room[]>([])
-  
+
   // Preloader State
   const [showPreloader, setShowPreloader] = React.useState(true)
 
@@ -284,15 +284,15 @@ export default function Home() {
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[#C6C1BA]"
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-[radial-gradient(circle_at_center,#CFC6BD_0%,#C6C1BA_100%)]"
           >
-            <div className="relative w-80 h-80 flex items-center justify-center">
+            <div className="absolute inset-0 w-full h-full overflow-hidden">
               <video
-                src="/videos/loading_logo.mp4"
+                src="/videos/loading_logo3.mp4"
                 autoPlay
                 muted
                 playsInline
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover scale-[1.02]"
               />
             </div>
           </motion.div>
