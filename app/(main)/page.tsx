@@ -12,7 +12,6 @@ if (typeof window !== "undefined") {
 import { Room } from "@/components/shared/RoomCard"
 import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
 import { getRoomsAction } from "@/app/admin/rooms_suites/action"
-import { BookingContext } from "./layout"
 
 // Import Modular Sections
 import Hero from "./_sections/hero"
@@ -83,7 +82,6 @@ const MOCK_ROOMS: Room[] = [
 ]
 
 export default function Home() {
-  const handleBookClick = React.useContext(BookingContext)
 
 
   // GSAP animation scope ref
@@ -278,7 +276,7 @@ export default function Home() {
         <Cinema />
 
         {/* Villas and Suites Showcase */}
-        <Rooms mockRooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS} onBookClick={handleBookClick} />
+        <Rooms mockRooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS} />
 
         {/* Amenities Curation block */}
         <Amenities />

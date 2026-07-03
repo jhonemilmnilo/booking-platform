@@ -7,7 +7,6 @@ import { Room } from "@/components/shared/RoomCard"
 
 interface RoomsProps {
   mockRooms: Room[];
-  onBookClick: (room: Room) => void;
 }
 
 const slideVariants = {
@@ -25,7 +24,7 @@ const slideVariants = {
   })
 }
 
-export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
+export default function Rooms({ mockRooms }: RoomsProps) {
   const [activeSuiteIndex, setActiveSuiteIndex] = React.useState(0)
   const [slideDirection, setSlideDirection] = React.useState(0)
   const [isMobile, setIsMobile] = React.useState(false)
@@ -134,8 +133,8 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                   </div>
                 </div>
 
-                {/* Dot Indicators & CTA */}
-                <div className="mt-4 md:mt-10 pt-4 md:pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
+                {/* Dot Indicators */}
+                <div className="mt-4 md:mt-10 pt-4 md:pt-6 border-t border-luxury-gold/10 flex justify-center items-center z-10">
                   <div className="flex gap-2">
                     {mockRooms.map((_, i) => (
                       <button
@@ -154,12 +153,6 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                       />
                     ))}
                   </div>
-                  <button
-                    onClick={() => onBookClick(activeSuite)}
-                    className="w-full sm:w-auto text-center bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow transition-all duration-300 hover:scale-102 cursor-pointer"
-                  >
-                    Configure Itinerary
-                  </button>
                 </div>
               </motion.div>
             </AnimatePresence>
