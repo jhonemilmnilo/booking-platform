@@ -193,7 +193,7 @@ export default function Header({
               }`}
             ></span>
             <span
-              className={`w-2/3 h-[2px] bg-current rounded-full transition-all duration-300 ${
+              className={`w-2/3 h-[2px] bg-current rounded-full transition-all duration-300 transform ${
                 isMobileMenuOpen ? "opacity-0 translate-x-[15px]" : ""
               }`}
             ></span>
