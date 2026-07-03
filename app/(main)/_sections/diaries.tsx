@@ -214,35 +214,37 @@ export default function Diaries() {
         {/* Video Reels Slide Row */}
         <div className="space-y-4">
           <h3 className="text-luxury-gold font-bold uppercase text-[10px] tracking-widest block">Cinematic Guest Reels</h3>
-          <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
-            {reelsList.map((reel) => (
-              <div
-                key={reel.id}
-                onClick={() => setActiveReel(reel.id)}
-                className="relative w-48 md:w-60 h-80 md:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-luxury-gold/15 shadow-xl snap-start shrink-0 cursor-pointer group bg-black"
-              >
-                <video
-                  src={reel.videoUrl}
-                  preload="metadata"
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover filter brightness-[0.7] group-hover:scale-105 transition-transform duration-750"
-                />
-                
-                {/* Gold Play Button Overlay */}
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-12 h-12 rounded-full bg-gold-gradient text-luxury-obsidian flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                    <i className="fa-solid fa-play text-sm ml-0.5"></i>
+          <div className="overflow-hidden -mx-6 px-6">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 -mb-4 scrollbar-none snap-x snap-mandatory">
+              {reelsList.map((reel) => (
+                <div
+                  key={reel.id}
+                  onClick={() => setActiveReel(reel.id)}
+                  className="relative w-48 md:w-60 h-80 md:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-luxury-gold/15 shadow-xl snap-start shrink-0 cursor-pointer group bg-black"
+                >
+                  <video
+                    src={reel.videoUrl}
+                    preload="metadata"
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover filter brightness-[0.7] group-hover:scale-105 transition-transform duration-750"
+                  />
+                  
+                  {/* Gold Play Button Overlay */}
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="w-12 h-12 rounded-full bg-gold-gradient text-luxury-obsidian flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                      <i className="fa-solid fa-play text-sm ml-0.5"></i>
+                    </div>
+                  </div>
+
+                  {/* Info Overlay */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">
+                    <span className="font-serif text-sm tracking-wide font-semibold truncate">{reel.guestName}</span>
+                    <span className="text-[9px] text-[#D4AF37] font-semibold tracking-wider uppercase">{reel.stayDate}</span>
                   </div>
                 </div>
-
-                {/* Info Overlay */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">
-                  <span className="font-serif text-sm tracking-wide font-semibold truncate">{reel.guestName}</span>
-                  <span className="text-[9px] text-[#D4AF37] font-semibold tracking-wider uppercase">{reel.stayDate}</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
