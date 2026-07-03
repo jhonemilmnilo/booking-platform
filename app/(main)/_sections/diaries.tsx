@@ -70,6 +70,17 @@ export default function Diaries() {
     loadReviews()
   }, [loadReviews])
 
+  React.useEffect(() => {
+    if (activeReel || isSubmitOpen) {
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [activeReel, isSubmitOpen])
+
   // Combine live reviews with video urls and fallbacks
   const reelsList = React.useMemo(() => {
     const liveReels = reviews
@@ -295,7 +306,7 @@ export default function Diaries() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 md:p-6"
+            className="fixed inset-0 bg-black/95 backdrop-blur-md z-[60] flex items-center justify-center p-4 md:p-6"
           >
             <button
               onClick={() => setActiveReel(null)}
@@ -338,13 +349,13 @@ export default function Diaries() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
           >
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
-              className="w-full max-w-lg bg-[#16171b] border border-luxury-gold/30 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 text-[#EAE5D9]"
+              className="w-full max-w-lg bg-[#16171b] border border-luxury-gold/30 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 text-[#EAE5D9] max-h-[90vh] overflow-y-auto"
             >
               {/* Modal Header */}
               <div className="flex justify-between items-center border-b border-white/10 pb-4">
