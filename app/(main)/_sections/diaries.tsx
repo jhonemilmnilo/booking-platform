@@ -214,8 +214,8 @@ export default function Diaries() {
         {/* Video Reels Slide Row */}
         <div className="space-y-4">
           <h3 className="text-luxury-gold font-bold uppercase text-[10px] tracking-widest block">Cinematic Guest Reels</h3>
-          <div className="overflow-hidden -mx-6 px-6">
-            <div className="flex gap-4 md:gap-6 overflow-x-auto pb-8 -mb-4 scrollbar-none snap-x snap-mandatory">
+          <div className="overflow-hidden -mx-6 md:mx-0">
+            <div className="flex gap-4 md:gap-6 overflow-x-auto px-6 md:px-0 pb-8 -mb-4 scrollbar-none snap-x snap-mandatory">
               {reelsList.map((reel) => (
                 <div
                   key={reel.id}
