@@ -53,6 +53,7 @@ export default function Diaries() {
   const [stayDate, setStayDate] = React.useState("")
   const [comment, setComment] = React.useState("")
   const [videoFile, setVideoFile] = React.useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
 
   // Fetch live reviews
   const loadReviews = React.useCallback(() => {
@@ -94,6 +95,10 @@ export default function Diaries() {
       toast.error("Video exceeds 5MB limit. Please select a shorter or optimized clip.")
       e.target.value = ""
       setVideoFile(null)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+      }
       return
     }
 
@@ -101,11 +106,32 @@ export default function Diaries() {
       toast.error("Only video files are allowed.")
       e.target.value = ""
       setVideoFile(null)
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
+      }
       return
     }
 
     setVideoFile(file)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    setPreviewUrl(URL.createObjectURL(file))
   }
+
+  const handleCancel = React.useCallback(() => {
+    setIsSubmitOpen(false)
+    setGuestName("")
+    setRating(5)
+    setStayDate("")
+    setComment("")
+    setVideoFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+      setPreviewUrl(null)
+    }
+  }, [previewUrl])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,6 +162,10 @@ export default function Diaries() {
         setStayDate("")
         setComment("")
         setVideoFile(null)
+        if (previewUrl) {
+          URL.revokeObjectURL(previewUrl)
+          setPreviewUrl(null)
+        }
       } else {
         toast.error(result.error || "Failed to submit review.", { id: toastId })
       }
@@ -324,7 +354,7 @@ export default function Diaries() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsSubmitOpen(false)}
+                  onClick={handleCancel}
                   className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-white flex items-center justify-center text-sm border border-white/10 cursor-pointer transition-colors"
                 >
                   <i className="fa-solid fa-xmark"></i>
@@ -394,33 +424,55 @@ export default function Diaries() {
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-white/60 mb-1.5">
                     Attach Video Reel <span className="text-luxury-gold">(Max 5MB / MP4)</span>
                   </label>
-                  <div className="flex items-center gap-3 bg-[#0c0d0f] border border-white/10 rounded-xl p-3.5">
-                    <input
-                      type="file"
-                      id="guestReelFile"
-                      accept="video/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="guestReelFile"
-                      className="bg-white/5 border border-white/10 hover:border-luxury-gold/50 hover:bg-luxury-gold/10 text-white font-semibold py-2 px-4 rounded-lg text-[10px] flex items-center justify-center gap-2 cursor-pointer transition-all duration-300"
-                    >
-                      <i className="fa-solid fa-cloud-arrow-up text-luxury-gold"></i> Select Video
-                    </label>
-                    <span className="text-[10px] text-white/40 truncate flex-1">
-                      {videoFile ? videoFile.name : "No file chosen"}
-                    </span>
-                    {videoFile && (
-                      <button
-                        type="button"
-                        onClick={() => setVideoFile(null)}
-                        className="text-red-500 hover:text-red-400 bg-transparent border-none text-[10px] font-semibold uppercase tracking-widest cursor-pointer"
+                  
+                  {videoFile && previewUrl ? (
+                    <div className="flex gap-4 items-center bg-[#0c0d0f] border border-luxury-gold/30 rounded-2xl p-3">
+                      {/* Looping preview player */}
+                      <div className="w-14 h-24 rounded-lg overflow-hidden border border-white/10 shrink-0 bg-black relative shadow-lg">
+                        <video
+                          src={previewUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <span className="block text-[10px] font-semibold text-white truncate">{videoFile.name}</span>
+                        <span className="block text-[9px] text-[#D4AF37] font-mono">{(videoFile.size / (1024 * 1024)).toFixed(2)} MB</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setVideoFile(null)
+                            if (previewUrl) {
+                              URL.revokeObjectURL(previewUrl)
+                              setPreviewUrl(null)
+                            }
+                          }}
+                          className="text-red-500 hover:text-red-400 bg-transparent border-none text-[10px] font-bold uppercase tracking-wider cursor-pointer flex items-center gap-1 p-0 mt-1"
+                        >
+                          <i className="fa-solid fa-trash-can text-[10px]"></i> Remove Video
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3 bg-[#0c0d0f] border border-white/10 rounded-xl p-3.5">
+                      <input
+                        type="file"
+                        id="guestReelFile"
+                        accept="video/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="guestReelFile"
+                        className="bg-white/5 border border-white/10 hover:border-luxury-gold/50 hover:bg-luxury-gold/10 text-white font-semibold py-3 px-6 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all duration-300 w-full text-center"
                       >
-                        Clear
-                      </button>
-                    )}
-                  </div>
+                        <i className="fa-solid fa-cloud-arrow-up text-luxury-gold"></i> Choose Video Clip
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Submit button */}
@@ -441,7 +493,7 @@ export default function Diaries() {
                   <button
                     type="button"
                     disabled={isLoading}
-                    onClick={() => setIsSubmitOpen(false)}
+                    onClick={handleCancel}
                     className="bg-white/5 hover:bg-white/10 text-white font-semibold px-6 rounded-xl text-xs border border-white/10 cursor-pointer transition-all disabled:opacity-50"
                   >
                     Cancel
