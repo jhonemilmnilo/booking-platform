@@ -84,9 +84,9 @@ export default function Rooms({ mockRooms }: RoomsProps) {
         </div>
 
         {/* Suite Showcase interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch gsap-reveal-fade-up">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-12 items-stretch gsap-reveal-fade-up">
           {/* Details Box Column Wrapper (Static) */}
-          <div className="lg:col-span-5 relative h-[520px] sm:h-[500px] lg:h-[500px] w-full">
+          <div className="lg:col-span-5 relative h-[520px] sm:h-[500px] lg:h-[500px] w-full order-2 lg:order-1">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -99,7 +99,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-6 sm:p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
+                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-b-3xl lg:rounded-3xl rounded-t-none border-t-0 lg:border-t p-6 sm:p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
               >
                 <div className="absolute -top-16 -right-16 w-36 h-36 bg-luxury-gold/5 rounded-full blur-2xl"></div>
 
@@ -159,7 +159,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
           </div>
 
           {/* Display Showcase Column Wrapper (Static) */}
-          <div className="lg:col-span-7 relative h-[450px] lg:h-[500px] w-full">
+          <div className="lg:col-span-7 relative h-[280px] sm:h-[350px] lg:h-[500px] w-full order-1 lg:order-2">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -172,7 +172,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 rounded-3xl overflow-hidden border border-luxury-gold/20 bg-luxury-obsidian w-full h-full"
+                className="absolute inset-0 rounded-t-3xl lg:rounded-3xl rounded-b-none border border-luxury-gold/30 bg-luxury-obsidian w-full h-full overflow-hidden border-b-0 lg:border-b"
               >
                 <Image src={activeSuite.imageUrl} alt={activeSuite.name} fill className="object-cover" priority />
 
