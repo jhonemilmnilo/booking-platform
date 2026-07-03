@@ -188,17 +188,17 @@ export default function Header({
         >
           <div className="w-6 h-5 flex flex-col justify-between relative overflow-hidden">
             <span
-              className={`w-full h-[2px] bg-currentColor transition-all duration-300 transform origin-left ${
+              className={`w-full h-[2px] bg-current transition-all duration-300 transform origin-left ${
                 isMobileMenuOpen ? "rotate-45 translate-x-[2px] translate-y-[-1px]" : ""
               }`}
             ></span>
             <span
-              className={`w-full h-[2px] bg-currentColor transition-all duration-300 ${
+              className={`w-full h-[2px] bg-current transition-all duration-300 ${
                 isMobileMenuOpen ? "opacity-0 translate-x-[20px]" : ""
               }`}
             ></span>
             <span
-              className={`w-full h-[2px] bg-currentColor transition-all duration-300 transform origin-left ${
+              className={`w-full h-[2px] bg-current transition-all duration-300 transform origin-left ${
                 isMobileMenuOpen ? "-rotate-45 translate-x-[2px] translate-y-[1px]" : ""
               }`}
             ></span>
