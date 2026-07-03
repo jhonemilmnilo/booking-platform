@@ -12,7 +12,7 @@ if (typeof window !== "undefined") {
 import { Room } from "@/components/shared/RoomCard"
 import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
 import { getRoomsAction } from "@/app/admin/rooms_suites/action"
-import { motion, AnimatePresence } from "framer-motion"
+import { BookingContext } from "./layout"
 
 // Import Modular Sections
 import Hero from "./_sections/hero"
@@ -83,6 +83,7 @@ const MOCK_ROOMS: Room[] = [
 ]
 
 export default function Home() {
+  const handleBookClick = React.useContext(BookingContext)
 
 
   // GSAP animation scope ref
@@ -95,28 +96,6 @@ export default function Home() {
   const [heroTitleLine2, setHeroTitleLine2] = React.useState("Sanctuary")
   const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
   const [dbRooms, setDbRooms] = React.useState<Room[]>([])
-
-  // Preloader State
-  const [showPreloader, setShowPreloader] = React.useState(true)
-
-  // Scroll locking effect specifically for preloader
-  React.useEffect(() => {
-    if (showPreloader) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = ""
-    }
-    return () => {
-      document.body.style.overflow = ""
-    }
-  }, [showPreloader])
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowPreloader(false)
-    }, 3000) // 3 seconds is ideal to let the logo video finish playing fully!
-    return () => clearTimeout(timer)
-  }, [])
 
   // Inquiry Prefills
   const [selectedVilla, setSelectedVilla] = React.useState("royal-suite")
@@ -276,77 +255,53 @@ export default function Home() {
   }
 
   return (
-    <>
-      {/* Cinematic Logo Preloader */}
-      <AnimatePresence>
-        {showPreloader && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-[radial-gradient(circle_at_center,#CFC6BD_0%,#C6C1BA_100%)]"
-          >
-            <div className="w-full aspect-video overflow-hidden relative">
-              <video
-                src="/videos/loading_logo3.mp4"
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover scale-[1.02]"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div ref={mainScopeRef} className="bg-luxury-obsidian text-luxury-cream font-sans min-h-screen">
+      {/* Cinematic Hero block */}
+      <Hero
+        videoSrc={videoSrc}
+        heroSubtitle={heroSubtitle}
+        heroTitleLine1={heroTitleLine1}
+        heroTitleLine2={heroTitleLine2}
+        heroDescription={heroDescription}
+        themeColorPrimary="#D4AF37"
+        onSearchSubmit={handleHeroBookingSubmit}
+        videoPlayerRef={videoPlayerRef}
+        rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
+      />
 
-      <div ref={mainScopeRef} className="bg-luxury-obsidian text-luxury-cream font-sans min-h-screen">
-        {/* Cinematic Hero block */}
-        <Hero
-          videoSrc={videoSrc}
-          heroSubtitle={heroSubtitle}
-          heroTitleLine1={heroTitleLine1}
-          heroTitleLine2={heroTitleLine2}
-          heroDescription={heroDescription}
-          themeColorPrimary="#D4AF37"
-          onSearchSubmit={handleHeroBookingSubmit}
-          videoPlayerRef={videoPlayerRef}
+      {/* Main scrolling elements */}
+      <div className="relative z-10 bg-luxury-obsidian">
+        {/* Resort story about section */}
+        <About />
+
+        {/* Cinematic campaign commercial display */}
+        <Cinema />
+
+        {/* Villas and Suites Showcase */}
+        <Rooms mockRooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS} onBookClick={handleBookClick} />
+
+        {/* Amenities Curation block */}
+        <Amenities />
+
+        {/* Guest Diaries Showcase */}
+        <Diaries />
+
+        {/* Location coordinates and layout map */}
+        <Location />
+
+        {/* Reservation Request inquiry form */}
+        <Inquiry
+          selectedVilla={selectedVilla}
+          setSelectedVilla={setSelectedVilla}
+          securityTier={securityTier}
+          setSecurityTier={setSecurityTier}
+          customRequests={customRequests}
+          setCustomRequests={setCustomRequests}
+          heroCheckIn={heroCheckIn}
+          heroGuests={heroGuests}
           rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
         />
-
-        {/* Main scrolling elements */}
-        <div className="relative z-10 bg-luxury-obsidian">
-          {/* Resort story about section */}
-          <About />
-
-          {/* Cinematic campaign commercial display */}
-          <Cinema />
-
-          {/* Villas and Suites Showcase */}
-          <Rooms mockRooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS} />
-
-          {/* Amenities Curation block */}
-          <Amenities />
-
-          {/* Guest Diaries Showcase */}
-          <Diaries />
-
-          {/* Location coordinates and layout map */}
-          <Location />
-
-          {/* Reservation Request inquiry form */}
-          <Inquiry
-            selectedVilla={selectedVilla}
-            setSelectedVilla={setSelectedVilla}
-            securityTier={securityTier}
-            setSecurityTier={setSecurityTier}
-            customRequests={customRequests}
-            setCustomRequests={setCustomRequests}
-            heroCheckIn={heroCheckIn}
-            heroGuests={heroGuests}
-            rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
-          />
-        </div>
       </div>
-    </>
+    </div>
   )
 }

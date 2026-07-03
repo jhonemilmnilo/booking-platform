@@ -23,21 +23,21 @@ const MOCK_REELS = [
     guestName: "Alessandra Rossi",
     stayDate: "May 2026",
     comment: "Breathtaking views and top-tier hospitality. The private infinity pool is unmatched.",
-    videoUrl: "/videos/enhance_ocean_hill_villas_mobile.mp4"
+    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-beach-and-ocean-waves-aerial-view-34282-large.mp4"
   },
   {
     id: "mock-2",
     guestName: "Julian Vance",
     stayDate: "June 2026",
     comment: "Simply paradise. Waking up to the sea waves is something I will never forget.",
-    videoUrl: "/ocean_hill_villa.mp4"
+    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-resort-swimming-pool-with-palm-trees-43187-large.mp4"
   },
   {
     id: "mock-3",
     guestName: "Clara Dupont",
     stayDate: "April 2026",
     comment: "Bespoke privileges made our honeymoon feel so magical. 10/10 curation.",
-    videoUrl: "/videos/enhance_ocean_hill_villas.mp4"
+    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-luxury-resort-overwater-bungalows-42247-large.mp4"
   }
 ]
 
@@ -46,7 +46,7 @@ export default function Diaries() {
   const [activeReel, setActiveReel] = React.useState<string | null>(null)
   const [isSubmitOpen, setIsSubmitOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
-  
+
   // Submit Form States
   const [guestName, setGuestName] = React.useState("")
   const [rating, setRating] = React.useState(5)
@@ -92,7 +92,7 @@ export default function Diaries() {
         comment: r.comment,
         videoUrl: r.videoUrl!
       }))
-    
+
     return liveReels.length > 0 ? liveReels : MOCK_REELS
   }, [reviews])
 
@@ -193,7 +193,7 @@ export default function Diaries() {
   return (
     <section id="diaries" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-charcoal to-luxury-obsidian relative">
       <div className="max-w-7xl mx-auto space-y-16">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-4">
@@ -214,37 +214,35 @@ export default function Diaries() {
         {/* Video Reels Slide Row */}
         <div className="space-y-4">
           <h3 className="text-luxury-gold font-bold uppercase text-[10px] tracking-widest block">Cinematic Guest Reels</h3>
-          <div className="overflow-hidden -mx-6 md:mx-0">
-            <div className="flex gap-4 md:gap-6 overflow-x-auto px-6 md:px-0 pb-8 -mb-4 scrollbar-none snap-x snap-mandatory">
-              {reelsList.map((reel) => (
-                <div
-                  key={reel.id}
-                  onClick={() => setActiveReel(reel.id)}
-                  className="relative w-48 md:w-60 h-80 md:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-luxury-gold/15 shadow-xl snap-start shrink-0 cursor-pointer group bg-black"
-                >
-                  <video
-                    src={reel.videoUrl}
-                    preload="metadata"
-                    muted
-                    playsInline
-                    className="w-full h-full object-cover filter brightness-[0.7] group-hover:scale-105 transition-transform duration-750"
-                  />
-                  
-                  {/* Gold Play Button Overlay */}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="w-12 h-12 rounded-full bg-gold-gradient text-luxury-obsidian flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                      <i className="fa-solid fa-play text-sm ml-0.5"></i>
-                    </div>
-                  </div>
+          <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory">
+            {reelsList.map((reel) => (
+              <div
+                key={reel.id}
+                onClick={() => setActiveReel(reel.id)}
+                className="relative w-48 md:w-60 h-80 md:h-[400px] rounded-2xl md:rounded-3xl overflow-hidden border border-luxury-gold/15 shadow-xl snap-start shrink-0 cursor-pointer group bg-black"
+              >
+                <video
+                  src={reel.videoUrl}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover filter brightness-[0.7] group-hover:scale-105 transition-transform duration-750"
+                />
 
-                  {/* Info Overlay */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">
-                    <span className="font-serif text-sm tracking-wide font-semibold truncate">{reel.guestName}</span>
-                    <span className="text-[9px] text-[#D4AF37] font-semibold tracking-wider uppercase">{reel.stayDate}</span>
+                {/* Gold Play Button Overlay */}
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="w-12 h-12 rounded-full bg-gold-gradient text-luxury-obsidian flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                    <i className="fa-solid fa-play text-sm ml-0.5"></i>
                   </div>
                 </div>
-              ))}
-            </div>
+
+                {/* Info Overlay */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">
+                  <span className="font-serif text-sm tracking-wide font-semibold truncate">{reel.guestName}</span>
+                  <span className="text-[9px] text-[#D4AF37] font-semibold tracking-wider uppercase">{reel.stayDate}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -376,7 +374,7 @@ export default function Diaries() {
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
-                
+
                 {/* Guest Name */}
                 <div>
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-white/60 mb-1.5">Guest Name</label>
@@ -437,7 +435,7 @@ export default function Diaries() {
                   <label className="block text-[10px] font-semibold uppercase tracking-wider text-white/60 mb-1.5">
                     Attach Video Reel <span className="text-luxury-gold">(Max 5MB / MP4)</span>
                   </label>
-                  
+
                   {videoFile && previewUrl ? (
                     <div className="flex gap-4 items-center bg-[#0c0d0f] border border-luxury-gold/30 rounded-2xl p-3">
                       {/* Looping preview player */}

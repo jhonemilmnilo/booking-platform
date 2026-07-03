@@ -83,13 +83,11 @@ export default function Header({
   return (
     <header
       id="mainHeader"
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 py-4 px-4 md:py-6 md:px-12 flex justify-between items-center ${
-        showSolidHeader
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 py-4 px-4 md:py-6 md:px-12 flex justify-between items-center ${showSolidHeader
           ? "bg-luxury-obsidian/95 py-3 md:py-4 border-b border-luxury-gold/15 backdrop-blur-md shadow-2xl"
           : "bg-transparent"
-      } ${
-        isHeaderVisible ? "translate-y-0" : "-translate-y-full"
-      }`}
+        } ${isHeaderVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
     >
       <Link href="/" className="flex items-center gap-3 whitespace-nowrap flex-shrink-0">
         {brandLogo ? (
@@ -109,9 +107,8 @@ export default function Header({
         )}
         <span
           id="brandName"
-          className={`font-serif text-sm sm:text-base md:text-2xl tracking-[0.25em] uppercase font-semibold transition-colors duration-300 whitespace-nowrap ${
-            showSolidHeader ? "text-luxury-cream" : "text-white"
-          }`}
+          className={`font-serif text-sm sm:text-base md:text-2xl tracking-[0.25em] uppercase font-semibold transition-colors duration-300 whitespace-nowrap ${showSolidHeader ? "text-luxury-cream" : "text-white"
+            }`}
         >
           {brandName.split(" ")[0]} <span className="text-luxury-gold">{brandName.split(" ").slice(1).join(" ")}</span>
         </span>
@@ -120,9 +117,8 @@ export default function Header({
       {/* Desktop Menu */}
       <nav
         id="desktopNav"
-        className={`hidden xl:flex items-center gap-4 xl:gap-8 text-[11px] xl:text-xs uppercase tracking-[0.2em] font-semibold transition-colors duration-300 whitespace-nowrap ${
-          showSolidHeader ? "text-luxury-cream" : "text-white"
-        }`}
+        className={`hidden lg:flex items-center gap-4 xl:gap-8 text-[11px] xl:text-xs uppercase tracking-[0.2em] font-semibold transition-colors duration-300 whitespace-nowrap ${showSolidHeader ? "text-luxury-cream" : "text-white"
+          }`}
       >
         <Link
           href="/#about"
@@ -182,26 +178,22 @@ export default function Header({
         {/* Mobile Menu Toggle */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`xl:hidden hover:text-luxury-gold p-2 transition-colors cursor-pointer z-50 relative border-none ${
-            showSolidHeader ? "text-luxury-cream" : "text-white"
-          }`}
+          className={`lg:hidden hover:text-luxury-gold p-2 transition-colors cursor-pointer z-50 relative border-none ${showSolidHeader ? "text-luxury-cream" : "text-white"
+            }`}
           aria-label="Toggle Menu"
         >
           <div className="w-6 h-[16px] flex flex-col justify-between items-end relative overflow-hidden">
             <span
-              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${
-                isMobileMenuOpen ? "rotate-45 translate-x-[3px] translate-y-[-1px]" : ""
-              }`}
+              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${isMobileMenuOpen ? "rotate-45 translate-x-[3px] translate-y-[-1px]" : ""
+                }`}
             ></span>
             <span
-              className={`w-2/3 h-[2.5px] bg-current rounded-full transition-all duration-300 ${
-                isMobileMenuOpen ? "opacity-0 translate-x-[15px]" : ""
-              }`}
+              className={`w-2/3 h-[2.5px] bg-current rounded-full transition-all duration-300 ${isMobileMenuOpen ? "opacity-0 translate-x-[15px]" : ""
+                }`}
             ></span>
             <span
-              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${
-                isMobileMenuOpen ? "-rotate-45 translate-x-[3px] translate-y-[1px]" : ""
-              }`}
+              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${isMobileMenuOpen ? "-rotate-45 translate-x-[3px] translate-y-[1px]" : ""
+                }`}
             ></span>
           </div>
         </button>
@@ -215,7 +207,7 @@ export default function Header({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold xl:hidden shadow-2xl backdrop-blur-md"
+            className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold lg:hidden shadow-2xl backdrop-blur-md"
           >
             <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
               The Resort

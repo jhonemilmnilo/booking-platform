@@ -7,6 +7,7 @@ import { Room } from "@/components/shared/RoomCard"
 
 interface RoomsProps {
   mockRooms: Room[];
+  onBookClick: (room: Room) => void;
 }
 
 const slideVariants = {
@@ -24,7 +25,7 @@ const slideVariants = {
   })
 }
 
-export default function Rooms({ mockRooms }: RoomsProps) {
+export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
   const [activeSuiteIndex, setActiveSuiteIndex] = React.useState(0)
   const [slideDirection, setSlideDirection] = React.useState(0)
   const [isMobile, setIsMobile] = React.useState(false)
@@ -84,9 +85,9 @@ export default function Rooms({ mockRooms }: RoomsProps) {
         </div>
 
         {/* Suite Showcase interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-12 items-stretch gsap-reveal-fade-up">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch gsap-reveal-fade-up">
           {/* Details Box Column Wrapper (Static) */}
-          <div className="lg:col-span-5 relative h-[400px] sm:h-[420px] lg:h-[500px] w-full order-2 lg:order-1">
+          <div className="lg:col-span-5 relative h-[520px] sm:h-[500px] lg:h-[500px] w-full">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -99,7 +100,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-b-3xl lg:rounded-3xl rounded-t-none border-t-0 lg:border-t p-6 sm:p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
+                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-6 sm:p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
               >
                 <div className="absolute -top-16 -right-16 w-36 h-36 bg-luxury-gold/5 rounded-full blur-2xl"></div>
 
@@ -133,8 +134,8 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                   </div>
                 </div>
 
-                {/* Dot Indicators */}
-                <div className="mt-2 md:mt-10 pt-3 md:pt-6 border-t border-luxury-gold/10 flex justify-center items-center z-10 pb-2 md:pb-0">
+                {/* Dot Indicators & CTA */}
+                <div className="mt-4 md:mt-10 pt-4 md:pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
                   <div className="flex gap-2">
                     {mockRooms.map((_, i) => (
                       <button
@@ -146,20 +147,25 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                             setActiveSuiteIndex(i)
                           }
                         }}
-                        className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                          i === activeSuiteIndex ? "w-6 bg-luxury-gold" : "w-2.5 bg-luxury-gold/20"
-                        }`}
+                        className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${i === activeSuiteIndex ? "w-6 bg-luxury-gold" : "w-2.5 bg-luxury-gold/20"
+                          }`}
                         aria-label={`Go to slide ${i + 1}`}
                       />
                     ))}
                   </div>
+                  <button
+                    onClick={() => onBookClick(activeSuite)}
+                    className="w-full sm:w-auto text-center bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow transition-all duration-300 hover:scale-102 cursor-pointer"
+                  >
+                    Configure Itinerary
+                  </button>
                 </div>
               </motion.div>
             </AnimatePresence>
           </div>
 
           {/* Display Showcase Column Wrapper (Static) */}
-          <div className="lg:col-span-7 relative h-[280px] sm:h-[350px] lg:h-[500px] w-full order-1 lg:order-2">
+          <div className="lg:col-span-7 relative h-[450px] lg:h-[500px] w-full">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -172,7 +178,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 rounded-t-3xl lg:rounded-3xl rounded-b-none border border-luxury-gold/30 bg-luxury-obsidian w-full h-full overflow-hidden border-b-0 lg:border-b"
+                className="absolute inset-0 rounded-3xl overflow-hidden border border-luxury-gold/20 bg-luxury-obsidian w-full h-full"
               >
                 <Image src={activeSuite.imageUrl} alt={activeSuite.name} fill className="object-cover" priority />
 
