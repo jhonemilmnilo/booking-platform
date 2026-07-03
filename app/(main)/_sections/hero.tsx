@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { Room } from "@/components/shared/RoomCard"
 
 interface Option {
   value: string;
@@ -84,11 +85,6 @@ function CustomSelect({ value, onChange, options, placeholder, icon }: CustomSel
   )
 }
 
-const VILLA_OPTIONS = [
-  { value: "royal-suite", label: "Royal Suite" },
-  { value: "garden-villa", label: "Garden Villa" },
-  { value: "lagoon-suite", label: "Lagoon Suite" }
-]
 
 const GUEST_OPTIONS = [
   { value: "1 Guest", label: "1 Room, 1 Guest" },
@@ -112,6 +108,7 @@ interface HeroProps {
   themeColorPrimary: string;
   onSearchSubmit: (villa: string, checkIn: string, checkOut: string, guests: string, curation: string) => void;
   videoPlayerRef: React.RefObject<HTMLVideoElement | null>;
+  rooms?: Room[];
 }
 
 export default function Hero({
@@ -123,9 +120,24 @@ export default function Hero({
   themeColorPrimary,
   onSearchSubmit,
   videoPlayerRef,
+  rooms = [],
 }: HeroProps) {
   // Hero booking search form states
   const [heroVilla, setHeroVilla] = React.useState("")
+
+  const villaOptions = React.useMemo(() => {
+    if (rooms && rooms.length > 0) {
+      return rooms.map((room) => ({
+        value: room.id,
+        label: room.name,
+      }))
+    }
+    return [
+      { value: "royal-suite", label: "Royal Suite" },
+      { value: "garden-villa", label: "Garden Villa" },
+      { value: "lagoon-suite", label: "Lagoon Suite" }
+    ]
+  }, [rooms])
   const [heroCheckIn, setHeroCheckIn] = React.useState("")
   const [heroCheckOut, setHeroCheckOut] = React.useState("")
   const [heroGuests, setHeroGuests] = React.useState("")
@@ -191,7 +203,7 @@ export default function Hero({
               <CustomSelect
                 value={heroVilla}
                 onChange={setHeroVilla}
-                options={VILLA_OPTIONS}
+                options={villaOptions}
                 placeholder="Select Villa"
                 icon="fa-hotel"
               />

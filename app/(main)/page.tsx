@@ -11,6 +11,7 @@ if (typeof window !== "undefined") {
 
 import { Room } from "@/components/shared/RoomCard"
 import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
+import { getRoomsAction } from "@/app/admin/rooms_suites/action"
 import { BookingContext } from "./layout"
 
 // Import Modular Sections
@@ -94,6 +95,7 @@ export default function Home() {
   const [heroTitleLine1, setHeroTitleLine1] = React.useState("Where Sky Meets")
   const [heroTitleLine2, setHeroTitleLine2] = React.useState("Sanctuary")
   const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+  const [dbRooms, setDbRooms] = React.useState<Room[]>([])
 
   // Inquiry Prefills
   const [selectedVilla, setSelectedVilla] = React.useState("royal-suite")
@@ -110,6 +112,18 @@ export default function Home() {
 
   // Initialize data and settings
   React.useEffect(() => {
+    // Fetch database rooms
+    getRoomsAction()
+      .then((res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          setDbRooms(res.data)
+          setSelectedVilla(res.data[0].id)
+        }
+      })
+      .catch((err) => {
+        console.warn("[Rooms] Error loading DB rooms:", err)
+      })
+
     // Determine video source dynamically
     const isMobile = window.matchMedia("(max-width: 768px)").matches
 
@@ -252,6 +266,7 @@ export default function Home() {
         themeColorPrimary="#D4AF37"
         onSearchSubmit={handleHeroBookingSubmit}
         videoPlayerRef={videoPlayerRef}
+        rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
       />
 
       {/* Main scrolling elements */}
@@ -263,7 +278,7 @@ export default function Home() {
         <Cinema />
 
         {/* Villas and Suites Showcase */}
-        <Rooms mockRooms={MOCK_ROOMS} onBookClick={handleBookClick} />
+        <Rooms mockRooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS} onBookClick={handleBookClick} />
 
         {/* Amenities Curation block */}
         <Amenities />
@@ -284,6 +299,7 @@ export default function Home() {
           setCustomRequests={setCustomRequests}
           heroCheckIn={heroCheckIn}
           heroGuests={heroGuests}
+          rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
         />
       </div>
     </div>

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { createBookingAction } from "@/app/actions/booking"
 import { toast } from "sonner"
+import { Room } from "@/components/shared/RoomCard"
 
 interface InquiryProps {
   selectedVilla: string;
@@ -13,6 +14,7 @@ interface InquiryProps {
   setCustomRequests: (val: string) => void;
   heroCheckIn: string;
   heroGuests: string;
+  rooms?: Room[];
 }
 
 export default function Inquiry({
@@ -24,7 +26,21 @@ export default function Inquiry({
   setCustomRequests,
   heroCheckIn,
   heroGuests,
+  rooms = [],
 }: InquiryProps) {
+  const villaOptions = React.useMemo(() => {
+    if (rooms && rooms.length > 0) {
+      return rooms.map((room) => ({
+        id: room.id,
+        name: room.name,
+      }))
+    }
+    return [
+      { id: "royal-suite", name: "The Beachfront Royal Suite" },
+      { id: "garden-villa", name: "The Beachfront Garden Villa" },
+      { id: "lagoon-suite", name: "The Oceanview Lagoon Suite" },
+    ]
+  }, [rooms])
   const [fullName, setFullName] = React.useState("")
   const [email, setEmail] = React.useState("")
   const [phone, setPhone] = React.useState("")
@@ -175,9 +191,11 @@ export default function Inquiry({
                 onChange={(e) => setSelectedVilla(e.target.value)}
                 className="w-full bg-luxury-charcoal border border-luxury-cream/15 focus:border-luxury-gold rounded-xl px-4 py-3 text-sm text-luxury-cream focus:outline-none transition-all cursor-pointer"
               >
-                <option value="royal-suite">The Beachfront Royal Suite</option>
-                <option value="garden-villa">The Beachfront Garden Villa</option>
-                <option value="lagoon-suite">The Oceanview Lagoon Suite</option>
+                {villaOptions.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.name}
+                  </option>
+                ))}
               </select>
             </div>
 
