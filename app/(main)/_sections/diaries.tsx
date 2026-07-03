@@ -23,21 +23,21 @@ const MOCK_REELS = [
     guestName: "Alessandra Rossi",
     stayDate: "May 2026",
     comment: "Breathtaking views and top-tier hospitality. The private infinity pool is unmatched.",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-beach-and-ocean-waves-aerial-view-34282-large.mp4"
+    videoUrl: "/videos/enhance_ocean_hill_villas_mobile.mp4"
   },
   {
     id: "mock-2",
     guestName: "Julian Vance",
     stayDate: "June 2026",
     comment: "Simply paradise. Waking up to the sea waves is something I will never forget.",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-resort-swimming-pool-with-palm-trees-43187-large.mp4"
+    videoUrl: "/ocean_hill_villa.mp4"
   },
   {
     id: "mock-3",
     guestName: "Clara Dupont",
     stayDate: "April 2026",
     comment: "Bespoke privileges made our honeymoon feel so magical. 10/10 curation.",
-    videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-luxury-resort-overwater-bungalows-42247-large.mp4"
+    videoUrl: "/videos/enhance_ocean_hill_villas.mp4"
   }
 ]
 
