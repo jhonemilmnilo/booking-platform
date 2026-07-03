@@ -28,6 +28,14 @@ const slideVariants = {
 export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
   const [activeSuiteIndex, setActiveSuiteIndex] = React.useState(0)
   const [slideDirection, setSlideDirection] = React.useState(0)
+  const [isMobile, setIsMobile] = React.useState(false)
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener("resize", checkMobile)
+    return () => window.removeEventListener("resize", checkMobile)
+  }, [])
 
   const activeSuite = mockRooms[activeSuiteIndex]
 
@@ -40,6 +48,25 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
     setSlideDirection(-1)
     setActiveSuiteIndex((prev) => (prev - 1 + mockRooms.length) % mockRooms.length)
   }
+
+  const getAmenityIcon = (name: string) => {
+    const lower = name.toLowerCase()
+    if (lower.includes("pool")) return "fa-droplet"
+    if (lower.includes("breakfast") || lower.includes("wine")) return "fa-wine-glass"
+    if (lower.includes("kitchen") || lower.includes("cook")) return "fa-kitchen-set"
+    if (lower.includes("air")) return "fa-wind"
+    if (lower.includes("pet")) return "fa-dog"
+    if (lower.includes("tv") || lower.includes("television")) return "fa-tv"
+    if (lower.includes("linen") || lower.includes("towel")) return "fa-shirt"
+    if (lower.includes("concierge")) return "fa-bell-concierge"
+    if (lower.includes("key")) return "fa-key"
+    return "fa-spa"
+  }
+
+  const displayedAmenities = React.useMemo(() => {
+    if (!activeSuite?.amenities) return []
+    return isMobile ? activeSuite.amenities.slice(0, 4) : activeSuite.amenities
+  }, [activeSuite, isMobile])
 
   return (
     <section id="villas" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-charcoal to-luxury-obsidian relative">
@@ -60,7 +87,7 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
         {/* Suite Showcase interface */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch gsap-reveal-fade-up">
           {/* Details Box Column Wrapper (Static) */}
-          <div className="lg:col-span-5 relative h-[500px] lg:h-[500px] w-full">
+          <div className="lg:col-span-5 relative h-[520px] sm:h-[500px] lg:h-[500px] w-full">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -73,37 +100,33 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
+                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-6 sm:p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
               >
                 <div className="absolute -top-16 -right-16 w-36 h-36 bg-luxury-gold/5 rounded-full blur-2xl"></div>
 
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-4">
-                    <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] text-xs">
+                <div className="space-y-4 md:space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-luxury-gold/10 pb-4 gap-2">
+                    <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] text-[10px] sm:text-xs">
                       {activeSuiteIndex === 0 ? "Oceanfront Club Wing" : activeSuiteIndex === 1 ? "West Beach Shoreline" : "East Lagoon Gardens"}
                     </span>
-                    <span className="font-serif text-lg text-luxury-cream font-semibold">
+                    <span className="font-serif text-base sm:text-lg text-luxury-cream font-semibold whitespace-nowrap">
                       ₱{activeSuite.pricePerNight.toLocaleString()}{" "}
                       <span className="text-[10px] font-sans text-luxury-cream/50 uppercase tracking-widest">/ Night</span>
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-3xl md:text-4xl text-luxury-cream font-bold">{activeSuite.name}</h3>
-                    <p className="text-luxury-cream/70 text-sm leading-relaxed">{activeSuite.description}</p>
+                  <div className="space-y-1 sm:space-y-2">
+                    <h3 className="font-serif text-2xl sm:text-3xl md:text-4xl text-luxury-cream font-bold">{activeSuite.name}</h3>
+                    <p className="text-luxury-cream/70 text-xs sm:text-sm leading-relaxed line-clamp-3 sm:line-clamp-none">{activeSuite.description}</p>
                   </div>
 
                   {/* Amenities */}
-                  <div className="space-y-3 pt-4">
+                  <div className="space-y-2 pt-2 md:pt-4">
                     <span className="text-luxury-gold font-semibold uppercase text-[10px] tracking-widest block">Suite Amenities</span>
-                    <ul className="grid grid-cols-2 gap-3 text-xs text-luxury-cream/90">
-                      {activeSuite.amenities.map((amenity, i) => (
+                    <ul className="grid grid-cols-2 gap-2 md:gap-3 text-xs text-luxury-cream/90">
+                      {displayedAmenities.map((amenity, i) => (
                         <li key={i} className="flex items-center gap-2">
-                          <i
-                            className={`fa-solid text-luxury-gold ${
-                              i === 0 ? "fa-droplet" : i === 1 ? "fa-wine-glass" : i === 2 ? "fa-key" : "fa-spa"
-                            }`}
-                          ></i>
+                          <i className={`fa-solid text-luxury-gold ${getAmenityIcon(amenity)}`}></i>
                           <span>{amenity}</span>
                         </li>
                       ))}
@@ -112,7 +135,7 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                 </div>
 
                 {/* Dot Indicators & CTA */}
-                <div className="mt-10 pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
+                <div className="mt-4 md:mt-10 pt-4 md:pt-6 border-t border-luxury-gold/10 flex flex-col sm:flex-row gap-4 justify-between items-center z-10">
                   <div className="flex gap-2">
                     {mockRooms.map((_, i) => (
                       <button
@@ -124,9 +147,8 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                             setActiveSuiteIndex(i)
                           }
                         }}
-                        className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                          i === activeSuiteIndex ? "w-6 bg-luxury-gold" : "w-2.5 bg-luxury-gold/20"
-                        }`}
+                        className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${i === activeSuiteIndex ? "w-6 bg-luxury-gold" : "w-2.5 bg-luxury-gold/20"
+                          }`}
                         aria-label={`Go to slide ${i + 1}`}
                       />
                     ))}

@@ -11,6 +11,7 @@ if (typeof window !== "undefined") {
 
 import { Room } from "@/components/shared/RoomCard"
 import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
+import { getRoomsAction } from "@/app/admin/rooms_suites/action"
 import { BookingContext } from "./layout"
 
 // Import Modular Sections
@@ -19,6 +20,7 @@ import About from "./_sections/about"
 import Cinema from "./_sections/cinema"
 import Rooms from "./_sections/rooms"
 import Amenities from "./_sections/amenities"
+import Diaries from "./_sections/diaries"
 import Location from "./_sections/location"
 import Inquiry from "./_sections/inquiry"
 
@@ -83,31 +85,6 @@ const MOCK_ROOMS: Room[] = [
 export default function Home() {
   const handleBookClick = React.useContext(BookingContext)
 
-  // Database-backed rooms list state
-  const [rooms, setRooms] = React.useState<Room[]>(MOCK_ROOMS)
-
-  // Gallery Lightbox Modal States
-  const [galleryRoom, setGalleryRoom] = React.useState<Room | null>(null)
-  const [activeGalleryImageIndex, setActiveGalleryImageIndex] = React.useState(0)
-
-  // Keyboard event listeners for the Gallery lightbox modal
-  React.useEffect(() => {
-    if (!galleryRoom) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const imgs = galleryRoom.images || [galleryRoom.imageUrl]
-      if (e.key === "ArrowLeft") {
-        setActiveGalleryImageIndex((prev) => (prev - 1 + imgs.length) % imgs.length)
-      } else if (e.key === "ArrowRight") {
-        setActiveGalleryImageIndex((prev) => (prev + 1) % imgs.length)
-      } else if (e.key === "Escape") {
-        setGalleryRoom(null)
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [galleryRoom])
 
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
@@ -118,6 +95,7 @@ export default function Home() {
   const [heroTitleLine1, setHeroTitleLine1] = React.useState("Where Sky Meets")
   const [heroTitleLine2, setHeroTitleLine2] = React.useState("Sanctuary")
   const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+  const [dbRooms, setDbRooms] = React.useState<Room[]>([])
 
   // Inquiry Prefills
   const [selectedVilla, setSelectedVilla] = React.useState("royal-suite")
@@ -134,6 +112,18 @@ export default function Home() {
 
   // Initialize data and settings
   React.useEffect(() => {
+    // Fetch database rooms
+    getRoomsAction()
+      .then((res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          setDbRooms(res.data)
+          setSelectedVilla(res.data[0].id)
+        }
+      })
+      .catch((err) => {
+        console.warn("[Rooms] Error loading DB rooms:", err)
+      })
+
     // Determine video source dynamically
     const isMobile = window.matchMedia("(max-width: 768px)").matches
 
@@ -276,6 +266,7 @@ export default function Home() {
         themeColorPrimary="#D4AF37"
         onSearchSubmit={handleHeroBookingSubmit}
         videoPlayerRef={videoPlayerRef}
+        rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
       />
 
       {/* Main scrolling elements */}
@@ -287,10 +278,13 @@ export default function Home() {
         <Cinema />
 
         {/* Villas and Suites Showcase */}
-        <Rooms mockRooms={MOCK_ROOMS} onBookClick={handleBookClick} />
+        <Rooms mockRooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS} onBookClick={handleBookClick} />
 
         {/* Amenities Curation block */}
         <Amenities />
+
+        {/* Guest Diaries Showcase */}
+        <Diaries />
 
         {/* Location coordinates and layout map */}
         <Location />
@@ -305,6 +299,7 @@ export default function Home() {
           setCustomRequests={setCustomRequests}
           heroCheckIn={heroCheckIn}
           heroGuests={heroGuests}
+          rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
         />
       </div>
     </div>

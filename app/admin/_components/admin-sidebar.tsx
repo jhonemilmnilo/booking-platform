@@ -21,7 +21,8 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   { name: "Overview", href: "/admin", icon: "fa-chart-pie" },
-  { name: "System Settings", href: "/admin/settings", icon: "fa-sliders" },
+  { name: "Hero Editor", href: "/admin/settings", icon: "fa-sliders" },
+  { name: "System Settings", href: "/admin/system", icon: "fa-gears" },
   {
     name: "Booking & Ledger",
     icon: "fa-calendar-days",
@@ -31,19 +32,13 @@ const sidebarItems: SidebarItem[] = [
     ],
   },
   { name: "Rooms & Suites", href: "/admin/rooms_suites", icon: "fa-hotel" },
+  { name: "Guest Diaries", href: "/admin/reviews", icon: "fa-camera-retro" },
 ]
 
 export default function AdminSidebar() {
   const router = useRouter()
   const pathname = usePathname()
 
-  const sidebarItems: SidebarItem[] = [
-    { name: "Overview", href: "/admin", icon: "fa-chart-pie" },
-    { name: "Hero Editor", href: "/admin/settings", icon: "fa-sliders" },
-    { name: "System Settings", href: "/admin/system", icon: "fa-gears" },
-    { name: "Bookings", href: "/admin/bookings", icon: "fa-calendar-days", comingSoon: true },
-    { name: "Rooms & Suites", href: "/admin/rooms", icon: "fa-hotel", comingSoon: true },
-  ]
 
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({})
 

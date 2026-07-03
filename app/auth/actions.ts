@@ -458,6 +458,17 @@ export async function getSystemSettingsAction() {
     const socialTiktok = await getSystemSetting("social_tiktok", "https://tiktok.com")
     const socialTwitter = await getSystemSetting("social_twitter", "https://twitter.com")
 
+    const touristSpots = await getSystemSetting(
+      "tourist_spots",
+      JSON.stringify([
+        { name: "Abagatanen White Beach", distance: "1 min Walk" },
+        { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+        { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+        { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+        { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
+      ])
+    )
+ 
     return {
       heroSubtitle,
       heroTitleLine1,
@@ -474,6 +485,7 @@ export async function getSystemSettingsAction() {
       socialInstagram,
       socialTiktok,
       socialTwitter,
+      touristSpots,
     }
   } catch (error) {
     console.error("[SettingsAction] Failed to retrieve system settings:", error)
@@ -493,6 +505,13 @@ export async function getSystemSettingsAction() {
       socialInstagram: "https://instagram.com",
       socialTiktok: "https://tiktok.com",
       socialTwitter: "https://twitter.com",
+      touristSpots: JSON.stringify([
+        { name: "Abagatanen White Beach", distance: "1 min Walk" },
+        { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+        { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+        { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+        { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
+      ])
     }
   }
 }
