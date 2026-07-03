@@ -86,7 +86,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
         {/* Suite Showcase interface */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 lg:gap-12 items-stretch gsap-reveal-fade-up">
           {/* Details Box Column Wrapper (Static) */}
-          <div className="lg:col-span-5 relative h-[360px] sm:h-[420px] lg:h-[500px] w-full order-2 lg:order-1">
+          <div className="lg:col-span-5 relative h-[400px] sm:h-[420px] lg:h-[500px] w-full order-2 lg:order-1">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -134,7 +134,7 @@ export default function Rooms({ mockRooms }: RoomsProps) {
                 </div>
 
                 {/* Dot Indicators */}
-                <div className="mt-2 md:mt-10 pt-3 md:pt-6 border-t border-luxury-gold/10 flex justify-center items-center z-10">
+                <div className="mt-2 md:mt-10 pt-3 md:pt-6 border-t border-luxury-gold/10 flex justify-center items-center z-10 pb-2 md:pb-0">
                   <div className="flex gap-2">
                     {mockRooms.map((_, i) => (
                       <button
