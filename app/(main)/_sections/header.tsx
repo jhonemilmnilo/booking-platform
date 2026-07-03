@@ -186,20 +186,20 @@ export default function Header({
           }`}
           aria-label="Toggle Menu"
         >
-          <div className="w-6 h-5 flex flex-col justify-between relative overflow-hidden">
+          <div className="w-6 h-[16px] flex flex-col justify-between items-end relative overflow-hidden">
             <span
-              className={`w-full h-[2px] bg-current transition-all duration-300 transform origin-left ${
-                isMobileMenuOpen ? "rotate-45 translate-x-[2px] translate-y-[-1px]" : ""
+              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${
+                isMobileMenuOpen ? "rotate-45 translate-x-[3px] translate-y-[-1px]" : ""
               }`}
             ></span>
             <span
-              className={`w-full h-[2px] bg-current transition-all duration-300 ${
-                isMobileMenuOpen ? "opacity-0 translate-x-[20px]" : ""
+              className={`w-2/3 h-[2.5px] bg-current rounded-full transition-all duration-300 ${
+                isMobileMenuOpen ? "opacity-0 translate-x-[15px]" : ""
               }`}
             ></span>
             <span
-              className={`w-full h-[2px] bg-current transition-all duration-300 transform origin-left ${
-                isMobileMenuOpen ? "-rotate-45 translate-x-[2px] translate-y-[1px]" : ""
+              className={`w-full h-[2.5px] bg-current rounded-full transition-all duration-300 transform origin-left ${
+                isMobileMenuOpen ? "-rotate-45 translate-x-[3px] translate-y-[1px]" : ""
               }`}
             ></span>
           </div>
