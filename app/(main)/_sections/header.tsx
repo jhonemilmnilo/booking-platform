@@ -120,7 +120,7 @@ export default function Header({
       {/* Desktop Menu */}
       <nav
         id="desktopNav"
-        className={`hidden lg:flex items-center gap-4 xl:gap-8 text-[11px] xl:text-xs uppercase tracking-[0.2em] font-semibold transition-colors duration-300 whitespace-nowrap ${
+        className={`hidden xl:flex items-center gap-4 xl:gap-8 text-[11px] xl:text-xs uppercase tracking-[0.2em] font-semibold transition-colors duration-300 whitespace-nowrap ${
           showSolidHeader ? "text-luxury-cream" : "text-white"
         }`}
       >
@@ -182,7 +182,7 @@ export default function Header({
         {/* Mobile Menu Toggle */}
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className={`lg:hidden hover:text-luxury-gold p-2 transition-colors cursor-pointer z-50 relative border-none ${
+          className={`xl:hidden hover:text-luxury-gold p-2 transition-colors cursor-pointer z-50 relative border-none ${
             showSolidHeader ? "text-luxury-cream" : "text-white"
           }`}
           aria-label="Toggle Menu"
@@ -215,7 +215,7 @@ export default function Header({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold lg:hidden shadow-2xl backdrop-blur-md"
+            className="absolute top-full left-0 w-full bg-luxury-obsidian/95 border-b border-luxury-gold/15 py-6 px-8 flex flex-col gap-4 text-sm uppercase tracking-widest font-semibold xl:hidden shadow-2xl backdrop-blur-md"
           >
             <Link href="/#about" onClick={() => setIsMobileMenuOpen(false)} className={`transition-colors py-2 border-b border-luxury-gold/5 ${activeSection === "about" ? "text-luxury-gold font-bold" : "hover:text-luxury-gold"}`}>
               The Resort
