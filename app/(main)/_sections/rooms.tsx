@@ -60,7 +60,7 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
         {/* Suite Showcase interface */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch gsap-reveal-fade-up">
           {/* Details Box Column Wrapper (Static) */}
-          <div className="lg:col-span-5 relative h-[500px] lg:h-[500px] w-full">
+          <div className="lg:col-span-5 relative h-[580px] sm:h-[520px] lg:h-[500px] w-full">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
                 key={activeSuiteIndex}
@@ -73,16 +73,16 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
+                className="absolute inset-0 flex flex-col justify-between bg-luxury-obsidian/80 border border-luxury-gold/30 rounded-3xl p-6 sm:p-8 md:p-10 gold-glow overflow-hidden h-full w-full"
               >
                 <div className="absolute -top-16 -right-16 w-36 h-36 bg-luxury-gold/5 rounded-full blur-2xl"></div>
 
                 <div className="space-y-6">
-                  <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-4">
-                    <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] text-xs">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-luxury-gold/10 pb-4 gap-2">
+                    <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] text-[10px] sm:text-xs">
                       {activeSuiteIndex === 0 ? "Oceanfront Club Wing" : activeSuiteIndex === 1 ? "West Beach Shoreline" : "East Lagoon Gardens"}
                     </span>
-                    <span className="font-serif text-lg text-luxury-cream font-semibold">
+                    <span className="font-serif text-base sm:text-lg text-luxury-cream font-semibold whitespace-nowrap">
                       ₱{activeSuite.pricePerNight.toLocaleString()}{" "}
                       <span className="text-[10px] font-sans text-luxury-cream/50 uppercase tracking-widest">/ Night</span>
                     </span>
