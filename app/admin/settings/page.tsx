@@ -23,8 +23,32 @@ export default function AdminSettingsPage() {
   const [heroVideoUrlMobile, setHeroVideoUrlMobile] = React.useState("/videos/enhance_ocean_hill_villas_mobile.mp4")
   
   const [isLoading, setIsLoading] = React.useState(true)
+  const [touristSpotsText, setTouristSpotsText] = React.useState("")
   const [isUploadingDesktop, setIsUploadingDesktop] = React.useState(false)
   const [isUploadingMobile, setIsUploadingMobile] = React.useState(false)
+
+  // Helper to format JSON array to newline-separated string
+  const formatTouristSpots = (jsonStr: string) => {
+    try {
+      const parsed = JSON.parse(jsonStr)
+      if (Array.isArray(parsed)) {
+        return parsed.map((spot) => `${spot.name}: ${spot.distance}`).join("\n")
+      }
+    } catch {}
+    return ""
+  }
+
+  // Helper to parse newline-separated string back to JSON array
+  const parseTouristSpots = (text: string) => {
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean)
+    const array = lines.map((line) => {
+      const parts = line.split(":")
+      const name = parts[0]?.trim() || ""
+      const distance = parts.slice(1).join(":")?.trim() || ""
+      return { name, distance }
+    })
+    return JSON.stringify(array)
+  }
 
   const saveSettingDirectly = async (key: string, value: string) => {
     try {
@@ -122,6 +146,9 @@ export default function AdminSettingsPage() {
         setThemeColorAccent(settings.themeColorAccent)
         setHeroVideoUrl(settings.heroVideoUrl || "/videos/enhance_ocean_hill_villas.mp4")
         setHeroVideoUrlMobile(settings.heroVideoUrlMobile || "/videos/enhance_ocean_hill_villas_mobile.mp4")
+        if (settings.touristSpots) {
+          setTouristSpotsText(formatTouristSpots(settings.touristSpots))
+        }
       })
       .catch((err) => {
         console.error("[AdminSettings] Error fetching settings:", err)
@@ -220,10 +247,25 @@ export default function AdminSettingsPage() {
                 <textarea
                   required
                   rows={4}
-                   value={heroDescription}
+                  value={heroDescription}
                   onChange={(e) => setHeroDescription(e.target.value)}
                   onBlur={(e) => saveSettingDirectly("hero_description", e.target.value)}
                   className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-white/60 mb-2 uppercase tracking-wide">Nearest Attractions (Format: Spot Name: Transit Time)</label>
+                <textarea
+                  rows={5}
+                  value={touristSpotsText}
+                  onChange={(e) => setTouristSpotsText(e.target.value)}
+                  onBlur={(e) => {
+                    const jsonStr = parseTouristSpots(e.target.value)
+                    saveSettingDirectly("tourist_spots", jsonStr)
+                  }}
+                  placeholder="e.g. Abagatanen White Beach: 1 min Walk&#10;Agno Umbrella Rocks: 8 mins Shore Drive"
+                  className="w-full bg-[#16171b] border border-white/10 focus:border-[#D4AF37]/50 rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors text-white resize-none font-mono"
                 />
               </div>
             </div>

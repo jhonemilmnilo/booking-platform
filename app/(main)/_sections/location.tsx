@@ -1,8 +1,41 @@
 "use client"
 
 import * as React from "react"
+import { getSystemSettingsAction } from "@/app/auth/actions"
+
+interface TouristSpot {
+  name: string
+  distance: string
+}
 
 export default function Location() {
+  const [touristSpots, setTouristSpots] = React.useState<TouristSpot[]>([
+    { name: "Abagatanen White Beach", distance: "1 min Walk" },
+    { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+    { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+    { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+    { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
+  ])
+
+  React.useEffect(() => {
+    getSystemSettingsAction()
+      .then((settings) => {
+        if (settings.touristSpots) {
+          try {
+            const parsed = JSON.parse(settings.touristSpots)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTouristSpots(parsed)
+            }
+          } catch (e) {
+            console.error("Failed to parse tourist spots JSON:", e)
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load tourist spots dynamically:", err)
+      })
+  }, [])
+
   return (
     <section id="location" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-obsidian to-luxury-charcoal relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
@@ -22,20 +55,14 @@ export default function Location() {
 
           {/* Distances */}
           <div className="space-y-4">
-            <span className="text-luxury-gold font-bold uppercase text-[10px] tracking-widest block">Transit Proximity</span>
+            <span className="text-luxury-gold font-bold uppercase text-[10px] tracking-widest block">Nearest Attractions</span>
             <div className="space-y-2 text-sm text-luxury-cream/80">
-              <div className="flex justify-between border-b border-luxury-gold/10 pb-2">
-                <span>Mykonos Town</span>
-                <span className="text-luxury-gold font-semibold">10 mins Shore Drive</span>
-              </div>
-              <div className="flex justify-between border-b border-luxury-gold/10 pb-2">
-                <span>International Airport</span>
-                <span className="text-luxury-gold font-semibold">15 mins Resort Shuttle</span>
-              </div>
-              <div className="flex justify-between border-b border-luxury-gold/10 pb-2">
-                <span>Private Beach Cove</span>
-                <span className="text-luxury-gold font-semibold">2 mins Garden Path Walk</span>
-              </div>
+              {touristSpots.map((spot, index) => (
+                <div key={index} className="flex justify-between border-b border-luxury-gold/10 pb-2">
+                  <span>{spot.name}</span>
+                  <span className="text-luxury-gold font-semibold">{spot.distance}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
