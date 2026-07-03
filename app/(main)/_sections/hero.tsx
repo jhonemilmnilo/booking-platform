@@ -174,7 +174,7 @@ export default function Hero({
 
         <p
           id="heroDescription"
-          className="text-luxury-cream/70 max-w-2xl mx-auto text-xs sm:text-sm md:text-base font-light leading-relaxed tracking-wide animate-fade-in-up delay-200"
+          className="text-white/80 max-w-2xl mx-auto text-xs sm:text-sm md:text-base font-light leading-relaxed tracking-wide animate-fade-in-up delay-200"
         >
           {heroDescription}
         </p>
