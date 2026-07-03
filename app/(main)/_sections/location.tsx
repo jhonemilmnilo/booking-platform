@@ -68,14 +68,12 @@ export default function Location() {
                   <button
                     key={index}
                     onClick={() => setSelectedSpot(spot)}
-                    className={`w-full text-left grid grid-cols-12 gap-2 border-b border-luxury-gold/10 pb-2 hover:text-luxury-gold transition-colors duration-300 group cursor-pointer ${
-                      isActive ? "text-luxury-gold font-bold" : ""
-                    }`}
+                    className={`w-full text-left grid grid-cols-12 gap-2 border-b border-luxury-gold/10 pb-2 hover:text-luxury-gold transition-colors duration-300 group cursor-pointer ${isActive ? "text-luxury-gold font-bold" : ""
+                      }`}
                   >
                     <span className="flex items-start gap-2 col-span-7 md:col-span-8">
-                      <i className={`fa-solid fa-location-dot text-[10px] mt-1 transition-transform duration-300 ${
-                        isActive ? "text-luxury-gold scale-125" : "text-luxury-gold/40 group-hover:scale-125 group-hover:text-luxury-gold"
-                      }`}></i>
+                      <i className={`fa-solid fa-location-dot text-[10px] mt-1 transition-transform duration-300 ${isActive ? "text-luxury-gold scale-125" : "text-luxury-gold/40 group-hover:scale-125 group-hover:text-luxury-gold"
+                        }`}></i>
                       <span className="leading-snug">{spot.name}</span>
                     </span>
                     <span className="text-luxury-gold font-semibold text-xs text-right col-span-5 md:col-span-4 pt-0.5 flex items-start justify-end gap-1">
@@ -110,9 +108,7 @@ export default function Location() {
             )}
 
             {/* Coordinates */}
-            <div className="absolute bottom-4 left-4 bg-luxury-obsidian/95 border border-luxury-gold/25 px-3.5 py-2 rounded-xl text-[10px] tracking-wider text-luxury-gold font-mono backdrop-blur-md shadow-xl z-20">
-              LAT 16.1652° N / LONG 119.7720° E
-            </div>
+
           </div>
         </div>
       </div>

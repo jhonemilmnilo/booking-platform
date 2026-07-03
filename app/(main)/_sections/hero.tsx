@@ -151,7 +151,7 @@ export default function Hero({
             className="absolute inset-0 w-full h-full object-cover filter brightness-[0.45] scale-[1.03]"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-luxury-obsidian via-luxury-obsidian/45 to-luxury-obsidian/30 z-10" />
+
       </div>
 
       {/* Main hero copywriting content */}
