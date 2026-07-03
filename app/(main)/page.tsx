@@ -286,7 +286,7 @@ export default function Home() {
             transition={{ duration: 0.8, ease: "easeInOut" }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-[radial-gradient(circle_at_center,#CFC6BD_0%,#C6C1BA_100%)]"
           >
-            <div className="absolute inset-0 w-full h-full overflow-hidden">
+            <div className="w-full aspect-video overflow-hidden relative">
               <video
                 src="/videos/loading_logo3.mp4"
                 autoPlay
