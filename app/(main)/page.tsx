@@ -19,6 +19,7 @@ import About from "./_sections/about"
 import Cinema from "./_sections/cinema"
 import Rooms from "./_sections/rooms"
 import Amenities from "./_sections/amenities"
+import Diaries from "./_sections/diaries"
 import Location from "./_sections/location"
 import Inquiry from "./_sections/inquiry"
 
@@ -266,6 +267,9 @@ export default function Home() {
 
         {/* Amenities Curation block */}
         <Amenities />
+
+        {/* Guest Diaries Showcase */}
+        <Diaries />
 
         {/* Location coordinates and layout map */}
         <Location />

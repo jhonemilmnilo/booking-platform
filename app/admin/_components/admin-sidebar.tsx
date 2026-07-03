@@ -31,6 +31,7 @@ const sidebarItems: SidebarItem[] = [
     ],
   },
   { name: "Rooms & Suites", href: "/admin/rooms_suites", icon: "fa-hotel" },
+  { name: "Guest Diaries", href: "/admin/reviews", icon: "fa-camera-retro" },
 ]
 
 export default function AdminSidebar() {
