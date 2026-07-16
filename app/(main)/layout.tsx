@@ -55,6 +55,7 @@ export default function MainLayout({
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = React.useState(false)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
+  const [isNavigatingToLogin, setIsNavigatingToLogin] = React.useState(false)
   const [selectedRoom, setSelectedRoom] = React.useState<Room | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
@@ -112,10 +113,13 @@ export default function MainLayout({
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
+      setIsNavigatingToLogin(true)
       toast.info("Authentication required", {
         description: "Please sign in or register to book a luxury suite reservation."
       })
-      router.push("/auth/login")
+      setTimeout(() => {
+        router.push("/auth/login")
+      }, 1500)
       return
     }
     setSelectedRoom(room)
@@ -132,7 +136,10 @@ export default function MainLayout({
     } else {
       setIsLoggedIn(false)
       toast.success("Successfully logged out.")
-      router.refresh()
+      setTimeout(() => {
+        router.refresh()
+        setIsLoggingOut(false)
+      }, 1500)
     }
   }
 
@@ -177,6 +184,12 @@ export default function MainLayout({
         isVisible={isLoggingOut} 
         title="Securing Session" 
         description="Logging out of your sanctuary access..." 
+      />
+
+      <LoadingOverlay 
+        isVisible={isNavigatingToLogin} 
+        title="Redirecting to Gateway" 
+        description="Please wait while we establish your security verification gateway..." 
       />
     </BookingContext.Provider>
   )

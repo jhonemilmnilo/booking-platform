@@ -88,11 +88,15 @@ function LoginContent() {
           } else {
             showToast.success("Verification code sent to your email.")
           }
-          router.push(`/auth/verify?email=${encodeURIComponent(values.email)}`)
+          setTimeout(() => {
+            router.push(`/auth/verify?email=${encodeURIComponent(values.email)}`)
+          }, 1500)
         } else {
           showToast.success("Successfully logged in!")
-          router.push("/")
-          router.refresh()
+          setTimeout(() => {
+            router.push("/")
+            router.refresh()
+          }, 1500)
         }
       } else {
         setIsLoading(false)

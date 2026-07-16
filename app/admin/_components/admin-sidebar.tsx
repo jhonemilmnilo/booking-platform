@@ -49,8 +49,10 @@ export default function AdminSidebar() {
       setIsLoggingOut(true)
       await signOutAction()
       toast.success("Signed out successfully.")
-      router.push("/")
-      router.refresh()
+      setTimeout(() => {
+        router.push("/")
+        router.refresh()
+      }, 1500)
     } catch (err) {
       setIsLoggingOut(false)
       console.error("[Sidebar] Sign out failed:", err)

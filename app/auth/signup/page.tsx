@@ -84,7 +84,9 @@ function SignUpContent() {
       const result = await signUpWithEmailAction(values)
       if (result.success) {
         showToast.success("Account registration initiated. Verification code sent to your email.")
-        router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
+        setTimeout(() => {
+          router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
+        }, 1500)
       } else {
         setIsLoading(false)
         showToast.error(result.error || "Registration failed.")

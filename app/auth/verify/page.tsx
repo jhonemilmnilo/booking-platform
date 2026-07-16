@@ -90,17 +90,21 @@ function VerifyOtpContent() {
       const result = await verifyOtpAction(email, values.code)
       if (result.success) {
         showToast.success("Identity verified successfully!")
-        if (result.role === "ADMIN") {
-          router.push("/admin/settings")
-        } else {
-          router.push("/")
-        }
-        router.refresh()
+        setTimeout(() => {
+          if (result.role === "ADMIN") {
+            router.push("/admin/settings")
+          } else {
+            router.push("/")
+          }
+          router.refresh()
+        }, 1500)
       } else {
         setIsLoading(false)
         showToast.error(result.error || "Verification failed.")
         if (result.code === "lockout") {
-          router.push("/auth/signup")
+          setTimeout(() => {
+            router.push("/auth/signup")
+          }, 1500)
         }
       }
     })
