@@ -18,6 +18,13 @@ export async function GET(request: Request) {
       const email = user?.email
       if (email) {
         const emailClean = email.trim().toLowerCase()
+        
+        const exists = await prisma.user.findUnique({
+          where: { email: emailClean }
+        })
+        
+        const isSignupActive = isSignup || !exists
+
         const otpLockoutKey = `otp:lockout:${emailClean}`
         const otpLockout = await checkLockout(otpLockoutKey)
         if (otpLockout.active) {
@@ -27,19 +34,8 @@ export async function GET(request: Request) {
           const seconds = Math.ceil((elapsedMs % 60000) / 1000)
           const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
           const errorMsg = `Too many incorrect verification attempts. Please try again in ${timeString}.`
-          const targetUrl = isSignup ? `${origin}/auth/signup` : `${origin}/auth/login`
+          const targetUrl = isSignupActive ? `${origin}/auth/signup` : `${origin}/auth/login`
           return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
-        }
-
-        const exists = await prisma.user.findUnique({
-          where: { email: emailClean }
-        })
-
-        if (!exists && !isSignup) {
-          // Force sign out to clear session
-          await supabase.auth.signOut()
-          const errorMsg = "Account not found. Please register an account before signing in."
-          return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(errorMsg)}`)
         }
 
         // Force sign out of the active OAuth session to enforce OTP
@@ -64,7 +60,7 @@ export async function GET(request: Request) {
           }
 
           const errorMsg = `Too many verification requests. Please try again in ${timeString}.`
-          const targetUrl = isSignup ? `${origin}/auth/signup` : `${origin}/auth/login`
+          const targetUrl = isSignupActive ? `${origin}/auth/signup` : `${origin}/auth/login`
           return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
         }
 
@@ -74,11 +70,11 @@ export async function GET(request: Request) {
           const cooldownSec = incrementResult.cooldownMs / 1000
           const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
           const errorMsg = `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
-          const targetUrl = isSignup ? `${origin}/auth/signup` : `${origin}/auth/login`
+          const targetUrl = isSignupActive ? `${origin}/auth/signup` : `${origin}/auth/login`
           return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
         }
 
-        const verifyUrl = isSignup
+        const verifyUrl = isSignupActive
           ? `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}&signup=true`
           : `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}`
 

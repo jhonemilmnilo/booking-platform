@@ -25,7 +25,7 @@ These rules must be strictly followed when writing database schema, server actio
 - **Use Supabase Realtime Sparingly**: Do not enable realtime listeners globally. Only enable them on tables where instantaneous UI updates are critical (like an active dashboard queue).
 
 ## 7. Authentication & Registration Flow
-- **Social Login Pre-Registration Requirement**: If a user signs in via Google or Facebook but they do not have an existing user record in our `prisma.user` table, the system must abort the login, sign them out, and direct them to the sign-up page with a message stating they must register/sign up first. Do not auto-register users.
+- **Social Login Auto-Registration**: If a user signs in via Google or Facebook but they do not have an existing user record in our `prisma.user` table, the system will automatically route them to the OTP verification step and register/create their user record upon successful verification. They do not need to manually register first.
 - **Enforced OTP Verification**: All authentication flows (both standard credentials and social logins) must be validated with an **8-digit OTP** sent to their email.
 
 ## 8. Logging Rules & Security

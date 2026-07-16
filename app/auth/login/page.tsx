@@ -189,46 +189,32 @@ function LoginContent() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              disabled={isPending}
-              onClick={() => handleSocialLogin("google")}
-              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.6c-.28 1.5-.12 3.01-.8 4.27l3.19 2.47c1.87-1.73 2.95-4.28 2.95-7.3c0-.85-.13-1.7-.19-2.27z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.19-2.47c-.89.6-2.02.95-3.54.95c-3.13 0-5.78-2.11-6.73-4.96L1.22 17.58C3.21 21.5 7.28 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.27 14.61c-.25-.75-.39-1.55-.39-2.39c0-.84.14-1.64.39-2.39L1.22 6.94C.44 8.5 0 10.2 0 12c0 1.8.44 3.5 1.22 5.06l4.05-3.45z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0C7.28 0 3.21 2.5 1.22 6.42l4.05 3.45c.95-2.85 3.6-4.96 6.73-4.96z"
-                />
-              </svg>
-              <span className="text-xs font-bold uppercase tracking-wider">Google</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              disabled={isPending}
-              onClick={() => handleSocialLogin("facebook")}
-              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
-            >
-              <svg className="h-4 w-4 text-[#1877F2] fill-[#1877F2]" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span className="text-xs font-bold uppercase tracking-wider">Facebook</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            disabled={isPending}
+            onClick={() => handleSocialLogin("google")}
+            className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.6c-.28 1.5-.12 3.01-.8 4.27l3.19 2.47c1.87-1.73 2.95-4.28 2.95-7.3c0-.85-.13-1.7-.19-2.27z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.19-2.47c-.89.6-2.02.95-3.54.95c-3.13 0-5.78-2.11-6.73-4.96L1.22 17.58C3.21 21.5 7.28 24 12 24z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.27 14.61c-.25-.75-.39-1.55-.39-2.39c0-.84.14-1.64.39-2.39L1.22 6.94C.44 8.5 0 10.2 0 12c0 1.8.44 3.5 1.22 5.06l4.05-3.45z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0C7.28 0 3.21 2.5 1.22 6.42l4.05 3.45c.95-2.85 3.6-4.96 6.73-4.96z"
+              />
+            </svg>
+            <span className="text-xs font-bold uppercase tracking-wider">Continue with Google</span>
+          </Button>
 
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-border/50"></div>

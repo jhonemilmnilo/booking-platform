@@ -3,7 +3,18 @@
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import prisma from "@/lib/prisma/client"
-import { isRateLimited, incrementOtpSendAttempts, resetOtpSendLimits, maskEmail, checkLockout } from "@/lib/rate-limit"
+import {
+  isRateLimited,
+  incrementOtpSendAttempts,
+  resetOtpSendLimits,
+  maskEmail,
+  checkLockout,
+  hasActiveOtp,
+  setActiveOtp,
+  hasOtpAccess,
+  setOtpAccess,
+  clearOtpStates
+} from "@/lib/rate-limit"
 import { getSystemSetting, setSystemSetting } from "@/lib/settings"
 
 const loginSchema = z.object({
@@ -18,327 +29,391 @@ const signUpSchema = z.object({
 })
 
 export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>) {
-  const parsed = loginSchema.safeParse(formData)
-  if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
-  }
-
-  const { email, password } = parsed.data
-  const emailClean = email.trim().toLowerCase()
-  const supabase = await createClient()
-
-  // 1. Check if locked out
-  const lockoutKey = `pw:lockout:${emailClean}`
-  const existingLockout = await prisma.rateLimit.findUnique({
-    where: { key: lockoutKey }
-  })
-  const now = new Date()
-  if (existingLockout && existingLockout.expiresAt > now) {
-    const minutesLeft = Math.ceil((existingLockout.expiresAt.getTime() - now.getTime()) / 60000)
-    return {
-      success: false,
-      error: `Too many failed attempts! Login is locked for ${minutesLeft} minute(s).`,
-      code: "lockout"
-    }
-  }
-
-  // 1b. Check if locked out of OTP verification attempts
-  const otpLockoutKey = `otp:lockout:${emailClean}`
-  const existingOtpLockout = await prisma.rateLimit.findUnique({
-    where: { key: otpLockoutKey }
-  })
-  if (existingOtpLockout && existingOtpLockout.expiresAt > now) {
-    const elapsedMs = existingOtpLockout.expiresAt.getTime() - now.getTime()
-    const minutes = Math.floor(elapsedMs / 60000)
-    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-    const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
-    return {
-      success: false,
-      error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
-      code: "lockout"
-    }
-  }
-
-  // 2. Validate Credentials
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    // Track failed attempts (Max 3 failed logins per 3 minutes)
-    const failKey = `pw:fail:${emailClean}`
-    const limitCheck = await isRateLimited(failKey, 3, 180000)
-    if (!limitCheck.success || limitCheck.remaining === 0) {
-      await prisma.rateLimit.upsert({
-        where: { key: lockoutKey },
-        create: { key: lockoutKey, attempts: 1, expiresAt: new Date(Date.now() + 180000) },
-        update: { attempts: 1, expiresAt: new Date(Date.now() + 180000) }
-      })
-      return {
-        success: false,
-        error: "Too many failed attempts! Login is locked for 3 minutes.",
-        code: "lockout"
-      }
-    }
-    const attemptsLeft = limitCheck.remaining
-    return { 
-      success: false, 
-      error: `Invalid email or password. You have ${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} left.` 
-    }
-  }
-
-  // Clear fail tracker on success
-  await prisma.rateLimit.deleteMany({
-    where: { key: { in: [`pw:fail:${emailClean}`, lockoutKey] } }
-  })
-
-  // Check if user profile exists in database
-  const exists = await prisma.user.findUnique({
-    where: { email: emailClean }
-  })
-
-  if (!exists) {
-    await supabase.auth.signOut()
-    return {
-      success: false,
-      error: "Account not found. Please register an account before signing in."
-    }
-  }
-
-  // Clear active session to enforce OTP
-  await supabase.auth.signOut()
-
-  // Check progressive lockout for sending OTP
-  const sendLockoutKey = `otp:send_lockout:${emailClean}`
-  const sendLockout = await checkLockout(sendLockoutKey)
-  if (sendLockout.active) {
-    const elapsedMs = sendLockout.remainingMs
-    const hours = Math.floor(elapsedMs / 3600000)
-    const minutes = Math.floor((elapsedMs % 3600000) / 60000)
-    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-    
-    let timeString = ""
-    if (hours > 0) {
-      timeString = `${hours} hour(s) and ${minutes} minute(s)`
-    } else if (minutes > 0) {
-      timeString = `${minutes} minute(s) and ${seconds} second(s)`
-    } else {
-      timeString = `${seconds} second(s)`
+  try {
+    const parsed = loginSchema.safeParse(formData)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message }
     }
 
-    return {
-      success: false,
-      error: `Too many verification requests. Please try again in ${timeString}.`
-    }
-  }
+    const { email, password } = parsed.data
+    const emailClean = email.trim().toLowerCase()
+    const supabase = await createClient()
 
-  // Increment send attempts
-  const incrementResult = await incrementOtpSendAttempts(emailClean)
-  if (incrementResult.locked) {
-    const cooldownSec = incrementResult.cooldownMs / 1000
-    const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
-    return {
-      success: false,
-      error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
-    }
-  }
-
-  // 3. Check local database cooldown for sending OTP to avoid hitting Supabase rate limit
-  const otpCooldownKey = `otp:send:${emailClean}`
-  const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
-  if (!otpRateLimit.success) {
-    return { success: true, otpRequired: true, otpAlreadySent: true }
-  }
-
-  // 4. Send Login OTP
-  const { error: otpError } = await supabase.auth.signInWithOtp({
-    email,
-  })
-
-  if (otpError) {
-    if (otpError.message.includes("For security purposes")) {
-      return { success: true, otpRequired: true, otpAlreadySent: true }
-    }
-    return { success: false, error: otpError.message }
-  }
-
-  console.info(`[Auth] Login OTP successfully requested for email: ${maskEmail(emailClean)}`)
-  return { success: true, otpRequired: true }
-}
-
-export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchema>) {
-  const parsed = signUpSchema.safeParse(formData)
-  if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0].message }
-  }
-
-  const { email, password, fullName } = parsed.data
-  const emailClean = email.trim().toLowerCase()
-  const supabase = await createClient()
-
-  // Check if locked out of OTP verification attempts
-  const otpLockoutKey = `otp:lockout:${emailClean}`
-  const otpLockout = await checkLockout(otpLockoutKey)
-  if (otpLockout.active) {
-    const elapsedMs = otpLockout.remainingMs
-    const minutes = Math.floor(elapsedMs / 60000)
-    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-    const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
-    return {
-      success: false,
-      error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
-      code: "lockout"
-    }
-  }
-
-  // Check progressive lockout for sending OTP
-  const sendLockoutKey = `otp:send_lockout:${emailClean}`
-  const sendLockout = await checkLockout(sendLockoutKey)
-  if (sendLockout.active) {
-    const elapsedMs = sendLockout.remainingMs
-    const hours = Math.floor(elapsedMs / 3600000)
-    const minutes = Math.floor((elapsedMs % 3600000) / 60000)
-    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-    
-    let timeString = ""
-    if (hours > 0) {
-      timeString = `${hours} hour(s) and ${minutes} minute(s)`
-    } else if (minutes > 0) {
-      timeString = `${minutes} minute(s) and ${seconds} second(s)`
-    } else {
-      timeString = `${seconds} second(s)`
-    }
-
-    return {
-      success: false,
-      error: `Too many verification requests. Please try again in ${timeString}.`
-    }
-  }
-
-  // Increment send attempts
-  const incrementResult = await incrementOtpSendAttempts(emailClean)
-  if (incrementResult.locked) {
-    const cooldownSec = incrementResult.cooldownMs / 1000
-    const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
-    return {
-      success: false,
-      error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
-    }
-  }
-
-  // Sign up in Supabase Auth (sends verification email code automatically)
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-      },
-    },
-  })
-
-  if (error) {
-    if (error.message.includes("For security purposes")) {
-      return { success: true, user: data?.user, otpAlreadySent: true }
-    }
-    return { success: false, error: error.message }
-  }
-
-  console.info(`[Auth] Signup OTP successfully requested for email: ${maskEmail(emailClean)}`)
-  return { success: true, user: data.user }
-}
-
-export async function verifyOtpAction(email: string, code: string) {
-  const emailClean = email.trim().toLowerCase()
-  const supabase = await createClient()
-
-  // 1. Check lockout status
-  const lockoutKey = `otp:lockout:${emailClean}`
-  const otpLockout = await checkLockout(lockoutKey)
-  if (otpLockout.active) {
-    const elapsedMs = otpLockout.remainingMs
-    const minutes = Math.floor(elapsedMs / 60000)
-    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-    const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
-    return {
-      success: false,
-      error: `Too many incorrect OTP codes. Verification is locked for ${timeString}.`,
-      code: "lockout"
-    }
-  }
-
-  // Try verification (first signup type, then fallback to email login type)
-  let { data, error } = await supabase.auth.verifyOtp({
-    email,
-    token: code,
-    type: "signup"
-  })
-
-  if (error) {
-    const { data: retryData, error: retryError } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: "email"
+    // 1. Check if locked out
+    const lockoutKey = `pw:lockout:${emailClean}`
+    const existingLockout = await prisma.rateLimit.findUnique({
+      where: { key: lockoutKey }
     })
-    data = retryData
-    error = retryError
-  }
-
-  if (error) {
-    // Track failed attempts (Max 3 failed OTP entries per 3 minutes)
-    const failKey = `otp:fail:${emailClean}`
-    const limitCheck = await isRateLimited(failKey, 3, 180000)
-    if (!limitCheck.success || limitCheck.remaining === 0) {
-      await prisma.rateLimit.upsert({
-        where: { key: lockoutKey },
-        create: { key: lockoutKey, attempts: 1, expiresAt: new Date(Date.now() + 180000) },
-        update: { attempts: 1, expiresAt: new Date(Date.now() + 180000) }
-      })
+    const now = new Date()
+    if (existingLockout && existingLockout.expiresAt > now) {
+      const minutesLeft = Math.ceil((existingLockout.expiresAt.getTime() - now.getTime()) / 60000)
       return {
         success: false,
-        error: "Too many incorrect OTP codes. OTP verification is locked for 3 minutes.",
+        error: `Too many failed attempts! Login is locked for ${minutesLeft} minute(s).`,
         code: "lockout"
       }
     }
-    const attemptsLeft = limitCheck.remaining
-    return {
-      success: false,
-      error: `Incorrect OTP code. You have ${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} left.`
+
+    // 1b. Check if locked out of OTP verification attempts
+    const otpLockoutKey = `otp:lockout:${emailClean}`
+    const existingOtpLockout = await prisma.rateLimit.findUnique({
+      where: { key: otpLockoutKey }
+    })
+    if (existingOtpLockout && existingOtpLockout.expiresAt > now) {
+      const elapsedMs = existingOtpLockout.expiresAt.getTime() - now.getTime()
+      const minutes = Math.floor(elapsedMs / 60000)
+      const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+      const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
+      return {
+        success: false,
+        error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
+        code: "lockout"
+      }
     }
-  }
 
-  // Success! Clear fail trackers and reset progressive OTP send limits
-  await resetOtpSendLimits(emailClean)
-  await prisma.rateLimit.deleteMany({
-    where: { key: { in: [`otp:fail:${emailClean}`, lockoutKey] } }
-  })
+    // 2. Validate Credentials
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-  // 2. Profile Syncing: Ensure profile exists in public.User table
-  const user = data.user
-  let role = "GUEST"
-  if (user) {
+    if (error) {
+      // Track failed attempts (Max 3 failed logins per 3 minutes)
+      const failKey = `pw:fail:${emailClean}`
+      const limitCheck = await isRateLimited(failKey, 3, 180000)
+      if (!limitCheck.success || limitCheck.remaining === 0) {
+        await prisma.rateLimit.upsert({
+          where: { key: lockoutKey },
+          create: { key: lockoutKey, attempts: 1, expiresAt: new Date(Date.now() + 180000) },
+          update: { attempts: 1, expiresAt: new Date(Date.now() + 180000) }
+        })
+        return {
+          success: false,
+          error: "Too many failed attempts! Login is locked for 3 minutes.",
+          code: "lockout"
+        }
+      }
+      const attemptsLeft = limitCheck.remaining
+      return { 
+        success: false, 
+        error: `Invalid email or password. You have ${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} left.` 
+      }
+    }
+
+    // Clear fail tracker on success
+    await prisma.rateLimit.deleteMany({
+      where: { key: { in: [`pw:fail:${emailClean}`, lockoutKey] } }
+    })
+
+    // Check if user profile exists in database
     const exists = await prisma.user.findUnique({
-      where: { id: user.id }
+      where: { email: emailClean }
     })
 
     if (!exists) {
-      // Create user record in our public table if it doesn't exist
-      const newUser = await prisma.user.create({
-        data: {
-          id: user.id,
-          email: user.email!,
-          fullName: user.user_metadata["full_name"] || "New Guest",
-          role: "GUEST"
-        }
-      })
-      role = newUser.role
-    } else {
-      role = exists.role
+      await supabase.auth.signOut()
+      return {
+        success: false,
+        error: "Account not found. Please register an account before signing in."
+      }
+    }
+
+    // Clear active session to enforce OTP
+    await supabase.auth.signOut()
+
+    // 2b. Check if there's already an active, unexpired OTP for this email
+    const activeOtp = await hasActiveOtp(emailClean)
+    if (activeOtp) {
+      // Authorize access to OTP verification page
+      await setOtpAccess(emailClean, 300000)
+      console.info(`[Auth] Active OTP found in Redis for email: ${maskEmail(emailClean)}. Skipping redundant email send.`)
+      return { success: true, otpRequired: true, otpAlreadySent: true }
+    }
+
+    // Check progressive lockout for sending OTP
+    const sendLockoutKey = `otp:send_lockout:${emailClean}`
+    const sendLockout = await checkLockout(sendLockoutKey)
+    if (sendLockout.active) {
+      const elapsedMs = sendLockout.remainingMs
+      const hours = Math.floor(elapsedMs / 3600000)
+      const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+      const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+      
+      let timeString = ""
+      if (hours > 0) {
+        timeString = `${hours} hour(s) and ${minutes} minute(s)`
+      } else if (minutes > 0) {
+        timeString = `${minutes} minute(s) and ${seconds} second(s)`
+      } else {
+        timeString = `${seconds} second(s)`
+      }
+
+      return {
+        success: false,
+        error: `Too many verification requests. Please try again in ${timeString}.`
+      }
+    }
+
+    // Increment send attempts
+    const incrementResult = await incrementOtpSendAttempts(emailClean)
+    if (incrementResult.locked) {
+      const cooldownSec = incrementResult.cooldownMs / 1000
+      const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+      return {
+        success: false,
+        error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+      }
+    }
+
+    // 3. Check local database cooldown for sending OTP to avoid hitting Supabase rate limit
+    const otpCooldownKey = `otp:send:${emailClean}`
+    const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
+    if (!otpRateLimit.success) {
+      // Even if database cooldown triggered, verify if we have access
+      await setOtpAccess(emailClean, 300000)
+      return { success: true, otpRequired: true, otpAlreadySent: true }
+    }
+
+    // 4. Send Login OTP
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email,
+    })
+
+    if (otpError) {
+      if (otpError.message.includes("For security purposes")) {
+        await setOtpAccess(emailClean, 300000)
+        return { success: true, otpRequired: true, otpAlreadySent: true }
+      }
+      return { success: false, error: otpError.message }
+    }
+
+    // Save active OTP state and grant access in Redis
+    await setActiveOtp(emailClean, 300000) // OTP valid for 5 minutes
+    await setOtpAccess(emailClean, 300000) // Allow access to verify page for 5 minutes
+
+    console.info(`[Auth] Login OTP successfully requested for email: ${maskEmail(emailClean)}`)
+    return { success: true, otpRequired: true }
+  } catch (error) {
+    console.error("[Auth] Login error details:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred during login. Please try again."
     }
   }
+}
 
-  return { success: true, role }
+export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchema>) {
+  try {
+    const parsed = signUpSchema.safeParse(formData)
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message }
+    }
+
+    const { email, password, fullName } = parsed.data
+    const emailClean = email.trim().toLowerCase()
+    const supabase = await createClient()
+
+    // Check if an active OTP has been sent and is not yet expired
+    const activeOtp = await hasActiveOtp(emailClean)
+    if (activeOtp) {
+      // Authorize access to OTP verification page
+      await setOtpAccess(emailClean, 300000)
+      console.info(`[Auth] Active OTP found in Redis for signup email: ${maskEmail(emailClean)}. Skipping redundant email send.`)
+      return { success: true, otpAlreadySent: true }
+    }
+
+    // Check if locked out of OTP verification attempts
+    const otpLockoutKey = `otp:lockout:${emailClean}`
+    const otpLockout = await checkLockout(otpLockoutKey)
+    if (otpLockout.active) {
+      const elapsedMs = otpLockout.remainingMs
+      const minutes = Math.floor(elapsedMs / 60000)
+      const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+      const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
+      return {
+        success: false,
+        error: `Too many incorrect verification attempts. Please try again in ${timeString}.`,
+        code: "lockout"
+      }
+    }
+
+    // Check progressive lockout for sending OTP
+    const sendLockoutKey = `otp:send_lockout:${emailClean}`
+    const sendLockout = await checkLockout(sendLockoutKey)
+    if (sendLockout.active) {
+      const elapsedMs = sendLockout.remainingMs
+      const hours = Math.floor(elapsedMs / 3600000)
+      const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+      const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+      
+      let timeString = ""
+      if (hours > 0) {
+        timeString = `${hours} hour(s) and ${minutes} minute(s)`
+      } else if (minutes > 0) {
+        timeString = `${minutes} minute(s) and ${seconds} second(s)`
+      } else {
+        timeString = `${seconds} second(s)`
+      }
+
+      return {
+        success: false,
+        error: `Too many verification requests. Please try again in ${timeString}.`
+      }
+    }
+
+    // Increment send attempts
+    const incrementResult = await incrementOtpSendAttempts(emailClean)
+    if (incrementResult.locked) {
+      const cooldownSec = incrementResult.cooldownMs / 1000
+      const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+      return {
+        success: false,
+        error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+      }
+    }
+
+    // Sign up in Supabase Auth (sends verification email code automatically)
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    })
+
+    if (error) {
+      if (error.message.includes("For security purposes")) {
+        await setOtpAccess(emailClean, 300000)
+        return { success: true, user: data?.user, otpAlreadySent: true }
+      }
+      return { success: false, error: error.message }
+    }
+
+    // Save active OTP state and grant access in Redis
+    await setActiveOtp(emailClean, 300000) // OTP valid for 5 minutes
+    await setOtpAccess(emailClean, 300000) // Allow access to verify page for 5 minutes
+
+    console.info(`[Auth] Signup OTP successfully requested for email: ${maskEmail(emailClean)}`)
+    return { success: true, user: data.user }
+  } catch (error) {
+    console.error("[Auth] Signup error details:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred during signup. Please try again."
+    }
+  }
+}
+
+export async function verifyOtpAction(email: string, code: string) {
+  try {
+    const emailClean = email.trim().toLowerCase()
+    const supabase = await createClient()
+
+    // Check if the user is authorized to verify OTP (access flag in Redis)
+    const hasAccess = await hasOtpAccess(emailClean)
+    if (!hasAccess) {
+      return {
+        success: false,
+        error: "Session expired or invalid. Please go back and sign in again."
+      }
+    }
+
+    // 1. Check lockout status
+    const lockoutKey = `otp:lockout:${emailClean}`
+    const otpLockout = await checkLockout(lockoutKey)
+    if (otpLockout.active) {
+      const elapsedMs = otpLockout.remainingMs
+      const minutes = Math.floor(elapsedMs / 60000)
+      const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+      const timeString = minutes > 0 ? `${minutes} minute(s) and ${seconds} second(s)` : `${seconds} second(s)`
+      return {
+        success: false,
+        error: `Too many incorrect OTP codes. Verification is locked for ${timeString}.`,
+        code: "lockout"
+      }
+    }
+
+    // Try verification (first signup type, then fallback to email login type)
+    let { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: "signup"
+    })
+
+    if (error) {
+      const { data: retryData, error: retryError } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email"
+      })
+      data = retryData
+      error = retryError
+    }
+
+    if (error) {
+      // Track failed attempts (Max 3 failed OTP entries per 3 minutes)
+      const failKey = `otp:fail:${emailClean}`
+      const limitCheck = await isRateLimited(failKey, 3, 180000)
+      if (!limitCheck.success || limitCheck.remaining === 0) {
+        await prisma.rateLimit.upsert({
+          where: { key: lockoutKey },
+          create: { key: lockoutKey, attempts: 1, expiresAt: new Date(Date.now() + 180000) },
+          update: { attempts: 1, expiresAt: new Date(Date.now() + 180000) }
+        })
+        return {
+          success: false,
+          error: "Too many incorrect OTP codes. OTP verification is locked for 3 minutes.",
+          code: "lockout"
+        }
+      }
+      const attemptsLeft = limitCheck.remaining
+      return {
+        success: false,
+        error: `Incorrect OTP code. You have ${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} left.`
+      }
+    }
+
+    // Success! Clear fail trackers, active OTP states, and reset progressive OTP send limits
+    await resetOtpSendLimits(emailClean)
+    await clearOtpStates(emailClean)
+    await prisma.rateLimit.deleteMany({
+      where: { key: { in: [`otp:fail:${emailClean}`, lockoutKey] } }
+    })
+
+    // 2. Profile Syncing: Ensure profile exists in public.User table
+    const user = data.user
+    let role = "GUEST"
+    if (user) {
+      const exists = await prisma.user.findUnique({
+        where: { id: user.id }
+      })
+
+      if (!exists) {
+        // Create user record in our public table if it doesn't exist
+        const newUser = await prisma.user.create({
+          data: {
+            id: user.id,
+            email: user.email!,
+            fullName: user.user_metadata["full_name"] || "New Guest",
+            role: "GUEST"
+          }
+        })
+        role = newUser.role
+      } else {
+        role = exists.role
+      }
+    }
+
+    return { success: true, role }
+  } catch (error) {
+    console.error("[Auth] Verify OTP error details:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred during OTP verification."
+    }
+  }
 }
 
 export async function getSocialLoginUrlAction(provider: "google" | "facebook", origin: string, isSignup?: boolean) {
@@ -368,66 +443,89 @@ export async function signOutAction() {
 }
 
 export async function resendOtpAction(email: string) {
-  const emailClean = email.trim().toLowerCase()
-  const supabase = await createClient()
+  try {
+    const emailClean = email.trim().toLowerCase()
+    const supabase = await createClient()
 
-  // 1. Check progressive lockout for sending OTP
-  const sendLockoutKey = `otp:send_lockout:${emailClean}`
-  const sendLockout = await checkLockout(sendLockoutKey)
-  if (sendLockout.active) {
-    const elapsedMs = sendLockout.remainingMs
-    const hours = Math.floor(elapsedMs / 3600000)
-    const minutes = Math.floor((elapsedMs % 3600000) / 60000)
-    const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-    
-    let timeString = ""
-    if (hours > 0) {
-      timeString = `${hours} hour(s) and ${minutes} minute(s)`
-    } else if (minutes > 0) {
-      timeString = `${minutes} minute(s) and ${seconds} second(s)`
-    } else {
-      timeString = `${seconds} second(s)`
+    // Verify the user is authorized to perform OTP actions (has access flag in Redis)
+    const hasAccess = await hasOtpAccess(emailClean)
+    if (!hasAccess) {
+      return {
+        success: false,
+        error: "Session expired or invalid. Please go back and sign in again."
+      }
     }
 
-    return {
-      success: false,
-      error: `Too many verification requests. Please try again in ${timeString}.`
+    // 1. Check progressive lockout for sending OTP
+    const sendLockoutKey = `otp:send_lockout:${emailClean}`
+    const sendLockout = await checkLockout(sendLockoutKey)
+    if (sendLockout.active) {
+      const elapsedMs = sendLockout.remainingMs
+      const hours = Math.floor(elapsedMs / 3600000)
+      const minutes = Math.floor((elapsedMs % 3600000) / 60000)
+      const seconds = Math.ceil((elapsedMs % 60000) / 1000)
+      
+      let timeString = ""
+      if (hours > 0) {
+        timeString = `${hours} hour(s) and ${minutes} minute(s)`
+      } else if (minutes > 0) {
+        timeString = `${minutes} minute(s) and ${seconds} second(s)`
+      } else {
+        timeString = `${seconds} second(s)`
+      }
+
+      return {
+        success: false,
+        error: `Too many verification requests. Please try again in ${timeString}.`
+      }
     }
-  }
 
-  // 2. Increment send attempts
-  const incrementResult = await incrementOtpSendAttempts(emailClean)
-  if (incrementResult.locked) {
-    const cooldownSec = incrementResult.cooldownMs / 1000
-    const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
-    return {
-      success: false,
-      error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`,
-      code: "lockout"
+    // 2. Increment send attempts
+    const incrementResult = await incrementOtpSendAttempts(emailClean)
+    if (incrementResult.locked) {
+      const cooldownSec = incrementResult.cooldownMs / 1000
+      const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+      return {
+        success: false,
+        error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`,
+        code: "lockout"
+      }
     }
-  }
 
-  // 3. Check local database 60s cooldown for sending OTP
-  const otpCooldownKey = `otp:send:${emailClean}`
-  const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
-  if (!otpRateLimit.success) {
-    return { success: true, otpAlreadySent: true }
-  }
-
-  // 4. Trigger OTP delivery
-  const { error: otpError } = await supabase.auth.signInWithOtp({
-    email: emailClean,
-  })
-
-  if (otpError) {
-    if (otpError.message.includes("For security purposes")) {
+    // 3. Check local database 60s cooldown for sending OTP
+    const otpCooldownKey = `otp:send:${emailClean}`
+    const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
+    if (!otpRateLimit.success) {
+      await setOtpAccess(emailClean, 300000)
       return { success: true, otpAlreadySent: true }
     }
-    return { success: false, error: otpError.message }
-  }
 
-  console.info(`[Auth] OTP successfully resent to email: ${maskEmail(emailClean)}`)
-  return { success: true }
+    // 4. Trigger OTP delivery
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: emailClean,
+    })
+
+    if (otpError) {
+      if (otpError.message.includes("For security purposes")) {
+        await setOtpAccess(emailClean, 300000)
+        return { success: true, otpAlreadySent: true }
+      }
+      return { success: false, error: otpError.message }
+    }
+
+    // Refresh active OTP state and grant access in Redis
+    await setActiveOtp(emailClean, 300000) // Reset active OTP valid for 5 minutes
+    await setOtpAccess(emailClean, 300000) // Reset verification page access for 5 minutes
+
+    console.info(`[Auth] OTP successfully resent to email: ${maskEmail(emailClean)}`)
+    return { success: true }
+  } catch (error) {
+    console.error("[Auth] Resend OTP error details:", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "An unexpected error occurred while resending the OTP."
+    }
+  }
 }
 
 export async function getHeroVideoUrlsAction() {

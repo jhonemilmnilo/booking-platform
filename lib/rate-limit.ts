@@ -329,3 +329,125 @@ export async function checkLockout(key: string): Promise<{ active: boolean; rema
   }
   return { active: false, remainingMs: 0 }
 }
+
+/**
+ * Checks if an active OTP has been sent and is not yet expired.
+ */
+export async function hasActiveOtp(email: string): Promise<boolean> {
+  const key = `otp:active_state:${email}`
+  if (redis && redis.status === "ready") {
+    try {
+      const exists = await redis.exists(key)
+      return exists === 1
+    } catch (error) {
+      console.warn("[RateLimit] Redis hasActiveOtp check failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { key } })
+    return !!record && record.expiresAt > new Date()
+  } catch (error) {
+    console.error("[RateLimit] Database hasActiveOtp check failed:", error)
+    return false
+  }
+}
+
+/**
+ * Sets the active OTP state tracking key in Redis (or DB fallback).
+ */
+export async function setActiveOtp(email: string, durationMs: number): Promise<void> {
+  const key = `otp:active_state:${email}`
+  const expiresAt = new Date(Date.now() + durationMs)
+  if (redis && redis.status === "ready") {
+    try {
+      await redis.set(key, "active", "PX", durationMs)
+      return
+    } catch (error) {
+      console.warn("[RateLimit] Redis setActiveOtp failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      create: { key, attempts: 1, expiresAt },
+      update: { expiresAt }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database setActiveOtp failed:", error)
+  }
+}
+
+/**
+ * Checks if the user is authorized to perform OTP verification (OTP access token).
+ */
+export async function hasOtpAccess(email: string): Promise<boolean> {
+  const key = `otp:access:${email}`
+  if (redis && redis.status === "ready") {
+    try {
+      const exists = await redis.exists(key)
+      return exists === 1
+    } catch (error) {
+      console.warn("[RateLimit] Redis hasOtpAccess check failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { key } })
+    return !!record && record.expiresAt > new Date()
+  } catch (error) {
+    console.error("[RateLimit] Database hasOtpAccess check failed:", error)
+    return false
+  }
+}
+
+/**
+ * Sets the OTP access token/flag in Redis (or DB fallback).
+ */
+export async function setOtpAccess(email: string, durationMs: number): Promise<void> {
+  const key = `otp:access:${email}`
+  const expiresAt = new Date(Date.now() + durationMs)
+  if (redis && redis.status === "ready") {
+    try {
+      await redis.set(key, "allowed", "PX", durationMs)
+      return
+    } catch (error) {
+      console.warn("[RateLimit] Redis setOtpAccess failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      create: { key, attempts: 1, expiresAt },
+      update: { expiresAt }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database setOtpAccess failed:", error)
+  }
+}
+
+/**
+ * Clears the active OTP state and access tokens (e.g. upon successful verification).
+ */
+export async function clearOtpStates(email: string): Promise<void> {
+  const keys = [`otp:active_state:${email}`, `otp:access:${email}`]
+  if (redis && redis.status === "ready") {
+    try {
+      await redis.del(...keys)
+      return
+    } catch (error) {
+      console.warn("[RateLimit] Redis clearOtpStates failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.deleteMany({
+      where: { key: { in: keys } }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database clearOtpStates failed:", error)
+  }
+}
+
