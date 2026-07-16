@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { verifyOtpAction, resendOtpAction, getSystemSettingsAction, getOtpCooldownAction } from "../actions"
+import LoadingOverlay from "@/components/shared/LoadingOverlay"
 
 import { Suspense } from "react"
 
@@ -30,6 +31,7 @@ function VerifyOtpContent() {
   const [resendTimer, setResendTimer] = React.useState(0)
   const [isResending, setIsResending] = React.useState(false)
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
+  const [isLoading, setIsLoading] = React.useState(false)
 
   // Track active OTP session and initialize/restore the countdown timer from Redis/DB
   React.useEffect(() => {
@@ -83,6 +85,7 @@ function VerifyOtpContent() {
       return
     }
 
+    setIsLoading(true)
     startTransition(async () => {
       const result = await verifyOtpAction(email, values.code)
       if (result.success) {
@@ -94,6 +97,7 @@ function VerifyOtpContent() {
         }
         router.refresh()
       } else {
+        setIsLoading(false)
         showToast.error(result.error || "Verification failed.")
         if (result.code === "lockout") {
           router.push("/auth/signup")
@@ -240,6 +244,13 @@ function VerifyOtpContent() {
           </p>
         </div>
       </div>
+      
+      {/* Premium Loader during successful verification redirect */}
+      <LoadingOverlay 
+        isVisible={isLoading} 
+        title="Preparing Sanctuary" 
+        description="Please wait while we finalize your luxury escape environment..." 
+      />
     </div>
   )
 }

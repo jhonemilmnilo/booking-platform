@@ -10,6 +10,7 @@ import { Room } from "@/components/shared/RoomCard"
 import BookingModal from "@/components/shared/BookingModal"
 import Header from "./_sections/header"
 import Footer from "./_sections/footer"
+import LoadingOverlay from "@/components/shared/LoadingOverlay"
 
 const MOCK_ROOMS: Room[] = [
   {
@@ -53,6 +54,7 @@ export default function MainLayout({
 }) {
   const router = useRouter()
   const [isLoggedIn, setIsLoggedIn] = React.useState(false)
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false)
   const [selectedRoom, setSelectedRoom] = React.useState<Room | null>(null)
   const [isModalOpen, setIsModalOpen] = React.useState(false)
 
@@ -121,9 +123,11 @@ export default function MainLayout({
   }
 
   const handleLogOut = async () => {
+    setIsLoggingOut(true)
     const supabase = createClient()
     const { error } = await supabase.auth.signOut()
     if (error) {
+      setIsLoggingOut(false)
       toast.error(error.message)
     } else {
       setIsLoggedIn(false)
@@ -167,6 +171,12 @@ export default function MainLayout({
         room={selectedRoom} 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+      />
+
+      <LoadingOverlay 
+        isVisible={isLoggingOut} 
+        title="Securing Session" 
+        description="Logging out of your sanctuary access..." 
       />
     </BookingContext.Provider>
   )

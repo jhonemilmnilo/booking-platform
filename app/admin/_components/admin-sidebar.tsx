@@ -4,6 +4,7 @@ import * as React from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { signOutAction } from "@/app/auth/actions"
+import LoadingOverlay from "@/components/shared/LoadingOverlay"
 
 interface SubItem {
   name: string
@@ -41,14 +42,17 @@ export default function AdminSidebar() {
 
 
   const [expandedItems, setExpandedItems] = React.useState<Record<string, boolean>>({})
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false)
 
   const handleSignOut = async () => {
     try {
+      setIsLoggingOut(true)
       await signOutAction()
       toast.success("Signed out successfully.")
       router.push("/")
       router.refresh()
     } catch (err) {
+      setIsLoggingOut(false)
       console.error("[Sidebar] Sign out failed:", err)
       toast.error("Failed to sign out.")
     }
@@ -160,6 +164,12 @@ export default function AdminSidebar() {
           <span>Log Out</span>
         </button>
       </div>
+
+      <LoadingOverlay 
+        isVisible={isLoggingOut} 
+        title="Securing Portal" 
+        description="Deauthorizing administrator session credentials..." 
+      />
     </aside>
   )
 }
