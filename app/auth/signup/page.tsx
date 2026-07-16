@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signUpWithEmailAction, getSocialLoginUrlAction } from "../actions"
+import { signUpWithEmailAction, getSocialLoginUrlAction, getSystemSettingsAction } from "../actions"
 
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
@@ -30,6 +30,7 @@ function SignUpContent() {
   const [showPassword, setShowPassword] = React.useState(false)
 
   const router = useRouter()
+  const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
   const searchParams = useSearchParams()
   const errorParam = searchParams.get("error")
 
@@ -47,7 +48,7 @@ function SignUpContent() {
   const [isPasswordFocused, setIsPasswordFocused] = React.useState(false)
   const [isNameFocused, setIsNameFocused] = React.useState(false)
 
-  // Handle BFCache spinner freeze and active OTP check
+  // Handle BFCache spinner freeze
   React.useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
@@ -56,25 +57,21 @@ function SignUpContent() {
     }
     window.addEventListener("pageshow", handlePageShow)
 
-    const pendingEmail = localStorage.getItem("pending_otp_email")
-    const pendingTime = localStorage.getItem("pending_otp_timestamp")
-    const isBypassed = sessionStorage.getItem("otp_bypassed") === "true"
-    if (pendingEmail && pendingTime && !isBypassed) {
-      const elapsed = Date.now() - parseInt(pendingTime, 10)
-      if (elapsed < 5 * 60 * 1000) {
-        showToast.info("Verification in Progress", "We already sent an OTP code. Please check your inbox or spam folder.")
-        router.push(`/auth/verify?email=${encodeURIComponent(pendingEmail)}`)
-        return
-      } else {
-        localStorage.removeItem("pending_otp_email")
-        localStorage.removeItem("pending_otp_timestamp")
-      }
-    }
-
     return () => {
       window.removeEventListener("pageshow", handlePageShow)
     }
-  }, [router])
+  }, [])
+
+  React.useEffect(() => {
+    getSystemSettingsAction()
+      .then((settings) => {
+        const primary = settings.theme_color_primary || settings.themeColorPrimary
+        if (primary) {
+          setThemeColorPrimary(primary)
+        }
+      })
+      .catch((err) => console.warn(err))
+  }, [])
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -83,12 +80,13 @@ function SignUpContent() {
 
   const handleEmailSignUp = (values: z.infer<typeof signUpSchema>) => {
     setIsLoading(true)
-    sessionStorage.removeItem("otp_bypassed")
     startTransition(async () => {
       const result = await signUpWithEmailAction(values)
       if (result.success) {
         showToast.success("Account registration initiated. Verification code sent to your email.")
-        router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
+        setTimeout(() => {
+          router.push(`/auth/verify?email=${encodeURIComponent(values.email)}&signup=true`)
+        }, 1500)
       } else {
         setIsLoading(false)
         showToast.error(result.error || "Registration failed.")
@@ -98,7 +96,6 @@ function SignUpContent() {
 
   const handleSocialLogin = (provider: "google" | "facebook") => {
     setIsLoading(true)
-    sessionStorage.removeItem("otp_bypassed")
     startTransition(async () => {
       const origin = window.location.origin
       const result = await getSocialLoginUrlAction(provider, origin, true)
@@ -128,10 +125,6 @@ function SignUpContent() {
         <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-transparent" />
 
         <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
-          <div className="flex items-center gap-2">
-            <Compass className="h-6 w-6 text-emerald-400 animate-spin-slow" />
-            <span className="text-xs font-bold tracking-widest uppercase text-emerald-300">Premium Tropical Sanctuary</span>
-          </div>
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
             Experience OceanHilling Platform
           </h2>
@@ -158,46 +151,32 @@ function SignUpContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              disabled={isPending}
-              onClick={() => handleSocialLogin("google")}
-              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.6c-.28 1.5-.12 3.01-.8 4.27l3.19 2.47c1.87-1.73 2.95-4.28 2.95-7.3c0-.85-.13-1.7-.19-2.27z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.19-2.47c-.89.6-2.02.95-3.54.95c-3.13 0-5.78-2.11-6.73-4.96L1.22 17.58C3.21 21.5 7.28 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.27 14.61c-.25-.75-.39-1.55-.39-2.39c0-.84.14-1.64.39-2.39L1.22 6.94C.44 8.5 0 10.2 0 12c0 1.8.44 3.5 1.22 5.06l4.05-3.45z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0C7.28 0 3.21 2.5 1.22 6.42l4.05 3.45c.95-2.85 3.6-4.96 6.73-4.96z"
-                />
-              </svg>
-              <span className="text-xs font-bold uppercase tracking-wider">Google</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              disabled={isPending}
-              onClick={() => handleSocialLogin("facebook")}
-              className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
-            >
-              <svg className="h-4 w-4 text-[#1877F2] fill-[#1877F2]" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-              <span className="text-xs font-bold uppercase tracking-wider">Facebook</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            disabled={isPending}
+            onClick={() => handleSocialLogin("google")}
+            className="h-11 w-full flex items-center justify-center gap-2 border-border/80 bg-background hover:bg-muted/30 text-foreground rounded-xl cursor-pointer"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.9h6.6c-.28 1.5-.12 3.01-.8 4.27l3.19 2.47c1.87-1.73 2.95-4.28 2.95-7.3c0-.85-.13-1.7-.19-2.27z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.19-2.47c-.89.6-2.02.95-3.54.95c-3.13 0-5.78-2.11-6.73-4.96L1.22 17.58C3.21 21.5 7.28 24 12 24z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.27 14.61c-.25-.75-.39-1.55-.39-2.39c0-.84.14-1.64.39-2.39L1.22 6.94C.44 8.5 0 10.2 0 12c0 1.8.44 3.5 1.22 5.06l4.05-3.45z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0C7.28 0 3.21 2.5 1.22 6.42l4.05 3.45c.95-2.85 3.6-4.96 6.73-4.96z"
+              />
+            </svg>
+            <span className="text-xs font-bold uppercase tracking-wider">Continue with Google</span>
+          </Button>
 
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-border/50"></div>
@@ -294,7 +273,12 @@ function SignUpContent() {
               )}
             </div>
 
-            <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer">
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full text-white h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer transition-all opacity-95 hover:opacity-100"
+              style={{ backgroundColor: themeColorPrimary }}
+            >
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -46,8 +46,8 @@ export async function isRateLimited(
 ): Promise<{ success: boolean; remaining: number; resetTime?: Date }> {
   const now = new Date()
 
-  // Try Redis first if it's initialized and ready
-  if (redis && redis.status === "ready") {
+  // Try Redis first if it's initialized
+  if (redis) {
     try {
       const current = await redis.get(key)
       if (current && parseInt(current, 10) >= maxAttempts) {
@@ -143,7 +143,7 @@ export async function isRateLimited(
 
 export async function getOtpSendTier(email: string): Promise<number> {
   const key = `otp:tier:${email}`
-  if (redis && redis.status === "ready") {
+  if (redis) {
     try {
       const val = await redis.get(key)
       return val ? parseInt(val, 10) : 1
@@ -183,14 +183,18 @@ export async function incrementOtpSendAttempts(
   const attemptsKey = `otp:send_attempts:${email}`
   let currentAttempts = 0
 
-  if (redis && redis.status === "ready") {
+  let redisAttemptsSuccess = false
+  if (redis) {
     try {
       const val = await redis.get(attemptsKey)
       currentAttempts = val ? parseInt(val, 10) : 0
+      redisAttemptsSuccess = true
     } catch {
       // Fallback below
     }
-  } else {
+  }
+  
+  if (!redisAttemptsSuccess) {
     try {
       const record = await prisma.rateLimit.findUnique({ where: { key: attemptsKey } })
       if (record && record.expiresAt > new Date()) {
@@ -210,17 +214,21 @@ export async function incrementOtpSendAttempts(
     const nextTier = Math.min(3, tier + 1)
     const tierKey = `otp:tier:${email}`
 
-    if (redis && redis.status === "ready") {
+    let redisLockoutSuccess = false
+    if (redis) {
       try {
         const multi = redis.multi()
         multi.set(lockoutKey, lockoutExpiry.getTime().toString(), "PX", cooldownMs)
         multi.set(tierKey, nextTier.toString(), "PX", 86400000)
         multi.del(attemptsKey)
         await multi.exec()
+        redisLockoutSuccess = true
       } catch (error) {
         console.warn("[RateLimit] Redis lockout multi block failed:", error)
       }
-    } else {
+    }
+    
+    if (!redisLockoutSuccess) {
       try {
         await prisma.$transaction([
           prisma.rateLimit.upsert({
@@ -245,7 +253,8 @@ export async function incrementOtpSendAttempts(
   }
 
   // Increment attempt counter
-  if (redis && redis.status === "ready") {
+  let redisIncrementSuccess = false
+  if (redis) {
     try {
       const multi = redis.multi()
       multi.incr(attemptsKey)
@@ -253,10 +262,13 @@ export async function incrementOtpSendAttempts(
         multi.pexpire(attemptsKey, 3600000)
       }
       await multi.exec()
+      redisIncrementSuccess = true
     } catch (error) {
       console.warn("[RateLimit] Redis increment failed:", error)
     }
-  } else {
+  }
+  
+  if (!redisIncrementSuccess) {
     try {
       await prisma.rateLimit.upsert({
         where: { key: attemptsKey },
@@ -273,7 +285,7 @@ export async function incrementOtpSendAttempts(
 
 export async function resetOtpSendLimits(email: string): Promise<void> {
   const keys = [`otp:tier:${email}`, `otp:send_attempts:${email}`, `otp:send_lockout:${email}`]
-  if (redis && redis.status === "ready") {
+  if (redis) {
     try {
       await redis.del(...keys)
     } catch {
@@ -287,6 +299,39 @@ export async function resetOtpSendLimits(email: string): Promise<void> {
     })
   } catch (error) {
     console.error("[RateLimit] Database reset failed:", error)
+  }
+}
+
+export async function isOtpSendLimitReached(email: string): Promise<boolean> {
+  try {
+    const tier = await getOtpSendTier(email)
+    let maxAttempts = 3
+    if (tier === 2) {
+      maxAttempts = 2
+    } else if (tier >= 3) {
+      maxAttempts = 1
+    }
+
+    const attemptsKey = `otp:send_attempts:${email}`
+    let currentAttempts = 0
+
+    if (redis && redis.status === "ready") {
+      const val = await redis.get(attemptsKey)
+      currentAttempts = val ? parseInt(val, 10) : 0
+    } else {
+      const record = await prisma.rateLimit.findUnique({
+        where: { key: attemptsKey },
+        select: { attempts: true, expiresAt: true }
+      })
+      if (record && record.expiresAt > new Date()) {
+        currentAttempts = record.attempts
+      }
+    }
+
+    return currentAttempts >= maxAttempts
+  } catch (error) {
+    console.error("[RateLimit] Error checking if OTP send limit is reached:", error)
+    return false
   }
 }
 
@@ -307,7 +352,7 @@ export function maskEmail(email: string): string {
  */
 export async function checkLockout(key: string): Promise<{ active: boolean; remainingMs: number }> {
   const now = Date.now()
-  if (redis && redis.status === "ready") {
+  if (redis) {
     try {
       const ttl = await redis.ttl(key)
       if (ttl > 0) {
@@ -329,3 +374,125 @@ export async function checkLockout(key: string): Promise<{ active: boolean; rema
   }
   return { active: false, remainingMs: 0 }
 }
+
+/**
+ * Checks if an active OTP has been sent and is not yet expired.
+ */
+export async function hasActiveOtp(email: string): Promise<boolean> {
+  const key = `otp:active_state:${email}`
+  if (redis) {
+    try {
+      const exists = await redis.exists(key)
+      return exists === 1
+    } catch (error) {
+      console.warn("[RateLimit] Redis hasActiveOtp check failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { key } })
+    return !!record && record.expiresAt > new Date()
+  } catch (error) {
+    console.error("[RateLimit] Database hasActiveOtp check failed:", error)
+    return false
+  }
+}
+
+/**
+ * Sets the active OTP state tracking key in Redis (or DB fallback).
+ */
+export async function setActiveOtp(email: string, durationMs: number): Promise<void> {
+  const key = `otp:active_state:${email}`
+  const expiresAt = new Date(Date.now() + durationMs)
+  if (redis) {
+    try {
+      await redis.set(key, "active", "PX", durationMs)
+      return
+    } catch (error) {
+      console.warn("[RateLimit] Redis setActiveOtp failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      create: { key, attempts: 1, expiresAt },
+      update: { expiresAt }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database setActiveOtp failed:", error)
+  }
+}
+
+/**
+ * Checks if the user is authorized to perform OTP verification (OTP access token).
+ */
+export async function hasOtpAccess(email: string): Promise<boolean> {
+  const key = `otp:access:${email}`
+  if (redis) {
+    try {
+      const exists = await redis.exists(key)
+      return exists === 1
+    } catch (error) {
+      console.warn("[RateLimit] Redis hasOtpAccess check failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    const record = await prisma.rateLimit.findUnique({ where: { key } })
+    return !!record && record.expiresAt > new Date()
+  } catch (error) {
+    console.error("[RateLimit] Database hasOtpAccess check failed:", error)
+    return false
+  }
+}
+
+/**
+ * Sets the OTP access token/flag in Redis (or DB fallback).
+ */
+export async function setOtpAccess(email: string, durationMs: number): Promise<void> {
+  const key = `otp:access:${email}`
+  const expiresAt = new Date(Date.now() + durationMs)
+  if (redis) {
+    try {
+      await redis.set(key, "allowed", "PX", durationMs)
+      return
+    } catch (error) {
+      console.warn("[RateLimit] Redis setOtpAccess failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      create: { key, attempts: 1, expiresAt },
+      update: { expiresAt }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database setOtpAccess failed:", error)
+  }
+}
+
+/**
+ * Clears the active OTP state and access tokens (e.g. upon successful verification).
+ */
+export async function clearOtpStates(email: string): Promise<void> {
+  const keys = [`otp:active_state:${email}`, `otp:access:${email}`]
+  if (redis) {
+    try {
+      await redis.del(...keys)
+      return
+    } catch (error) {
+      console.warn("[RateLimit] Redis clearOtpStates failed, falling back to database:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.deleteMany({
+      where: { key: { in: keys } }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database clearOtpStates failed:", error)
+  }
+}
+
