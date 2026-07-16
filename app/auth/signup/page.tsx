@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signUpWithEmailAction, getSocialLoginUrlAction } from "../actions"
+import { signUpWithEmailAction, getSocialLoginUrlAction, getSystemSettingsAction } from "../actions"
 
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
@@ -30,6 +30,7 @@ function SignUpContent() {
   const [showPassword, setShowPassword] = React.useState(false)
 
   const router = useRouter()
+  const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
   const searchParams = useSearchParams()
   const errorParam = searchParams.get("error")
 
@@ -75,6 +76,17 @@ function SignUpContent() {
       window.removeEventListener("pageshow", handlePageShow)
     }
   }, [router])
+
+  React.useEffect(() => {
+    getSystemSettingsAction()
+      .then((settings) => {
+        const primary = settings.theme_color_primary || settings.themeColorPrimary
+        if (primary) {
+          setThemeColorPrimary(primary)
+        }
+      })
+      .catch((err) => console.warn(err))
+  }, [])
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -128,10 +140,6 @@ function SignUpContent() {
         <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/40 to-transparent" />
 
         <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
-          <div className="flex items-center gap-2">
-            <Compass className="h-6 w-6 text-emerald-400 animate-spin-slow" />
-            <span className="text-xs font-bold tracking-widest uppercase text-emerald-300">Premium Tropical Sanctuary</span>
-          </div>
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
             Experience OceanHilling Platform
           </h2>
@@ -280,7 +288,12 @@ function SignUpContent() {
               )}
             </div>
 
-            <Button type="submit" disabled={isPending} className="w-full bg-primary hover:bg-primary/95 text-primary-foreground h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer">
+            <Button
+              type="submit"
+              disabled={isPending}
+              className="w-full text-white h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer transition-all opacity-95 hover:opacity-100"
+              style={{ backgroundColor: themeColorPrimary }}
+            >
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
