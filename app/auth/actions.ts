@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { z } from "zod"
 import prisma from "@/lib/prisma/client"
+import { redis } from "@/lib/redis"
 import {
   isRateLimited,
   incrementOtpSendAttempts,
@@ -13,7 +14,8 @@ import {
   setActiveOtp,
   hasOtpAccess,
   setOtpAccess,
-  clearOtpStates
+  clearOtpStates,
+  isOtpSendLimitReached
 } from "@/lib/rate-limit"
 import { getSystemSetting, setSystemSetting } from "@/lib/settings"
 
@@ -154,14 +156,18 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
       }
     }
 
-    // Increment send attempts
-    const incrementResult = await incrementOtpSendAttempts(emailClean)
-    if (incrementResult.locked) {
-      const cooldownSec = incrementResult.cooldownMs / 1000
-      const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
-      return {
-        success: false,
-        error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+    // Pre-check if send attempts limit is already reached to trigger lockout immediately
+    // without creating a 60s cooldown key in Redis/DB
+    const isLimitReached = await isOtpSendLimitReached(emailClean)
+    if (isLimitReached) {
+      const incrementResult = await incrementOtpSendAttempts(emailClean)
+      if (incrementResult.locked) {
+        const cooldownSec = incrementResult.cooldownMs / 1000
+        const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+        return {
+          success: false,
+          error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+        }
       }
     }
 
@@ -174,6 +180,17 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
       return { success: true, otpRequired: true, otpAlreadySent: true }
     }
 
+    // Increment send attempts (only if we're actually allowed to send a new OTP)
+    const incrementResult = await incrementOtpSendAttempts(emailClean)
+    if (incrementResult.locked) {
+      const cooldownSec = incrementResult.cooldownMs / 1000
+      const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+      return {
+        success: false,
+        error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+      }
+    }
+
     // 4. Send Login OTP
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
@@ -181,6 +198,7 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
 
     if (otpError) {
       if (otpError.message.includes("For security purposes")) {
+        await setActiveOtp(emailClean, 300000)
         await setOtpAccess(emailClean, 300000)
         return { success: true, otpRequired: true, otpAlreadySent: true }
       }
@@ -261,6 +279,20 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
       }
     }
 
+    // Pre-check if send attempts limit is already reached to trigger lockout immediately
+    const isLimitReached = await isOtpSendLimitReached(emailClean)
+    if (isLimitReached) {
+      const incrementResult = await incrementOtpSendAttempts(emailClean)
+      if (incrementResult.locked) {
+        const cooldownSec = incrementResult.cooldownMs / 1000
+        const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+        return {
+          success: false,
+          error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+        }
+      }
+    }
+
     // Increment send attempts
     const incrementResult = await incrementOtpSendAttempts(emailClean)
     if (incrementResult.locked) {
@@ -285,6 +317,7 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
 
     if (error) {
       if (error.message.includes("For security purposes")) {
+        await setActiveOtp(emailClean, 300000)
         await setOtpAccess(emailClean, 300000)
         return { success: true, user: data?.user, otpAlreadySent: true }
       }
@@ -442,19 +475,43 @@ export async function signOutAction() {
   return { success: true }
 }
 
+export async function getOtpCooldownAction(email: string) {
+  try {
+    const emailClean = email.trim().toLowerCase()
+    const otpCooldownKey = `otp:send:${emailClean}`
+
+    // 1. Try Redis first
+    if (redis && redis.status === "ready") {
+      const ttl = await redis.ttl(otpCooldownKey)
+      if (ttl > 0) {
+        return { success: true, remainingSeconds: ttl }
+      }
+      return { success: true, remainingSeconds: 0 }
+    }
+
+    // 2. Database Fallback (RateLimit table)
+    const record = await prisma.rateLimit.findUnique({
+      where: { key: otpCooldownKey },
+      select: { expiresAt: true }
+    })
+
+    if (record && record.expiresAt > new Date()) {
+      const remainingMs = record.expiresAt.getTime() - Date.now()
+      const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000))
+      return { success: true, remainingSeconds }
+    }
+
+    return { success: true, remainingSeconds: 0 }
+  } catch (error) {
+    console.error("[Auth] Get OTP cooldown error:", error)
+    return { success: false, error: "Failed to get OTP cooldown status", remainingSeconds: 0 }
+  }
+}
+
 export async function resendOtpAction(email: string) {
   try {
     const emailClean = email.trim().toLowerCase()
     const supabase = await createClient()
-
-    // Verify the user is authorized to perform OTP actions (has access flag in Redis)
-    const hasAccess = await hasOtpAccess(emailClean)
-    if (!hasAccess) {
-      return {
-        success: false,
-        error: "Session expired or invalid. Please go back and sign in again."
-      }
-    }
 
     // 1. Check progressive lockout for sending OTP
     const sendLockoutKey = `otp:send_lockout:${emailClean}`
@@ -480,7 +537,34 @@ export async function resendOtpAction(email: string) {
       }
     }
 
-    // 2. Increment send attempts
+    // Pre-check if send attempts limit is already reached to trigger lockout immediately
+    // without creating a 60s cooldown key in Redis/DB
+    const isLimitReached = await isOtpSendLimitReached(emailClean)
+    if (isLimitReached) {
+      const incrementResult = await incrementOtpSendAttempts(emailClean)
+      if (incrementResult.locked) {
+        const cooldownSec = incrementResult.cooldownMs / 1000
+        const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+        return {
+          success: false,
+          error: `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`,
+          code: "lockout"
+        }
+      }
+    }
+
+    // 3. Check local database 60s cooldown for sending OTP
+    const otpCooldownKey = `otp:send:${emailClean}`
+    const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
+    if (!otpRateLimit.success) {
+      // Re-grant access window on check
+      await setOtpAccess(emailClean, 300000)
+      const remainingMs = otpRateLimit.resetTime ? (otpRateLimit.resetTime.getTime() - Date.now()) : 60000
+      const remainingSeconds = Math.max(1, Math.ceil(remainingMs / 1000))
+      return { success: true, otpAlreadySent: true, remainingSeconds }
+    }
+
+    // 2. Increment send attempts (only if we're actually allowed to send a new OTP)
     const incrementResult = await incrementOtpSendAttempts(emailClean)
     if (incrementResult.locked) {
       const cooldownSec = incrementResult.cooldownMs / 1000
@@ -492,14 +576,6 @@ export async function resendOtpAction(email: string) {
       }
     }
 
-    // 3. Check local database 60s cooldown for sending OTP
-    const otpCooldownKey = `otp:send:${emailClean}`
-    const otpRateLimit = await isRateLimited(otpCooldownKey, 1, 60000)
-    if (!otpRateLimit.success) {
-      await setOtpAccess(emailClean, 300000)
-      return { success: true, otpAlreadySent: true }
-    }
-
     // 4. Trigger OTP delivery
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: emailClean,
@@ -507,8 +583,9 @@ export async function resendOtpAction(email: string) {
 
     if (otpError) {
       if (otpError.message.includes("For security purposes")) {
+        await setActiveOtp(emailClean, 300000)
         await setOtpAccess(emailClean, 300000)
-        return { success: true, otpAlreadySent: true }
+        return { success: true, otpAlreadySent: true, remainingSeconds: 60 }
       }
       return { success: false, error: otpError.message }
     }

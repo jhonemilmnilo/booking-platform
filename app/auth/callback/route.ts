@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { isRateLimited, incrementOtpSendAttempts, maskEmail, checkLockout } from "@/lib/rate-limit"
+import { isRateLimited, incrementOtpSendAttempts, maskEmail, checkLockout, setActiveOtp, setOtpAccess, isOtpSendLimitReached } from "@/lib/rate-limit"
 import prisma from "@/lib/prisma/client"
 
 export async function GET(request: Request) {
@@ -64,7 +64,33 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
         }
 
-        // Increment send attempts
+        const verifyUrl = isSignupActive
+          ? `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}&signup=true`
+          : `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}`
+
+        // Pre-check if send attempts limit is already reached to trigger lockout immediately
+        // without creating a 60s cooldown key in Redis/DB
+        const isLimitReached = await isOtpSendLimitReached(emailClean)
+        if (isLimitReached) {
+          const incrementResult = await incrementOtpSendAttempts(emailClean)
+          if (incrementResult.locked) {
+            const cooldownSec = incrementResult.cooldownMs / 1000
+            const cooldownStr = cooldownSec >= 3600 ? "1 hour" : `${cooldownSec / 60} minutes`
+            const errorMsg = `Too many verification requests. Send limit reached. Please try again in ${cooldownStr}.`
+            const targetUrl = isSignupActive ? `${origin}/auth/signup` : `${origin}/auth/login`
+            return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
+          }
+        }
+
+        // Check local database cooldown for sending OTP
+        const otpRateLimit = await isRateLimited(`otp:send:${emailClean}`, 1, 60000)
+        if (!otpRateLimit.success) {
+          // Redirect to OTP verify page directly since one is already active
+          await setOtpAccess(emailClean, 300000)
+          return NextResponse.redirect(verifyUrl)
+        }
+
+        // Increment send attempts (only if we're actually allowed to send a new OTP)
         const incrementResult = await incrementOtpSendAttempts(emailClean)
         if (incrementResult.locked) {
           const cooldownSec = incrementResult.cooldownMs / 1000
@@ -74,17 +100,6 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${targetUrl}?error=${encodeURIComponent(errorMsg)}`)
         }
 
-        const verifyUrl = isSignupActive
-          ? `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}&signup=true`
-          : `${origin}/auth/verify?email=${encodeURIComponent(emailClean)}`
-
-        // Check local database cooldown for sending OTP
-        const otpRateLimit = await isRateLimited(`otp:send:${emailClean}`, 1, 60000)
-        if (!otpRateLimit.success) {
-          // Redirect to OTP verify page directly since one is already active
-          return NextResponse.redirect(verifyUrl)
-        }
-
         // Trigger OTP delivery
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email: emailClean,
@@ -92,12 +107,16 @@ export async function GET(request: Request) {
 
         if (otpError) {
           if (otpError.message.includes("For security purposes")) {
+            await setActiveOtp(emailClean, 300000)
+            await setOtpAccess(emailClean, 300000)
             return NextResponse.redirect(verifyUrl)
           }
           return NextResponse.redirect(`${origin}/auth/login?error=${encodeURIComponent(otpError.message)}`)
         }
 
         console.info(`[Auth] OAuth-callback OTP successfully requested for email: ${maskEmail(emailClean)}`)
+        await setActiveOtp(emailClean, 300000)
+        await setOtpAccess(emailClean, 300000)
         return NextResponse.redirect(verifyUrl)
       }
     }

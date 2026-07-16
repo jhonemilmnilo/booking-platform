@@ -10,13 +10,30 @@ interface LoadingOverlayProps {
 
 export default function LoadingOverlay({
   isVisible,
-  title = "Connecting to Portal",
-  description = "Please wait while we secure your connection...",
+  title = "Establishing Secure Gateway",
+  description = "Please wait while we authenticate your sanctuary access...",
 }: LoadingOverlayProps) {
   if (!isVisible) return null
 
+  const letters = title.split("")
+
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40 backdrop-blur-xl transition-all duration-300">
+      {/* Dynamic Keyframes for Luxury Staggered Bounce */}
+      <style>{`
+        @keyframes luxury-bounce {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-5px);
+          }
+        }
+        .animate-bounce-char {
+          animation: luxury-bounce 1.6s ease-in-out infinite;
+        }
+      `}</style>
+
       <div className="flex flex-col items-center gap-5 p-8 rounded-3xl bg-card/85 border border-border/80 shadow-[0_0_50px_rgba(212,175,55,0.12)] max-w-[340px] w-full animate-in fade-in zoom-in-95 duration-300">
         
         {/* Luxury Gold Sun & Waves Loader */}
@@ -41,7 +58,20 @@ export default function LoadingOverlay({
 
         {/* Text Container with Luxury Typography */}
         <div className="space-y-1.5 text-center font-sans">
-          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37]">{title}</h3>
+          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37] flex justify-center flex-wrap">
+            {letters.map((char, index) => (
+              <span
+                key={index}
+                className="inline-block animate-bounce-char"
+                style={{
+                  animationDelay: `${index * 0.05}s`,
+                  marginRight: char === " " ? "0.4em" : "0",
+                }}
+              >
+                {char === " " ? "\u00A0" : char}
+              </span>
+            ))}
+          </h3>
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 leading-normal">{description}</p>
         </div>
       </div>
