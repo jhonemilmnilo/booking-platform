@@ -7,15 +7,15 @@ import { redis } from "@/lib/redis"
 import {
   isRateLimited,
   incrementOtpSendAttempts,
-  resetOtpSendLimits,
   maskEmail,
   checkLockout,
   hasActiveOtp,
   setActiveOtp,
   hasOtpAccess,
   setOtpAccess,
-  clearOtpStates,
-  isOtpSendLimitReached
+  isOtpSendLimitReached,
+  getOtpStatus,
+  clearAllRateLimits
 } from "@/lib/rate-limit"
 import { getSystemSetting, setSystemSetting } from "@/lib/settings"
 
@@ -408,12 +408,8 @@ export async function verifyOtpAction(email: string, code: string) {
       }
     }
 
-    // Success! Clear fail trackers, active OTP states, and reset progressive OTP send limits
-    await resetOtpSendLimits(emailClean)
-    await clearOtpStates(emailClean)
-    await prisma.rateLimit.deleteMany({
-      where: { key: { in: [`otp:fail:${emailClean}`, lockoutKey] } }
-    })
+    // Success! Clear all rate limits (OTP resends, OTP entries, and password fail/lockout logs)
+    await clearAllRateLimits(emailClean)
 
     // 2. Profile Syncing: Ensure profile exists in public.User table
     const user = data.user
@@ -752,4 +748,25 @@ export async function uploadBrandLogoAction(formData: FormData) {
     return { success: false, error: error instanceof Error ? error.message : "Upload failed" };
   }
 }
+
+export async function getOtpStatusAction(email: string) {
+  try {
+    const status = await getOtpStatus(email)
+    return { success: true, status }
+  } catch (error) {
+    console.error("[Auth] getOtpStatusAction failed:", error)
+    return { success: false, error: "Failed to fetch OTP status." }
+  }
+}
+
+export async function getPrimaryThemeColorAction() {
+  try {
+    const themeColorPrimary = await getSystemSetting("theme_color_primary", "#D4AF37")
+    return { themeColorPrimary }
+  } catch (error) {
+    console.error("[SettingsAction] Failed to retrieve primary theme color:", error)
+    return { themeColorPrimary: "#D4AF37" }
+  }
+}
+
 
