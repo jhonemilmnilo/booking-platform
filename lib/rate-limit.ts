@@ -496,3 +496,99 @@ export async function clearOtpStates(email: string): Promise<void> {
   }
 }
 
+export interface OtpStatus {
+  tier: number;
+  sendAttempts: number;
+  maxSendAttempts: number;
+  sendLockoutActive: boolean;
+  sendLockoutRemainingMs: number;
+  verifyLockoutActive: boolean;
+  verifyLockoutRemainingMs: number;
+  verifyAttempts: number;
+  maxVerifyAttempts: number;
+  cooldownActive: boolean;
+  cooldownRemainingMs: number;
+}
+
+/**
+ * Gets the complete aggregated OTP state for an email.
+ */
+export async function getOtpStatus(email: string): Promise<OtpStatus> {
+  const emailClean = email.trim().toLowerCase()
+  const tier = await getOtpSendTier(emailClean)
+  
+  let maxSendAttempts = 3
+  if (tier === 2) {
+    maxSendAttempts = 2
+  } else if (tier >= 3) {
+    maxSendAttempts = 1
+  }
+
+  const now = Date.now()
+  const sendLockoutKey = `otp:send_lockout:${emailClean}`
+  const verifyLockoutKey = `otp:lockout:${emailClean}`
+  const sendAttemptsKey = `otp:send_attempts:${emailClean}`
+  const verifyAttemptsKey = `otp:fail:${emailClean}`
+  const cooldownKey = `otp:send:${emailClean}`
+
+  // 1. Check Lockout and Cooldown States
+  const sendLockout = await checkLockout(sendLockoutKey)
+  const verifyLockout = await checkLockout(verifyLockoutKey)
+  const cooldown = await checkLockout(cooldownKey)
+
+  // 2. Get Send Attempts
+  let sendAttempts = 0
+  if (redis) {
+    try {
+      const val = await redis.get(sendAttemptsKey)
+      sendAttempts = val ? parseInt(val, 10) : 0
+    } catch {
+      // ignore
+    }
+  } else {
+    try {
+      const record = await prisma.rateLimit.findUnique({ where: { key: sendAttemptsKey } })
+      if (record && record.expiresAt.getTime() > now) {
+        sendAttempts = record.attempts
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 3. Get Verify Attempts
+  let verifyAttempts = 0
+  if (redis) {
+    try {
+      const val = await redis.get(verifyAttemptsKey)
+      verifyAttempts = val ? parseInt(val, 10) : 0
+    } catch {
+      // ignore
+    }
+  } else {
+    try {
+      const record = await prisma.rateLimit.findUnique({ where: { key: verifyAttemptsKey } })
+      if (record && record.expiresAt.getTime() > now) {
+        verifyAttempts = record.attempts
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return {
+    tier,
+    sendAttempts,
+    maxSendAttempts,
+    sendLockoutActive: sendLockout.active,
+    sendLockoutRemainingMs: sendLockout.remainingMs,
+    verifyLockoutActive: verifyLockout.active,
+    verifyLockoutRemainingMs: verifyLockout.remainingMs,
+    verifyAttempts,
+    maxVerifyAttempts: 3,
+    cooldownActive: cooldown.active,
+    cooldownRemainingMs: cooldown.remainingMs
+  }
+}
+
+

@@ -15,7 +15,8 @@ import {
   hasOtpAccess,
   setOtpAccess,
   clearOtpStates,
-  isOtpSendLimitReached
+  isOtpSendLimitReached,
+  getOtpStatus
 } from "@/lib/rate-limit"
 import { getSystemSetting, setSystemSetting } from "@/lib/settings"
 
@@ -750,6 +751,16 @@ export async function uploadBrandLogoAction(formData: FormData) {
   } catch (error) {
     console.error("[UploadAction] Failed to upload logo via service role:", error);
     return { success: false, error: error instanceof Error ? error.message : "Upload failed" };
+  }
+}
+
+export async function getOtpStatusAction(email: string) {
+  try {
+    const status = await getOtpStatus(email)
+    return { success: true, status }
+  } catch (error) {
+    console.error("[Auth] getOtpStatusAction failed:", error)
+    return { success: false, error: "Failed to fetch OTP status." }
   }
 }
 

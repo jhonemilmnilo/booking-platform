@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { showToast } from "@/components/shared/Toast"
-import { Loader2, ShieldCheck, Mail, ArrowLeft, Compass } from "lucide-react"
+import { Loader2, Mail, ArrowLeft, Compass } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { verifyOtpAction, resendOtpAction, getSystemSettingsAction, getOtpCooldownAction } from "../actions"
+import { verifyOtpAction, resendOtpAction, getSystemSettingsAction, getOtpStatusAction } from "../actions"
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 
 import { Suspense } from "react"
@@ -21,6 +21,20 @@ import { Suspense } from "react"
 const verifySchema = z.object({
   code: z.string().length(8, "Code must be exactly 8 digits").regex(/^\d+$/, "Code must contain only numbers"),
 })
+
+interface OtpStatusData {
+  tier: number;
+  sendAttempts: number;
+  maxSendAttempts: number;
+  sendLockoutActive: boolean;
+  sendLockoutRemainingMs: number;
+  verifyLockoutActive: boolean;
+  verifyLockoutRemainingMs: number;
+  verifyAttempts: number;
+  maxVerifyAttempts: number;
+  cooldownActive: boolean;
+  cooldownRemainingMs: number;
+}
 
 function VerifyOtpContent() {
   const router = useRouter()
@@ -32,27 +46,31 @@ function VerifyOtpContent() {
   const [isResending, setIsResending] = React.useState(false)
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
   const [isLoading, setIsLoading] = React.useState(false)
+  const [otpStatus, setOtpStatus] = React.useState<OtpStatusData | null>(null)
 
-  // Track active OTP session and initialize/restore the countdown timer from Redis/DB
-  React.useEffect(() => {
+  const fetchOtpStatus = React.useCallback(async () => {
     if (!email) return
-
-    let isSubscribed = true
-    getOtpCooldownAction(email)
-      .then((res) => {
-        if (!isSubscribed) return
-        if (res.success && res.remainingSeconds && res.remainingSeconds > 0) {
-          setResendTimer(res.remainingSeconds)
-        } else {
-          setResendTimer(0)
-        }
-      })
-      .catch((err) => console.error(err))
-
-    return () => {
-      isSubscribed = false
+    try {
+      const res = await getOtpStatusAction(email)
+      if (res.success && res.status) {
+        setOtpStatus(res.status)
+        const sendLockoutSec = Math.ceil(res.status.sendLockoutRemainingMs / 1000)
+        const cooldownSec = Math.ceil(res.status.cooldownRemainingMs / 1000)
+        const maxTimer = Math.max(0, sendLockoutSec, cooldownSec)
+        setResendTimer(maxTimer)
+      }
+    } catch (err) {
+      console.error("[VerifyPage] Error fetching OTP status:", err)
     }
   }, [email])
+
+  // Initial load
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchOtpStatus()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [fetchOtpStatus])
 
   React.useEffect(() => {
     getSystemSettingsAction()
@@ -65,7 +83,7 @@ function VerifyOtpContent() {
       .catch((err) => console.warn(err))
   }, [])
 
-  // Countdown timer for Resend button
+  // Countdown timer for Resend button and lockout
   React.useEffect(() => {
     if (resendTimer <= 0) return
     const interval = setInterval(() => {
@@ -73,6 +91,16 @@ function VerifyOtpContent() {
     }, 1000)
     return () => clearInterval(interval)
   }, [resendTimer])
+
+  // Sync state once cooldown finishes to sync client UI with true server state
+  React.useEffect(() => {
+    if (resendTimer === 0 && email) {
+      const timer = setTimeout(() => {
+        fetchOtpStatus()
+      }, 0)
+      return () => clearTimeout(timer)
+    }
+  }, [resendTimer, email, fetchOtpStatus])
 
   const form = useForm<z.infer<typeof verifySchema>>({
     resolver: zodResolver(verifySchema),
@@ -101,6 +129,8 @@ function VerifyOtpContent() {
       } else {
         setIsLoading(false)
         showToast.error(result.error || "Verification failed.")
+        // Refresh limits on error
+        await fetchOtpStatus()
         if (result.code === "lockout") {
           setTimeout(() => {
             router.push("/auth/signup")
@@ -115,6 +145,9 @@ function VerifyOtpContent() {
     setIsResending(true)
     const result = await resendOtpAction(email)
     setIsResending(false)
+
+    // Sync status from server immediately to reflect attempts increment/lockout
+    await fetchOtpStatus()
 
     if (result.success) {
       const remaining = result.remainingSeconds || 60
@@ -167,8 +200,8 @@ function VerifyOtpContent() {
                   {...form.register("code")}
                   placeholder="12345678"
                   maxLength={8}
-                  disabled={isPending}
-                  className="pl-9 h-11 text-center tracking-[0.3em] font-mono text-lg bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                  disabled={isPending || otpStatus?.verifyLockoutActive}
+                  className="pl-9 h-11 text-center tracking-[0.3em] font-mono text-lg bg-background border-border text-foreground transition-all focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50"
                   style={{
                     borderColor: isCodeFocused ? themeColor : undefined,
                     boxShadow: isCodeFocused ? `0 0 0 1px ${themeColor}` : undefined
@@ -184,8 +217,8 @@ function VerifyOtpContent() {
 
             <Button
               type="submit"
-              disabled={isPending}
-              className="w-full text-white h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer transition-all opacity-95 hover:opacity-100"
+              disabled={isPending || otpStatus?.verifyLockoutActive}
+              className="w-full text-white h-11 rounded-xl font-bold uppercase tracking-wider text-xs cursor-pointer transition-all opacity-95 hover:opacity-100 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: themeColorPrimary }}
             >
               {isPending ? (
@@ -208,8 +241,8 @@ function VerifyOtpContent() {
               ) : (
                 <button
                   onClick={handleResendCode}
-                  disabled={isResending}
-                  className="font-extrabold text-primary hover:underline focus:outline-none cursor-pointer"
+                  disabled={isResending || otpStatus?.sendLockoutActive || otpStatus?.verifyLockoutActive}
+                  className="font-extrabold text-primary hover:underline focus:outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Resend Code
                 </button>
