@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { verifyOtpAction, resendOtpAction, getSystemSettingsAction, getOtpStatusAction } from "../actions"
+import { verifyOtpAction, resendOtpAction, getPrimaryThemeColorAction, getOtpStatusAction } from "../actions"
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 
 import { Suspense } from "react"
@@ -73,11 +73,10 @@ function VerifyOtpContent() {
   }, [fetchOtpStatus])
 
   React.useEffect(() => {
-    getSystemSettingsAction()
-      .then((settings) => {
-        const primary = settings.theme_color_primary || settings.themeColorPrimary
-        if (primary) {
-          setThemeColorPrimary(primary)
+    getPrimaryThemeColorAction()
+      .then((res) => {
+        if (res.themeColorPrimary) {
+          setThemeColorPrimary(res.themeColorPrimary)
         }
       })
       .catch((err) => console.warn(err))

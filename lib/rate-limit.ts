@@ -591,4 +591,41 @@ export async function getOtpStatus(email: string): Promise<OtpStatus> {
   }
 }
 
+/**
+ * Clears all rate limits, tiers, cooldowns, and lockouts (both OTP and password) for a user email.
+ * This runs when they successfully authenticate and complete verification.
+ */
+export async function clearAllRateLimits(email: string): Promise<void> {
+  const emailClean = email.trim().toLowerCase()
+  const keys = [
+    `otp:tier:${emailClean}`,
+    `otp:send_attempts:${emailClean}`,
+    `otp:send_lockout:${emailClean}`,
+    `otp:send:${emailClean}`,
+    `otp:active_state:${emailClean}`,
+    `otp:access:${emailClean}`,
+    `otp:fail:${emailClean}`,
+    `otp:lockout:${emailClean}`,
+    `pw:fail:${emailClean}`,
+    `pw:lockout:${emailClean}`
+  ]
+
+  if (redis) {
+    try {
+      await redis.del(...keys)
+    } catch (error) {
+      console.warn("[RateLimit] Redis clearAllRateLimits failed:", error)
+    }
+  }
+
+  try {
+    await prisma.rateLimit.deleteMany({
+      where: { key: { in: keys } }
+    })
+  } catch (error) {
+    console.error("[RateLimit] Database clearAllRateLimits failed:", error)
+  }
+}
+
+
 

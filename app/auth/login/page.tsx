@@ -13,7 +13,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { loginWithEmailAction, getSocialLoginUrlAction, getSystemSettingsAction } from "../actions"
+import { loginWithEmailAction, getSocialLoginUrlAction, getPrimaryThemeColorAction } from "../actions"
 
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
@@ -53,11 +53,10 @@ function LoginContent() {
   }, [])
 
   React.useEffect(() => {
-    getSystemSettingsAction()
-      .then((settings) => {
-        const primary = settings.theme_color_primary || settings.themeColorPrimary
-        if (primary) {
-          setThemeColorPrimary(primary)
+    getPrimaryThemeColorAction()
+      .then((res) => {
+        if (res.themeColorPrimary) {
+          setThemeColorPrimary(res.themeColorPrimary)
         }
       })
       .catch((err) => console.warn(err))
