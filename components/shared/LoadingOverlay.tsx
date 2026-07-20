@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { getSystemSettingsAction } from "@/app/auth/actions"
 
 interface LoadingOverlayProps {
   isVisible: boolean
@@ -10,71 +11,134 @@ interface LoadingOverlayProps {
 
 export default function LoadingOverlay({
   isVisible,
-  title = "Establishing Secure Gateway",
-  description = "Please wait while we authenticate your sanctuary access...",
+  title,
+  description = "Establishing a secure connection to your sanctuary gateway.",
 }: LoadingOverlayProps) {
+  const [dbBrandName, setDbBrandName] = React.useState("")
+
+  React.useEffect(() => {
+    // Check if settings are already injected in the window
+    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__?.brandName) {
+      const cachedName = (window as any).__SYSTEM_SETTINGS__.brandName
+      // Defer state update to next microtask to prevent synchronous cascading renders warning
+      Promise.resolve().then(() => {
+        setDbBrandName(cachedName)
+      })
+      return
+    }
+
+    if (title || dbBrandName) return
+
+    let isMounted = true
+    getSystemSettingsAction()
+      .then((settings) => {
+        if (isMounted && settings?.brandName) {
+          setDbBrandName(settings.brandName)
+        }
+      })
+      .catch((err) => {
+        console.error("[LoadingOverlay] Failed to fetch brand name from database:", err)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [title, dbBrandName])
+
   if (!isVisible) return null
 
-  const letters = title.split("")
+  const displayTitle = title || dbBrandName || "OceanHilling"
+  const letters = displayTitle.split("")
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/40 backdrop-blur-xl transition-all duration-300">
-      {/* Dynamic Keyframes for Luxury Staggered Bounce */}
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/85 backdrop-blur-2xl transition-all duration-500 ease-in-out">
+      {/* Premium Keyframes for Luxury Organic Motion */}
       <style>{`
-        @keyframes luxury-bounce {
+        @keyframes sanctuary-breath {
           0%, 100% {
-            transform: translateY(0);
+            transform: scale(1);
+            opacity: 0.15;
           }
           50% {
-            transform: translateY(-5px);
+            transform: scale(1.08);
+            opacity: 0.35;
           }
         }
-        .animate-bounce-char {
-          animation: luxury-bounce 1.6s ease-in-out infinite;
+        @keyframes sun-glow {
+          0%, 100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.4));
+          }
+          50% {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 25px rgba(212, 175, 55, 0.8));
+          }
+        }
+        @keyframes text-fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-sanctuary-breath {
+          animation: sanctuary-breath 4s ease-in-out infinite;
+        }
+        .animate-sun-glow {
+          animation: sun-glow 3s ease-in-out infinite;
+        }
+        .animate-letter-flow {
+          animation: text-fade-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
-      <div className="flex flex-col items-center gap-5 p-8 rounded-3xl bg-card/85 border border-border/80 shadow-[0_0_50px_rgba(212,175,55,0.12)] max-w-[340px] w-full animate-in fade-in zoom-in-95 duration-300">
+      <div className="flex flex-col items-center gap-7 p-10 rounded-[2rem] bg-card/70 border border-border/40 shadow-[0_24px_64px_rgba(30,63,32,0.06)] max-w-[400px] w-full animate-in fade-in zoom-in-95 duration-500">
         
-        {/* Luxury Gold Sun & Waves Loader */}
-        <div className="relative flex items-center justify-center h-20 w-20">
-          {/* Ring of Sanctuary (Slow Spin) */}
-          <div className="absolute inset-0 rounded-full border-2 border-dashed border-[#D4AF37]/30 animate-[spin_10s_linear_infinite]" />
+        {/* Animated Sanctuary Emblem */}
+        <div className="relative flex items-center justify-center h-28 w-28">
+          {/* Outer Breathing Circle (Forest Theme) */}
+          <div className="absolute inset-0 rounded-full border border-primary/20 animate-sanctuary-breath" />
           
-          {/* Inner Container */}
-          <div className="relative flex flex-col items-center justify-center bg-background/90 h-16 w-16 rounded-full border border-border/60 shadow-inner overflow-hidden">
-            {/* The Golden Sun (glowing and pulsing) */}
-            <div className="w-5 h-5 rounded-full bg-[#D4AF37] shadow-[0_0_15px_#D4AF37] animate-pulse mb-1.5" />
-            
-            {/* Abstract Ocean Waves */}
-            <div className="absolute bottom-2.5 w-full flex flex-col items-center gap-0.5">
-              {/* Wave 1 */}
-              <div className="w-10 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/75 to-transparent rounded-full animate-pulse" />
-              {/* Wave 2 */}
-              <div className="w-8 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37]/45 to-transparent rounded-full animate-pulse [animation-delay:0.3s]" />
-            </div>
+          {/* Middle Slow Spinning Dashed Ring (Sanctuary Orbit) */}
+          <div className="absolute inset-2 rounded-full border border-dashed border-[#D4AF37]/25 animate-[spin_20s_linear_infinite]" />
+          
+          {/* Fast Reverse Ring (Ocean Ripple Effect) */}
+          <div className="absolute inset-4 rounded-full border-t-2 border-r border-transparent border-t-secondary/60 border-r-secondary/20 animate-[spin_2.5s_linear_infinite_reverse]" />
+
+          {/* Forward Ring (Light Shore Wave Ripple) */}
+          <div className="absolute inset-6 rounded-full border-b-2 border-l border-transparent border-b-[#D4AF37]/50 border-l-[#D4AF37]/10 animate-[spin_3s_linear_infinite]" />
+          
+          {/* Inner Golden Sun Pearl (Centerpiece) */}
+          <div className="relative flex items-center justify-center bg-background h-12 w-12 rounded-full border border-border/80 shadow-md">
+            <div className="w-4 h-4 rounded-full bg-gold-gradient animate-sun-glow" />
           </div>
         </div>
 
         {/* Text Container with Luxury Typography */}
-        <div className="space-y-1.5 text-center font-sans">
-          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4AF37] flex justify-center flex-wrap">
-            {letters.map((char, index) => (
+        <div className="space-y-3.5 text-center">
+          <h3 className="font-serif text-sm font-semibold tracking-[0.15em] text-gold-gradient flex justify-center flex-wrap min-h-[1.5rem]">
+            {letters.map((char: string, index: number) => (
               <span
                 key={index}
-                className="inline-block animate-bounce-char"
+                className="inline-block opacity-0 animate-letter-flow"
                 style={{
-                  animationDelay: `${index * 0.05}s`,
-                  marginRight: char === " " ? "0.4em" : "0",
+                  animationDelay: `${index * 0.03}s`,
+                  marginRight: char === " " ? "0.35em" : "0",
                 }}
               >
                 {char === " " ? "\u00A0" : char}
               </span>
             ))}
           </h3>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 leading-normal">{description}</p>
+          <p className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground/80 leading-relaxed max-w-[280px] mx-auto">
+            {description}
+          </p>
         </div>
       </div>
     </div>
   )
 }
+

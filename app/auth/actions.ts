@@ -17,7 +17,7 @@ import {
   getOtpStatus,
   clearAllRateLimits
 } from "@/lib/rate-limit"
-import { getSystemSetting, setSystemSetting } from "@/lib/settings"
+import { getSystemSetting, setSystemSetting, getSystemSettings } from "@/lib/settings"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -608,87 +608,96 @@ export async function getHeroVideoUrlsAction() {
 }
 
 export async function getSystemSettingsAction() {
+  const keys = [
+    "hero_subtitle",
+    "hero_title_line_1",
+    "hero_title_line_2",
+    "hero_description",
+    "theme_color_primary",
+    "theme_color_secondary",
+    "theme_color_accent",
+    "hero_video_url",
+    "hero_video_url_mobile",
+    "brand_name",
+    "brand_logo",
+    "social_facebook",
+    "social_instagram",
+    "social_tiktok",
+    "social_twitter",
+    "tourist_spots"
+  ]
+
+  const defaultValues = {
+    hero_subtitle: "The Apex of Oceanfront Luxury",
+    hero_title_line_1: "Where Sky Meets",
+    hero_title_line_2: "Sanctuary",
+    hero_description: "Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
+    theme_color_primary: "#D4AF37",
+    theme_color_secondary: "#FFFFFF",
+    theme_color_accent: "#1C1A17",
+    hero_video_url: "/videos/enhance_ocean_hill_villas.mp4",
+    hero_video_url_mobile: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+    brand_name: "Ocean Hill",
+    brand_logo: "",
+    social_facebook: "https://facebook.com",
+    social_instagram: "https://instagram.com",
+    social_tiktok: "https://tiktok.com",
+    social_twitter: "https://twitter.com",
+    tourist_spots: JSON.stringify([
+      { name: "Abagatanen White Beach", distance: "1 min Walk" },
+      { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+      { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+      { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+      { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
+    ])
+  }
+
   try {
-    const heroSubtitle = await getSystemSetting("hero_subtitle", "The Apex of Oceanfront Luxury")
-    const heroTitleLine1 = await getSystemSetting("hero_title_line_1", "Where Sky Meets")
-    const heroTitleLine2 = await getSystemSetting("hero_title_line_2", "Sanctuary")
-    const heroDescription = await getSystemSetting("hero_description", "Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
-    
-    const themeColorPrimary = await getSystemSetting("theme_color_primary", "#D4AF37")
-    const themeColorSecondary = await getSystemSetting("theme_color_secondary", "#FFFFFF")
-    const themeColorAccent = await getSystemSetting("theme_color_accent", "#1C1A17")
+    const settings = await getSystemSettings(keys, defaultValues)
 
-    const heroVideoUrl = await getSystemSetting("hero_video_url", "/videos/enhance_ocean_hill_villas.mp4")
-    const heroVideoUrlMobile = await getSystemSetting("hero_video_url_mobile", "/videos/enhance_ocean_hill_villas_mobile.mp4")
-
-    const brandName = await getSystemSetting("brand_name", "Ocean Hill")
-    const brandLogo = await getSystemSetting("brand_logo", "")
-
-    const socialFacebook = await getSystemSetting("social_facebook", "https://facebook.com")
-    const socialInstagram = await getSystemSetting("social_instagram", "https://instagram.com")
-    const socialTiktok = await getSystemSetting("social_tiktok", "https://tiktok.com")
-    const socialTwitter = await getSystemSetting("social_twitter", "https://twitter.com")
-
-    const touristSpots = await getSystemSetting(
-      "tourist_spots",
-      JSON.stringify([
-        { name: "Abagatanen White Beach", distance: "1 min Walk" },
-        { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
-        { name: "Bani Olanen Beach", distance: "12 mins Drive" },
-        { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
-        { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
-      ])
-    )
- 
     return {
-      heroSubtitle,
-      heroTitleLine1,
-      heroTitleLine2,
-      heroDescription,
-      themeColorPrimary,
-      themeColorSecondary,
-      themeColorAccent,
-      theme_color_primary: themeColorPrimary,
-      theme_color_secondary: themeColorSecondary,
-      theme_color_accent: themeColorAccent,
-      heroVideoUrl,
-      heroVideoUrlMobile,
-      brandName,
-      brandLogo,
-      socialFacebook,
-      socialInstagram,
-      socialTiktok,
-      socialTwitter,
-      touristSpots,
+      heroSubtitle: settings.hero_subtitle,
+      heroTitleLine1: settings.hero_title_line_1,
+      heroTitleLine2: settings.hero_title_line_2,
+      heroDescription: settings.hero_description,
+      themeColorPrimary: settings.theme_color_primary,
+      themeColorSecondary: settings.theme_color_secondary,
+      themeColorAccent: settings.theme_color_accent,
+      theme_color_primary: settings.theme_color_primary,
+      theme_color_secondary: settings.theme_color_secondary,
+      theme_color_accent: settings.theme_color_accent,
+      heroVideoUrl: settings.hero_video_url,
+      heroVideoUrlMobile: settings.hero_video_url_mobile,
+      brandName: settings.brand_name,
+      brandLogo: settings.brand_logo,
+      socialFacebook: settings.social_facebook,
+      socialInstagram: settings.social_instagram,
+      socialTiktok: settings.social_tiktok,
+      socialTwitter: settings.social_twitter,
+      touristSpots: settings.tourist_spots,
     }
   } catch (error) {
     console.error("[SettingsAction] Failed to retrieve system settings:", error)
     return {
-      heroSubtitle: "The Apex of Oceanfront Luxury",
-      heroTitleLine1: "Where Sky Meets",
-      heroTitleLine2: "Sanctuary",
-      heroDescription: "Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
-      themeColorPrimary: "#D4AF37",
-      themeColorSecondary: "#FFFFFF",
-      themeColorAccent: "#1C1A17",
-      theme_color_primary: "#D4AF37",
-      theme_color_secondary: "#FFFFFF",
-      theme_color_accent: "#1C1A17",
-      heroVideoUrl: "/videos/enhance_ocean_hill_villas.mp4",
-      heroVideoUrlMobile: "/videos/enhance_ocean_hill_villas_mobile.mp4",
-      brandName: "Ocean Hill",
-      brandLogo: "",
-      socialFacebook: "https://facebook.com",
-      socialInstagram: "https://instagram.com",
-      socialTiktok: "https://tiktok.com",
-      socialTwitter: "https://twitter.com",
-      touristSpots: JSON.stringify([
-        { name: "Abagatanen White Beach", distance: "1 min Walk" },
-        { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
-        { name: "Bani Olanen Beach", distance: "12 mins Drive" },
-        { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
-        { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
-      ])
+      heroSubtitle: defaultValues.hero_subtitle,
+      heroTitleLine1: defaultValues.hero_title_line_1,
+      heroTitleLine2: defaultValues.hero_title_line_2,
+      heroDescription: defaultValues.hero_description,
+      themeColorPrimary: defaultValues.theme_color_primary,
+      themeColorSecondary: defaultValues.theme_color_secondary,
+      themeColorAccent: defaultValues.theme_color_accent,
+      theme_color_primary: defaultValues.theme_color_primary,
+      theme_color_secondary: defaultValues.theme_color_secondary,
+      theme_color_accent: defaultValues.theme_color_accent,
+      heroVideoUrl: defaultValues.hero_video_url,
+      heroVideoUrlMobile: defaultValues.hero_video_url_mobile,
+      brandName: defaultValues.brand_name,
+      brandLogo: defaultValues.brand_logo,
+      socialFacebook: defaultValues.social_facebook,
+      socialInstagram: defaultValues.social_instagram,
+      socialTiktok: defaultValues.social_tiktok,
+      socialTwitter: defaultValues.social_twitter,
+      touristSpots: defaultValues.tourist_spots,
     }
   }
 }
