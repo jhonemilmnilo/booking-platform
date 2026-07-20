@@ -73,6 +73,21 @@ export default function MainLayout({
 
   // Initialize data and settings
   React.useEffect(() => {
+    // If settings are already injected in the window by the server, use them to avoid a network roundtrip
+    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__) {
+      const settings = (window as any).__SYSTEM_SETTINGS__
+      setBrandName(settings.brandName || "Ocean Hill")
+      setBrandLogo(settings.brandLogo || "")
+      setSocialFacebook(settings.socialFacebook || "https://facebook.com")
+      setSocialInstagram(settings.socialInstagram || "https://instagram.com")
+      setSocialTiktok(settings.socialTiktok || "https://tiktok.com")
+      setSocialTwitter(settings.socialTwitter || "https://twitter.com")
+      setThemeColorPrimary(settings.themeColorPrimary || "#D4AF37")
+      setThemeColorSecondary(settings.themeColorSecondary || "#FFFFFF")
+      setThemeColorAccent(settings.themeColorAccent || "#1C1A17")
+      return
+    }
+
     getSystemSettingsAction()
       .then((settings) => {
         setBrandName(settings.brandName || "Ocean Hill")

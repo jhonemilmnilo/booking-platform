@@ -57,10 +57,10 @@ export default async function RootLayout({
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
-        {/* Inject Brand Name for Instant Client-Side Access */}
+        {/* Inject System Settings for Instant Client-Side Access */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__BRAND_NAME__ = ${JSON.stringify(brandName)};`,
+            __html: `window.__SYSTEM_SETTINGS__ = ${JSON.stringify(settings)};`,
           }}
         />
       </head>

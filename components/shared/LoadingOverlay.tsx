@@ -14,14 +14,19 @@ export default function LoadingOverlay({
   title,
   description = "Establishing a secure connection to your sanctuary gateway.",
 }: LoadingOverlayProps) {
-  const [dbBrandName, setDbBrandName] = React.useState(() => {
-    if (typeof window !== "undefined" && (window as any).__BRAND_NAME__) {
-      return (window as any).__BRAND_NAME__
-    }
-    return ""
-  })
+  const [dbBrandName, setDbBrandName] = React.useState("")
 
   React.useEffect(() => {
+    // Check if settings are already injected in the window
+    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__?.brandName) {
+      const cachedName = (window as any).__SYSTEM_SETTINGS__.brandName
+      // Defer state update to next microtask to prevent synchronous cascading renders warning
+      Promise.resolve().then(() => {
+        setDbBrandName(cachedName)
+      })
+      return
+    }
+
     if (title || dbBrandName) return
 
     let isMounted = true
