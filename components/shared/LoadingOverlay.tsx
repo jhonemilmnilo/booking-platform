@@ -48,14 +48,17 @@ export default function LoadingOverlay({
     }
   }, [title, dbBrandName])
 
+  // Resolve the title to display — fall back to fetched brand name or a default
+  const displayTitle = title || dbBrandName || "Sanctuary"
+
   // Ensure "Gateway" moves cleanly to the 2nd line and prevents mid-word breaks
-  const formattedTitle = title.includes("\n")
-    ? title
-    : title === "Establishing Secure Gateway"
+  const formattedTitle = displayTitle.includes("\n")
+    ? displayTitle
+    : displayTitle === "Establishing Secure Gateway"
       ? "Establishing Secure\nGateway"
-      : title.endsWith(" Gateway")
-        ? title.replace(/ Gateway$/, "\nGateway")
-        : title
+      : displayTitle.endsWith(" Gateway")
+        ? displayTitle.replace(/ Gateway$/, "\nGateway")
+        : displayTitle
 
   const lines = formattedTitle.split("\n")
   let globalCharIndex = 0
