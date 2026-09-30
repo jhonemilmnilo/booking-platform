@@ -3,6 +3,8 @@
 export interface SystemSettingsCache {
   brandName?: string
   brandLogo?: string
+  brandLogoSize?: number | string
+  brand_logo_size?: string
   socialFacebook?: string
   socialInstagram?: string
   socialTiktok?: string

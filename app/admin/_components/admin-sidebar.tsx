@@ -41,6 +41,7 @@ const sidebarItems: SidebarItem[] = [
 
 interface AdminSidebarProps {
   initialBrandName?: string
+  initialBrandLogo?: string
   initialThemeColor?: string
   isCollapsed?: boolean
   onToggleCollapse?: () => void
@@ -48,6 +49,7 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({
   initialBrandName,
+  initialBrandLogo,
   isCollapsed = false,
   onToggleCollapse,
 }: AdminSidebarProps = {}) {
@@ -79,20 +81,34 @@ export default function AdminSidebar({
     return "MIGS THE SHORE"
   })
 
+  const [brandLogo, setBrandLogo] = React.useState(() => {
+    if (initialBrandLogo) return initialBrandLogo
+    if (typeof window !== "undefined") {
+      const c = getClientCachedSettings()
+      if (c?.brandLogo) return c.brandLogo
+    }
+    return ""
+  })
+
   const loadSettings = React.useCallback(() => {
     queueMicrotask(() => {
       const cached = getClientCachedSettings()
       if (cached?.brandName) {
         setBrandName(cached.brandName)
       }
+      if (cached?.brandLogo !== undefined) {
+        setBrandLogo(cached.brandLogo)
+      }
     })
     getSystemSettingsAction()
       .then((s) => {
         if (s.brandName) setBrandName(s.brandName)
+        if (s.brandLogo !== undefined) setBrandLogo(s.brandLogo)
         if (typeof window !== "undefined") {
           setClientCachedSettings({
             ...(getClientCachedSettings() || {}),
             brandName: s.brandName,
+            brandLogo: s.brandLogo,
             themeColorPrimary: s.themeColorPrimary,
             themeColorSecondary: s.themeColorSecondary,
             themeColorAccent: s.themeColorAccent,
@@ -125,14 +141,24 @@ export default function AdminSidebar({
       <div className="flex flex-col flex-1 min-h-0">
         <div className="h-20 px-3.5 border-b border-white/5 flex items-center justify-between overflow-hidden shrink-0">
           <div className="flex items-center min-w-0">
-            {/* Centered Crown: 52px wide container aligns icon center exactly at 40px */}
+            {/* Centered Brand Logo / Crown: 52px wide container aligns icon center exactly at 40px */}
             <div className="w-[52px] h-10 flex items-center justify-center shrink-0">
-              <div
-                title={isCollapsed ? brandName : undefined}
-                className="w-10 h-10 rounded-xl bg-luxury-gold/10 flex items-center justify-center border border-luxury-gold/30 shrink-0 shadow-sm"
-              >
-                <i className="fa-solid fa-crown text-luxury-gold text-sm"></i>
-              </div>
+              {brandLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={brandLogo}
+                  alt={brandName}
+                  title={isCollapsed ? brandName : undefined}
+                  className="w-10 h-10 object-contain shrink-0"
+                />
+              ) : (
+                <div
+                  title={isCollapsed ? brandName : undefined}
+                  className="w-10 h-10 rounded-xl bg-luxury-gold/10 flex items-center justify-center border border-luxury-gold/30 shrink-0 shadow-sm"
+                >
+                  <i className="fa-solid fa-crown text-luxury-gold text-sm"></i>
+                </div>
+              )}
             </div>
 
             {/* Brand Title and Subtitle: smoothly slides and fades */}

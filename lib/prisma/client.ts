@@ -12,8 +12,18 @@ const prismaClientSingleton = () => {
     connectionString,
     ssl: {
       rejectUnauthorized: false
-    }
+    },
+    max: 10,
+    idleTimeoutMillis: 10000, // Discard idle connections after 10s before Supabase PgBouncer closes them
+    connectionTimeoutMillis: 8000, // Fail-fast timeout instead of hanging for 20+ seconds
+    keepAlive: true, // Maintain TCP keep-alive packets to prevent cloud firewall termination
   })
+
+  // Prevent idle client termination by Supabase/PgBouncer from crashing or corrupting the pool
+  pool.on("error", (err) => {
+    console.warn("[Prisma Pool] Discarding terminated idle connection:", err.message)
+  })
+
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }

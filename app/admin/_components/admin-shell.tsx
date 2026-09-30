@@ -34,6 +34,7 @@ export function AdminSidebarToggle({ className = "" }: { className?: string }) {
 
 interface AdminShellProps {
   initialBrandName?: string
+  initialBrandLogo?: string
   initialThemeColor?: string
   initialThemeSecondary?: string
   initialThemeAccent?: string
@@ -42,6 +43,7 @@ interface AdminShellProps {
 
 export default function AdminShell({
   initialBrandName,
+  initialBrandLogo,
   initialThemeColor,
   initialThemeSecondary,
   initialThemeAccent,
@@ -73,6 +75,7 @@ export default function AdminShell({
       if (initialThemeSecondary) current.themeColorSecondary = initialThemeSecondary
       if (initialThemeAccent) current.themeColorAccent = initialThemeAccent
       if (initialBrandName) current.brandName = initialBrandName
+      if (initialBrandLogo !== undefined) current.brandLogo = initialBrandLogo
       localStorage.setItem(
         "sanctuary_settings_cache_v2",
         JSON.stringify({ data: current, timestamp: Date.now() })
@@ -118,8 +121,11 @@ export default function AdminShell({
     }
 
     window.addEventListener("storage", handleStorage)
-    return () => window.removeEventListener("storage", handleStorage)
-  }, [initialThemeColor, initialThemeSecondary, initialThemeAccent, initialBrandName])
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+      document.documentElement.classList.remove("dark", "light", "admin-light", "admin-sidebar-collapsed")
+    }
+  }, [initialThemeColor, initialThemeSecondary, initialThemeAccent, initialBrandName, initialBrandLogo])
 
   const toggleCollapsed = React.useCallback(() => {
     setIsCollapsed((prev) => {
@@ -146,6 +152,7 @@ export default function AdminShell({
       <div className="min-h-screen bg-[#0b0c10] flex w-full">
         <AdminSidebar
           initialBrandName={initialBrandName}
+          initialBrandLogo={initialBrandLogo}
           initialThemeColor={initialThemeColor}
           isCollapsed={isCollapsed}
           onToggleCollapse={toggleCollapsed}

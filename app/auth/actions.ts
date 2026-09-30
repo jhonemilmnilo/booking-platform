@@ -18,7 +18,7 @@ import {
   clearAllRateLimits
 } from "@/lib/rate-limit"
 import { revalidatePath } from "next/cache"
-import { getSystemSetting, setSystemSetting } from "@/lib/settings"
+import { getSystemSetting, getSystemSettings, setSystemSettings } from "@/lib/settings"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -522,12 +522,114 @@ export async function getHeroVideoUrlsAction() {
   return { desktopUrl, mobileUrl }
 }
 
+const DEFAULT_SYSTEM_SETTINGS: Record<string, string> = {
+  hero_subtitle: "The Apex of Oceanfront Luxury",
+  hero_title_line_1: "Where Sky Meets",
+  hero_title_line_2: "Sanctuary",
+  hero_description: "Nestled along the pristine sands of the coastline, our luxury resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
+  theme_color_primary: "#D4AF37",
+  theme_color_secondary: "#FFFFFF",
+  theme_color_accent: "#1C1A17",
+  hero_video_url: "/videos/enhance_ocean_hill_villas.mp4",
+  hero_video_url_mobile: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+  brand_name: "MIGS THE SHORE",
+  brand_logo: "",
+  brand_logo_size: "36",
+  social_facebook: "https://facebook.com",
+  social_instagram: "https://instagram.com",
+  social_tiktok: "https://tiktok.com",
+  social_twitter: "https://twitter.com",
+  resort_latitude: "16.1651539",
+  resort_longitude: "119.7698115",
+  resort_location_title_line_1: "Poised Above the",
+  resort_location_title_line_2: "Aegean Horizon",
+  resort_location_description: "Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Our resort occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove.",
+  resort_region: "Pangasinan",
+  tourist_spots: JSON.stringify([
+    { name: "Abagatanen White Beach", distance: "1 min Walk" },
+    { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+    { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+    { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+    { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
+  ]),
+  resort_amenities: JSON.stringify([
+    {
+      id: "beach-club",
+      title: "Private Beach Club",
+      subtitle: "Pristine Sands & Daybeds",
+      description: "Enjoy exclusive access to our secluded white sand cove, fully serviced with luxury loungers, double daybeds, and dedicated beachside concierges.",
+      category: "beach",
+      categoryLabel: "Beachfront",
+      icon: "fa-umbrella-beach",
+      hours: "6:00 AM – 7:00 PM",
+      perks: ["Private Cove", "Double Daybeds", "Butler Service"],
+      highlightBadge: "Signature",
+    },
+    {
+      id: "water-sports",
+      title: "Water Sports & Charters",
+      subtitle: "Coastal Exploration",
+      description: "Paddleboards, sea kayaks, and custom luxury yacht charters are available directly from the private resort pier for bespoke ocean exploration.",
+      category: "beach",
+      categoryLabel: "Sea Adventures",
+      icon: "fa-ship",
+      hours: "8:00 AM – 5:00 PM",
+      perks: ["Private Yachts", "Sea Kayaks", "Guided Reef Tours"],
+    },
+    {
+      id: "fine-dining",
+      title: "Fine Oceanfront Dining",
+      subtitle: "Mediterranean Gastronomy",
+      description: "Indulge in gourmet Mediterranean cuisine crafted from locally sourced coastal ingredients, served directly over the water under the evening stars.",
+      category: "dining",
+      categoryLabel: "Gourmet Dining",
+      icon: "fa-utensils",
+      hours: "11:30 AM – 11:00 PM",
+      perks: ["Michelin-Caliber Chefs", "Overwater Deck", "Private Cellar"],
+      highlightBadge: "Award Winning",
+    },
+    {
+      id: "poolside-loungers",
+      title: "Poolside Loungers & Cabanas",
+      subtitle: "Lagoon & Infinity Terraces",
+      description: "Relax beside our multi-tiered heated lagoon and infinity pools, featuring shaded luxury cabanas, chilled towel service, and panoramic ocean vistas.",
+      category: "wellness",
+      categoryLabel: "Relaxation",
+      icon: "fa-water",
+      hours: "7:00 AM – 10:00 PM",
+      perks: ["Infinity Edge", "Heated Waters", "Chilled Towels"],
+    },
+    {
+      id: "wellness-spa",
+      title: "Wellness & Spa Pavilion",
+      subtitle: "Holistic Rejuvenation",
+      description: "Experience world-class massage therapy, Himalayan salt saunas, and sensory wellness treatments designed to restore body and mind right on the shore.",
+      category: "wellness",
+      categoryLabel: "Holistic Health",
+      icon: "fa-spa",
+      hours: "9:00 AM – 9:00 PM",
+      perks: ["Herbal Steam", "Deep Tissue Massage", "Sound Healing"],
+      highlightBadge: "Holistic",
+    },
+    {
+      id: "sunset-bar",
+      title: "Sunset Cabana Bar",
+      subtitle: "Artisanal Libations",
+      description: "Sip custom botanical cocktails, fresh cold-pressed tropical juices, and vintage reserve wines served directly to your lounge chair by master mixologists.",
+      category: "dining",
+      categoryLabel: "Seaside Drinks",
+      icon: "fa-martini-glass-citrus",
+      hours: "3:00 PM – Midnight",
+      perks: ["Master Mixology", "Craft Botanical Cocktails", "Sunset DJ Sets"],
+    },
+  ]),
+}
+
 export async function getSystemSettingsAction() {
   try {
-    const heroSubtitle = await getSystemSetting("hero_subtitle", "The Apex of Oceanfront Luxury")
-    const heroTitleLine1 = await getSystemSetting("hero_title_line_1", "Where Sky Meets")
-    const heroTitleLine2 = await getSystemSetting("hero_title_line_2", "Sanctuary")
-    let heroDescription = await getSystemSetting("hero_description", "Nestled along the pristine sands of the coastline, our luxury resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+    const s = await getSystemSettings(Object.keys(DEFAULT_SYSTEM_SETTINGS), DEFAULT_SYSTEM_SETTINGS)
+
+    let heroDescription = s.hero_description
     if (heroDescription) {
       heroDescription = heroDescription
         .replace(/oceanhilling\s*resort/gi, "our luxury resort")
@@ -535,270 +637,83 @@ export async function getSystemSettingsAction() {
         .replace(/ocean\s*hill/gi, "our resort")
     }
 
-    const themeColorPrimary = await getSystemSetting("theme_color_primary", "#D4AF37")
-    const themeColorSecondary = await getSystemSetting("theme_color_secondary", "#FFFFFF")
-    const themeColorAccent = await getSystemSetting("theme_color_accent", "#1C1A17")
-
-    const heroVideoUrl = await getSystemSetting("hero_video_url", "/videos/enhance_ocean_hill_villas.mp4")
-    const heroVideoUrlMobile = await getSystemSetting("hero_video_url_mobile", "/videos/enhance_ocean_hill_villas_mobile.mp4")
-
-    const brandName = await getSystemSetting("brand_name", "MIGS THE SHORE")
-    const brandLogo = await getSystemSetting("brand_logo", "")
-
-    const socialFacebook = await getSystemSetting("social_facebook", "https://facebook.com")
-    const socialInstagram = await getSystemSetting("social_instagram", "https://instagram.com")
-    const socialTiktok = await getSystemSetting("social_tiktok", "https://tiktok.com")
-    const socialTwitter = await getSystemSetting("social_twitter", "https://twitter.com")
-
-    const resortLatitude = await getSystemSetting("resort_latitude", "16.1651539")
-    const resortLongitude = await getSystemSetting("resort_longitude", "119.7698115")
-    const resortLocationTitleLine1 = await getSystemSetting("resort_location_title_line_1", "Poised Above the")
-    const resortLocationTitleLine2 = await getSystemSetting("resort_location_title_line_2", "Aegean Horizon")
-    const resortLocationDescription = await getSystemSetting(
-      "resort_location_description",
-      "Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Our resort occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove."
-    )
-    const resortRegion = await getSystemSetting("resort_region", "Pangasinan")
-
-    const touristSpots = await getSystemSetting(
-      "tourist_spots",
-      JSON.stringify([
-        { name: "Abagatanen White Beach", distance: "1 min Walk" },
-        { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
-        { name: "Bani Olanen Beach", distance: "12 mins Drive" },
-        { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
-        { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
-      ])
-    )
-
-    const resortAmenities = await getSystemSetting(
-      "resort_amenities",
-      JSON.stringify([
-        {
-          id: "beach-club",
-          title: "Private Beach Club",
-          subtitle: "Pristine Sands & Daybeds",
-          description: "Enjoy exclusive access to our secluded white sand cove, fully serviced with luxury loungers, double daybeds, and dedicated beachside concierges.",
-          category: "beach",
-          categoryLabel: "Beachfront",
-          icon: "fa-umbrella-beach",
-          hours: "6:00 AM – 7:00 PM",
-          perks: ["Private Cove", "Double Daybeds", "Butler Service"],
-          highlightBadge: "Signature",
-        },
-        {
-          id: "water-sports",
-          title: "Water Sports & Charters",
-          subtitle: "Coastal Exploration",
-          description: "Paddleboards, sea kayaks, and custom luxury yacht charters are available directly from the private resort pier for bespoke ocean exploration.",
-          category: "beach",
-          categoryLabel: "Sea Adventures",
-          icon: "fa-ship",
-          hours: "8:00 AM – 5:00 PM",
-          perks: ["Private Yachts", "Sea Kayaks", "Guided Reef Tours"],
-        },
-        {
-          id: "fine-dining",
-          title: "Fine Oceanfront Dining",
-          subtitle: "Mediterranean Gastronomy",
-          description: "Indulge in gourmet Mediterranean cuisine crafted from locally sourced coastal ingredients, served directly over the water under the evening stars.",
-          category: "dining",
-          categoryLabel: "Gourmet Dining",
-          icon: "fa-utensils",
-          hours: "11:30 AM – 11:00 PM",
-          perks: ["Michelin-Caliber Chefs", "Overwater Deck", "Private Cellar"],
-          highlightBadge: "Award Winning",
-        },
-        {
-          id: "poolside-loungers",
-          title: "Poolside Loungers & Cabanas",
-          subtitle: "Lagoon & Infinity Terraces",
-          description: "Relax beside our multi-tiered heated lagoon and infinity pools, featuring shaded luxury cabanas, chilled towel service, and panoramic ocean vistas.",
-          category: "wellness",
-          categoryLabel: "Relaxation",
-          icon: "fa-water",
-          hours: "7:00 AM – 10:00 PM",
-          perks: ["Infinity Edge", "Heated Waters", "Chilled Towels"],
-        },
-        {
-          id: "wellness-spa",
-          title: "Wellness & Spa Pavilion",
-          subtitle: "Holistic Rejuvenation",
-          description: "Experience world-class massage therapy, Himalayan salt saunas, and sensory wellness treatments designed to restore body and mind right on the shore.",
-          category: "wellness",
-          categoryLabel: "Holistic Health",
-          icon: "fa-spa",
-          hours: "9:00 AM – 9:00 PM",
-          perks: ["Herbal Steam", "Deep Tissue Massage", "Sound Healing"],
-          highlightBadge: "Holistic",
-        },
-        {
-          id: "sunset-bar",
-          title: "Sunset Cabana Bar",
-          subtitle: "Artisanal Libations",
-          description: "Sip custom botanical cocktails, fresh cold-pressed tropical juices, and vintage reserve wines served directly to your lounge chair by master mixologists.",
-          category: "dining",
-          categoryLabel: "Seaside Drinks",
-          icon: "fa-martini-glass-citrus",
-          hours: "3:00 PM – Midnight",
-          perks: ["Master Mixology", "Craft Botanical Cocktails", "Sunset DJ Sets"],
-        },
-      ])
-    )
+    const brandLogoSize = s.brand_logo_size || "36"
 
     return {
-      heroSubtitle,
-      heroTitleLine1,
-      heroTitleLine2,
+      heroSubtitle: s.hero_subtitle,
+      heroTitleLine1: s.hero_title_line_1,
+      heroTitleLine2: s.hero_title_line_2,
       heroDescription,
-      themeColorPrimary,
-      themeColorSecondary,
-      themeColorAccent,
-      theme_color_primary: themeColorPrimary,
-      theme_color_secondary: themeColorSecondary,
-      theme_color_accent: themeColorAccent,
-      heroVideoUrl,
-      heroVideoUrlMobile,
-      brandName,
-      brandLogo,
-      socialFacebook,
-      socialInstagram,
-      socialTiktok,
-      socialTwitter,
-      touristSpots,
-      resortLatitude,
-      resortLongitude,
-      resortLocationTitleLine1,
-      resortLocationTitleLine2,
-      resortLocationDescription,
-      resortRegion,
-      resort_latitude: resortLatitude,
-      resort_longitude: resortLongitude,
-      resortAmenities,
-      resort_amenities: resortAmenities,
+      themeColorPrimary: s.theme_color_primary,
+      themeColorSecondary: s.theme_color_secondary,
+      themeColorAccent: s.theme_color_accent,
+      theme_color_primary: s.theme_color_primary,
+      theme_color_secondary: s.theme_color_secondary,
+      theme_color_accent: s.theme_color_accent,
+      heroVideoUrl: s.hero_video_url,
+      heroVideoUrlMobile: s.hero_video_url_mobile,
+      brandName: s.brand_name,
+      brandLogo: s.brand_logo,
+      brandLogoSize: Number(brandLogoSize) || 36,
+      brand_logo_size: brandLogoSize,
+      socialFacebook: s.social_facebook,
+      socialInstagram: s.social_instagram,
+      socialTiktok: s.social_tiktok,
+      socialTwitter: s.social_twitter,
+      touristSpots: s.tourist_spots,
+      resortLatitude: s.resort_latitude,
+      resortLongitude: s.resort_longitude,
+      resortLocationTitleLine1: s.resort_location_title_line_1,
+      resortLocationTitleLine2: s.resort_location_title_line_2,
+      resortLocationDescription: s.resort_location_description,
+      resortRegion: s.resort_region,
+      resort_latitude: s.resort_latitude,
+      resort_longitude: s.resort_longitude,
+      resortAmenities: s.resort_amenities,
+      resort_amenities: s.resort_amenities,
     }
   } catch (error) {
     console.error("[SettingsAction] Failed to retrieve system settings:", error)
     return {
-      heroSubtitle: "The Apex of Oceanfront Luxury",
-      heroTitleLine1: "Where Sky Meets",
-      heroTitleLine2: "Sanctuary",
-      heroDescription: "Nestled along the pristine sands of the coastline, our luxury resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
-      themeColorPrimary: "#D4AF37",
-      themeColorSecondary: "#FFFFFF",
-      themeColorAccent: "#1C1A17",
-      theme_color_primary: "#D4AF37",
-      theme_color_secondary: "#FFFFFF",
-      theme_color_accent: "#1C1A17",
-      heroVideoUrl: "/videos/enhance_ocean_hill_villas.mp4",
-      heroVideoUrlMobile: "/videos/enhance_ocean_hill_villas_mobile.mp4",
-      brandName: "MIGS THE SHORE",
-      brandLogo: "",
-      socialFacebook: "https://facebook.com",
-      socialInstagram: "https://instagram.com",
-      socialTiktok: "https://tiktok.com",
-      socialTwitter: "https://twitter.com",
-      touristSpots: JSON.stringify([
-        { name: "Abagatanen White Beach", distance: "1 min Walk" },
-        { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
-        { name: "Bani Olanen Beach", distance: "12 mins Drive" },
-        { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
-        { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
-      ]),
-      resortLatitude: "16.1651539",
-      resortLongitude: "119.7698115",
-      resortLocationTitleLine1: "Poised Above the",
-      resortLocationTitleLine2: "Aegean Horizon",
-      resortLocationDescription: "Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Our resort occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove.",
-      resortRegion: "Pangasinan",
-      resort_latitude: "16.1651539",
-      resort_longitude: "119.7698115",
-      resortAmenities: JSON.stringify([
-        {
-          id: "beach-club",
-          title: "Private Beach Club",
-          subtitle: "Pristine Sands & Daybeds",
-          description: "Enjoy exclusive access to our secluded white sand cove, fully serviced with luxury loungers, double daybeds, and dedicated beachside concierges.",
-          category: "beach",
-          categoryLabel: "Beachfront",
-          icon: "fa-umbrella-beach",
-          hours: "6:00 AM – 7:00 PM",
-          perks: ["Private Cove", "Double Daybeds", "Butler Service"],
-          highlightBadge: "Signature",
-        },
-        {
-          id: "water-sports",
-          title: "Water Sports & Charters",
-          subtitle: "Coastal Exploration",
-          description: "Paddleboards, sea kayaks, and custom luxury yacht charters are available directly from the private resort pier for bespoke ocean exploration.",
-          category: "beach",
-          categoryLabel: "Sea Adventures",
-          icon: "fa-ship",
-          hours: "8:00 AM – 5:00 PM",
-          perks: ["Private Yachts", "Sea Kayaks", "Guided Reef Tours"],
-        },
-        {
-          id: "fine-dining",
-          title: "Fine Oceanfront Dining",
-          subtitle: "Mediterranean Gastronomy",
-          description: "Indulge in gourmet Mediterranean cuisine crafted from locally sourced coastal ingredients, served directly over the water under the evening stars.",
-          category: "dining",
-          categoryLabel: "Gourmet Dining",
-          icon: "fa-utensils",
-          hours: "11:30 AM – 11:00 PM",
-          perks: ["Michelin-Caliber Chefs", "Overwater Deck", "Private Cellar"],
-          highlightBadge: "Award Winning",
-        },
-        {
-          id: "poolside-loungers",
-          title: "Poolside Loungers & Cabanas",
-          subtitle: "Lagoon & Infinity Terraces",
-          description: "Relax beside our multi-tiered heated lagoon and infinity pools, featuring shaded luxury cabanas, chilled towel service, and panoramic ocean vistas.",
-          category: "wellness",
-          categoryLabel: "Relaxation",
-          icon: "fa-water",
-          hours: "7:00 AM – 10:00 PM",
-          perks: ["Infinity Edge", "Heated Waters", "Chilled Towels"],
-        },
-        {
-          id: "wellness-spa",
-          title: "Wellness & Spa Pavilion",
-          subtitle: "Holistic Rejuvenation",
-          description: "Experience world-class massage therapy, Himalayan salt saunas, and sensory wellness treatments designed to restore body and mind right on the shore.",
-          category: "wellness",
-          categoryLabel: "Holistic Health",
-          icon: "fa-spa",
-          hours: "9:00 AM – 9:00 PM",
-          perks: ["Herbal Steam", "Deep Tissue Massage", "Sound Healing"],
-          highlightBadge: "Holistic",
-        },
-        {
-          id: "sunset-bar",
-          title: "Sunset Cabana Bar",
-          subtitle: "Artisanal Libations",
-          description: "Sip custom botanical cocktails, fresh cold-pressed tropical juices, and vintage reserve wines served directly to your lounge chair by master mixologists.",
-          category: "dining",
-          categoryLabel: "Seaside Drinks",
-          icon: "fa-martini-glass-citrus",
-          hours: "3:00 PM – Midnight",
-          perks: ["Master Mixology", "Craft Botanical Cocktails", "Sunset DJ Sets"],
-        },
-      ]),
-      resort_amenities: "",
+      heroSubtitle: DEFAULT_SYSTEM_SETTINGS.hero_subtitle,
+      heroTitleLine1: DEFAULT_SYSTEM_SETTINGS.hero_title_line_1,
+      heroTitleLine2: DEFAULT_SYSTEM_SETTINGS.hero_title_line_2,
+      heroDescription: DEFAULT_SYSTEM_SETTINGS.hero_description,
+      themeColorPrimary: DEFAULT_SYSTEM_SETTINGS.theme_color_primary,
+      themeColorSecondary: DEFAULT_SYSTEM_SETTINGS.theme_color_secondary,
+      themeColorAccent: DEFAULT_SYSTEM_SETTINGS.theme_color_accent,
+      theme_color_primary: DEFAULT_SYSTEM_SETTINGS.theme_color_primary,
+      theme_color_secondary: DEFAULT_SYSTEM_SETTINGS.theme_color_secondary,
+      theme_color_accent: DEFAULT_SYSTEM_SETTINGS.theme_color_accent,
+      heroVideoUrl: DEFAULT_SYSTEM_SETTINGS.hero_video_url,
+      heroVideoUrlMobile: DEFAULT_SYSTEM_SETTINGS.hero_video_url_mobile,
+      brandName: DEFAULT_SYSTEM_SETTINGS.brand_name,
+      brandLogo: DEFAULT_SYSTEM_SETTINGS.brand_logo,
+      brandLogoSize: 36,
+      brand_logo_size: "36",
+      socialFacebook: DEFAULT_SYSTEM_SETTINGS.social_facebook,
+      socialInstagram: DEFAULT_SYSTEM_SETTINGS.social_instagram,
+      socialTiktok: DEFAULT_SYSTEM_SETTINGS.social_tiktok,
+      socialTwitter: DEFAULT_SYSTEM_SETTINGS.social_twitter,
+      touristSpots: DEFAULT_SYSTEM_SETTINGS.tourist_spots,
+      resortLatitude: DEFAULT_SYSTEM_SETTINGS.resort_latitude,
+      resortLongitude: DEFAULT_SYSTEM_SETTINGS.resort_longitude,
+      resortLocationTitleLine1: DEFAULT_SYSTEM_SETTINGS.resort_location_title_line_1,
+      resortLocationTitleLine2: DEFAULT_SYSTEM_SETTINGS.resort_location_title_line_2,
+      resortLocationDescription: DEFAULT_SYSTEM_SETTINGS.resort_location_description,
+      resortRegion: DEFAULT_SYSTEM_SETTINGS.resort_region,
+      resort_latitude: DEFAULT_SYSTEM_SETTINGS.resort_latitude,
+      resort_longitude: DEFAULT_SYSTEM_SETTINGS.resort_longitude,
+      resortAmenities: DEFAULT_SYSTEM_SETTINGS.resort_amenities,
+      resort_amenities: DEFAULT_SYSTEM_SETTINGS.resort_amenities,
     }
   }
 }
 
 export async function updateSystemSettingsAction(settings: Record<string, string>) {
   try {
-    for (const [key, value] of Object.entries(settings)) {
-      await setSystemSetting(key, value)
-    }
-    revalidatePath("/", "layout")
-    revalidatePath("/admin/system")
-    revalidatePath("/admin/settings")
-    revalidatePath("/admin/location")
-    revalidatePath("/admin/amenities")
+    await setSystemSettings(settings)
+    revalidatePath("/")
     return { success: true }
   } catch (error) {
     console.error("[SettingsAction] Failed to update system settings:", error)

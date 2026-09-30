@@ -423,7 +423,7 @@ export default function AdminAmenitiesPage() {
           </div>
         </header>
 
-        <main className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+        <main className="w-full p-6 md:p-10 space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-[#131418] border border-black/10 dark:border-white/[0.08] rounded-2xl p-4 shadow-sm dark:shadow-lg space-y-2">
@@ -496,7 +496,7 @@ export default function AdminAmenitiesPage() {
       </header>
 
       {/* ── Main Content Container ── */}
-      <main className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
+      <main className="w-full p-6 md:p-10 space-y-6">
         {/* Quick Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-[#131418] border border-white/[0.08] rounded-2xl p-4 shadow-lg">
@@ -614,7 +614,7 @@ export default function AdminAmenitiesPage() {
 
         {/* ── Content View: Card Editor Mode ── */}
         {previewMode === "cards" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5">
             {filteredAmenities.length === 0 ? (
               <div className="col-span-full py-16 text-center bg-[#131418] border border-white/[0.08] rounded-2xl p-8">
                 <div className="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center text-white/30 mx-auto mb-3">
@@ -757,7 +757,7 @@ export default function AdminAmenitiesPage() {
             </div>
 
             {/* Live Rendered Card Grid in Public Theme */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
               {filteredAmenities.map((amenity) => (
                 <div
                   key={amenity.id}

@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion"
 interface HeaderProps {
   brandName: string;
   brandLogo: string;
+  brandLogoSize?: number;
   isLoggedIn: boolean;
   isAdmin?: boolean;
   onBookClick: (room: Room) => void;
@@ -19,6 +20,7 @@ interface HeaderProps {
 export default function Header({
   brandName,
   brandLogo,
+  brandLogoSize = 36,
   isLoggedIn,
   isAdmin = false,
   onLogOut,
@@ -95,10 +97,16 @@ export default function Header({
           <img
             src={brandLogo}
             alt="Logo"
-            className="w-7 h-7 sm:w-8 sm:h-8 xl:w-9 xl:h-9 object-contain rounded"
+            style={{ height: `${brandLogoSize}px`, width: "auto" }}
+            className="max-h-[80px] max-w-[220px] object-contain rounded transition-all duration-200"
           />
         ) : (
-          <svg className="w-7 h-7 sm:w-8 sm:h-8 xl:w-9 xl:h-9 text-luxury-gold filter drop-shadow flex-shrink-0 transition-transform duration-300 group-hover:scale-105" viewBox="0 0 100 100" fill="currentColor">
+          <svg
+            style={{ height: `${brandLogoSize}px`, width: `${brandLogoSize}px` }}
+            className="text-luxury-gold filter drop-shadow flex-shrink-0 transition-transform duration-300 group-hover:scale-105"
+            viewBox="0 0 100 100"
+            fill="currentColor"
+          >
             <path d="M50 5 L85 25 L85 65 L50 95 L15 65 L15 25 Z" fill="none" stroke="currentColor" strokeWidth="2" />
             <path d="M50 15 L75 30 L75 60 L50 82 L25 60 L25 30 Z" fill="none" stroke="currentColor" strokeDasharray="2,2" />
             <circle cx="50" cy="48" r="8" fill="currentColor" />
@@ -183,7 +191,7 @@ export default function Header({
           Reserve
         </button> */}
 
-        {isLoggedIn && (
+        {isLoggedIn ? (
           <button
             onClick={onLogOut}
             className={`hidden sm:inline-flex items-center justify-center border font-semibold text-[11px] xl:text-xs uppercase tracking-[0.18em] xl:tracking-[0.2em] px-3.5 py-2 xl:px-4.5 xl:py-2 rounded-full shadow-sm transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap ${
@@ -194,10 +202,19 @@ export default function Header({
           >
             Log Out
           </button>
+        ) : (
+          <Link
+            href="/auth/login"
+            className="hidden sm:inline-flex items-center justify-center bg-gold-gradient hover:brightness-110 text-white font-semibold text-[11px] xl:text-xs uppercase tracking-[0.2em] px-4.5 py-2 xl:px-5 xl:py-2 rounded-full shadow-md hover:shadow-[0_0_22px_var(--color-luxury-gold)] transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap border-none"
+            title="Sign In to Sanctuary"
+          >
+            <i className="fa-solid fa-arrow-right-to-bracket mr-2 text-[10px]"></i>
+            Sign In
+          </Link>
         )}
 
-        {/* Mobile Quick Admin Button */}
-        {isAdmin && (
+        {/* Mobile Quick Admin / Sign In Button */}
+        {isAdmin ? (
           <Link
             href="/admin"
             className="sm:hidden flex items-center justify-center w-8 h-8 rounded-full border border-luxury-gold/60 bg-luxury-gold/15 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-all shadow-[0_0_10px_rgba(212,175,55,0.25)]"
@@ -205,7 +222,15 @@ export default function Header({
           >
             <i className="fa-solid fa-crown text-xs"></i>
           </Link>
-        )}
+        ) : !isLoggedIn ? (
+          <Link
+            href="/auth/login"
+            className="sm:hidden flex items-center justify-center w-8 h-8 rounded-full border border-luxury-gold/40 bg-luxury-gold/15 text-luxury-gold hover:bg-luxury-gold hover:text-black transition-all shadow-sm"
+            title="Sign In"
+          >
+            <i className="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+          </Link>
+        ) : null}
 
         {/* Mobile Menu Toggle */}
         <button
@@ -319,7 +344,7 @@ export default function Header({
               >
                 Reserve
               </button> */}
-              {isLoggedIn && (
+              {isLoggedIn ? (
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false)
@@ -329,6 +354,15 @@ export default function Header({
                 >
                   Log Out
                 </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full flex items-center justify-center gap-2.5 bg-gold-gradient text-white font-semibold text-xs uppercase tracking-[0.2em] py-3 rounded-full shadow-lg border-none cursor-pointer text-center"
+                >
+                  <i className="fa-solid fa-arrow-right-to-bracket text-xs"></i>
+                  <span>Sign In</span>
+                </Link>
               )}
             </div>
           </motion.div>

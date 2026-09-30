@@ -42,6 +42,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      data-scroll-behavior="smooth"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
@@ -81,13 +82,18 @@ export default async function RootLayout({
               window.__SYSTEM_SETTINGS__ = ${JSON.stringify(settings)};
 
               try {
-                var adminTheme = localStorage.getItem("admin_theme_mode");
-                if (adminTheme === "light") {
-                  document.documentElement.classList.remove("dark");
-                  document.documentElement.classList.add("light", "admin-light");
-                } else if (adminTheme === "dark") {
-                  document.documentElement.classList.remove("light", "admin-light");
-                  document.documentElement.classList.add("dark");
+                var isAdminPath = window.location.pathname.indexOf("/admin") === 0;
+                if (isAdminPath) {
+                  var adminTheme = localStorage.getItem("admin_theme_mode");
+                  if (adminTheme === "light") {
+                    document.documentElement.classList.remove("dark");
+                    document.documentElement.classList.add("light", "admin-light");
+                  } else {
+                    document.documentElement.classList.remove("light", "admin-light");
+                    document.documentElement.classList.add("dark");
+                  }
+                } else {
+                  document.documentElement.classList.remove("dark", "light", "admin-light");
                 }
 
                 var raw = localStorage.getItem("sanctuary_settings_cache_v2");

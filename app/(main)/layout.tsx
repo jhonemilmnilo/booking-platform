@@ -67,6 +67,7 @@ export default function MainLayout({
   // Brand and settings
   const [brandName, setBrandName] = React.useState("MIGS THE SHORE")
   const [brandLogo, setBrandLogo] = React.useState("")
+  const [brandLogoSize, setBrandLogoSize] = React.useState(36)
   const [socialFacebook, setSocialFacebook] = React.useState("https://facebook.com")
   const [socialInstagram, setSocialInstagram] = React.useState("https://instagram.com")
   const [socialTiktok, setSocialTiktok] = React.useState("https://tiktok.com")
@@ -127,6 +128,11 @@ export default function MainLayout({
 
   // Initialize data and settings with client-side caching
   React.useEffect(() => {
+    // Ensure the main public site never inherits admin theme classes
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.remove("dark", "light", "admin-light", "admin-sidebar-collapsed")
+    }
+
     // 1. Immediately hydrate from cache — deferred to avoid synchronous setState-in-effect lint
     const cached = getClientCachedSettings()
     let hasValidCache = false
@@ -136,6 +142,7 @@ export default function MainLayout({
       queueMicrotask(() => {
         if (cached.brandName) setBrandName(cached.brandName as string)
         if (cached.brandLogo !== undefined) setBrandLogo(cached.brandLogo as string)
+        if (cached.brandLogoSize) setBrandLogoSize(Number(cached.brandLogoSize) || 36)
         if (cached.socialFacebook) setSocialFacebook(cached.socialFacebook as string)
         if (cached.socialInstagram) setSocialInstagram(cached.socialInstagram as string)
         if (cached.socialTiktok) setSocialTiktok(cached.socialTiktok as string)
@@ -153,12 +160,24 @@ export default function MainLayout({
 
     // 2. Fetch fresh settings from server (stale-while-revalidate)
     // If settings are already injected in the window by the server, use them to avoid a network roundtrip
-    interface SystemSettingsWindow { brandName?: string; brandLogo?: string; socialFacebook?: string; socialInstagram?: string; socialTiktok?: string; socialTwitter?: string; themeColorPrimary?: string; themeColorSecondary?: string; themeColorAccent?: string }
+    interface SystemSettingsWindow {
+      brandName?: string;
+      brandLogo?: string;
+      brandLogoSize?: number | string;
+      socialFacebook?: string;
+      socialInstagram?: string;
+      socialTiktok?: string;
+      socialTwitter?: string;
+      themeColorPrimary?: string;
+      themeColorSecondary?: string;
+      themeColorAccent?: string;
+    }
     const injected = (window as Window & { __SYSTEM_SETTINGS__?: SystemSettingsWindow }).__SYSTEM_SETTINGS__
     if (injected) {
       queueMicrotask(() => {
         setBrandName(injected.brandName || "Ocean Hill")
         setBrandLogo(injected.brandLogo || "")
+        if (injected.brandLogoSize) setBrandLogoSize(Number(injected.brandLogoSize) || 36)
         setSocialFacebook(injected.socialFacebook || "https://facebook.com")
         setSocialInstagram(injected.socialInstagram || "https://instagram.com")
         setSocialTiktok(injected.socialTiktok || "https://tiktok.com")
@@ -186,6 +205,7 @@ export default function MainLayout({
       .then((settings) => {
         setBrandName(settings.brandName || "MIGS THE SHORE")
         setBrandLogo(settings.brandLogo || "")
+        if (settings.brandLogoSize) setBrandLogoSize(Number(settings.brandLogoSize) || 36)
         setSocialFacebook(settings.socialFacebook || "https://facebook.com")
         setSocialInstagram(settings.socialInstagram || "https://instagram.com")
         setSocialTiktok(settings.socialTiktok || "https://tiktok.com")
@@ -334,6 +354,7 @@ export default function MainLayout({
       <Header
         brandName={brandName}
         brandLogo={brandLogo}
+        brandLogoSize={brandLogoSize}
         isLoggedIn={isLoggedIn}
         isAdmin={isAdmin}
         onBookClick={handleBookClick}

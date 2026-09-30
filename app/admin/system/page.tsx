@@ -11,6 +11,7 @@ import AdminUserDropdown from "@/app/admin/_components/admin-user-dropdown"
 interface SystemSettingsValues {
   brandName: string
   brandLogo: string
+  brandLogoSize: number
   themeColorPrimary: string
   themeColorSecondary: string
   themeColorAccent: string
@@ -36,6 +37,13 @@ export default function GeneralSystemSettingsPage() {
       if (c?.brandLogo) return c.brandLogo
     }
     return ""
+  })
+  const [brandLogoSize, setBrandLogoSize] = React.useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const c = getClientCachedSettings()
+      if (c?.brandLogoSize) return Number(c.brandLogoSize)
+    }
+    return 36
   })
 
   const [themeColorPrimary, setThemeColorPrimary] = React.useState(() => {
@@ -121,6 +129,7 @@ export default function GeneralSystemSettingsPage() {
         const loadedValues: SystemSettingsValues = {
           brandName: settings.brandName || "MIGS THE SHORE",
           brandLogo: settings.brandLogo || "",
+          brandLogoSize: Number(settings.brandLogoSize) || 36,
           themeColorPrimary: settings.themeColorPrimary || "#D4AF37",
           themeColorSecondary: settings.themeColorSecondary || "#FFFFFF",
           themeColorAccent: settings.themeColorAccent || "#1C1A17",
@@ -132,6 +141,7 @@ export default function GeneralSystemSettingsPage() {
 
         setBrandName(loadedValues.brandName)
         setBrandLogo(loadedValues.brandLogo)
+        setBrandLogoSize(loadedValues.brandLogoSize)
         setThemeColorPrimary(loadedValues.themeColorPrimary)
         setThemeColorSecondary(loadedValues.themeColorSecondary)
         setThemeColorAccent(loadedValues.themeColorAccent)
@@ -165,6 +175,7 @@ export default function GeneralSystemSettingsPage() {
     return (
       brandName !== savedSettings.brandName ||
       brandLogo !== savedSettings.brandLogo ||
+      brandLogoSize !== savedSettings.brandLogoSize ||
       themeColorPrimary !== savedSettings.themeColorPrimary ||
       themeColorSecondary !== savedSettings.themeColorSecondary ||
       themeColorAccent !== savedSettings.themeColorAccent ||
@@ -177,6 +188,7 @@ export default function GeneralSystemSettingsPage() {
     savedSettings,
     brandName,
     brandLogo,
+    brandLogoSize,
     themeColorPrimary,
     themeColorSecondary,
     themeColorAccent,
@@ -205,16 +217,36 @@ export default function GeneralSystemSettingsPage() {
     const toastId = toast.loading("Saving system settings...")
 
     try {
-      const payload: Record<string, string> = {
-        brand_name: brandName,
-        brand_logo: brandLogo,
-        theme_color_primary: themeColorPrimary,
-        theme_color_secondary: themeColorSecondary,
-        theme_color_accent: themeColorAccent,
-        social_facebook: socialFacebook,
-        social_instagram: socialInstagram,
-        social_tiktok: socialTiktok,
-        social_twitter: socialTwitter,
+      // Only send fields that actually changed to minimize database writes and egress
+      const payload: Record<string, string> = {}
+      if (savedSettings) {
+        if (brandName !== savedSettings.brandName) payload.brand_name = brandName
+        if (brandLogo !== savedSettings.brandLogo) payload.brand_logo = brandLogo
+        if (brandLogoSize !== savedSettings.brandLogoSize) payload.brand_logo_size = String(brandLogoSize)
+        if (themeColorPrimary !== savedSettings.themeColorPrimary) payload.theme_color_primary = themeColorPrimary
+        if (themeColorSecondary !== savedSettings.themeColorSecondary) payload.theme_color_secondary = themeColorSecondary
+        if (themeColorAccent !== savedSettings.themeColorAccent) payload.theme_color_accent = themeColorAccent
+        if (socialFacebook !== savedSettings.socialFacebook) payload.social_facebook = socialFacebook
+        if (socialInstagram !== savedSettings.socialInstagram) payload.social_instagram = socialInstagram
+        if (socialTiktok !== savedSettings.socialTiktok) payload.social_tiktok = socialTiktok
+        if (socialTwitter !== savedSettings.socialTwitter) payload.social_twitter = socialTwitter
+      } else {
+        payload.brand_name = brandName
+        payload.brand_logo = brandLogo
+        payload.brand_logo_size = String(brandLogoSize)
+        payload.theme_color_primary = themeColorPrimary
+        payload.theme_color_secondary = themeColorSecondary
+        payload.theme_color_accent = themeColorAccent
+        payload.social_facebook = socialFacebook
+        payload.social_instagram = socialInstagram
+        payload.social_tiktok = socialTiktok
+        payload.social_twitter = socialTwitter
+      }
+
+      if (Object.keys(payload).length === 0) {
+        toast.success("No changes to save.", { id: toastId })
+        setIsSaving(false)
+        return
       }
 
       const result = await updateSystemSettingsAction(payload)
@@ -228,6 +260,8 @@ export default function GeneralSystemSettingsPage() {
         ...currentCache,
         brandName,
         brandLogo,
+        brandLogoSize,
+        brand_logo_size: String(brandLogoSize),
         themeColorPrimary,
         themeColorSecondary,
         themeColorAccent,
@@ -241,6 +275,7 @@ export default function GeneralSystemSettingsPage() {
       setSavedSettings({
         brandName,
         brandLogo,
+        brandLogoSize,
         themeColorPrimary,
         themeColorSecondary,
         themeColorAccent,
@@ -532,6 +567,34 @@ export default function GeneralSystemSettingsPage() {
                   </label>
                 </div>
               </div>
+
+              {/* Logo Display Size Control */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-white/60 uppercase tracking-wide">
+                    Logo Display Size
+                  </label>
+                  <span className="text-xs font-mono font-bold text-luxury-gold bg-luxury-gold/10 border border-luxury-gold/30 px-2.5 py-0.5 rounded-lg">
+                    {brandLogoSize}px
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 bg-[#16171b] border border-white/10 rounded-xl p-3">
+                  <span className="text-[10px] text-white/40 uppercase tracking-widest font-semibold shrink-0">20px</span>
+                  <input
+                    type="range"
+                    min="20"
+                    max="80"
+                    step="2"
+                    value={brandLogoSize}
+                    onChange={(e) => setBrandLogoSize(Number(e.target.value))}
+                    className="w-full accent-luxury-gold cursor-pointer"
+                  />
+                  <span className="text-[10px] text-white/40 uppercase tracking-widest font-semibold shrink-0">80px</span>
+                </div>
+                <p className="text-[11px] text-white/40">
+                  Controls the height of the brand logo in the website header and navigation bars.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -682,10 +745,16 @@ export default function GeneralSystemSettingsPage() {
                   <img
                     src={brandLogo}
                     alt="Logo Preview"
-                    className="w-8 h-8 object-contain rounded"
+                    style={{ height: `${brandLogoSize}px`, width: "auto" }}
+                    className="max-h-[80px] max-w-[200px] object-contain rounded transition-all duration-200"
                   />
                 ) : (
-                  <svg style={{ color: themeColorPrimary }} className="w-8 h-8 filter drop-shadow transition-colors duration-300" viewBox="0 0 100 100" fill="currentColor">
+                  <svg
+                    style={{ height: `${brandLogoSize}px`, width: `${brandLogoSize}px`, color: themeColorPrimary }}
+                    className="filter drop-shadow transition-all duration-300"
+                    viewBox="0 0 100 100"
+                    fill="currentColor"
+                  >
                     <path d="M50 5 L85 25 L85 65 L50 95 L15 65 L15 25 Z" fill="none" stroke="currentColor" strokeWidth="2" />
                     <circle cx="50" cy="48" r="8" fill="currentColor" />
                   </svg>

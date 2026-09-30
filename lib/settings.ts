@@ -78,7 +78,8 @@ export async function getSystemSettings(
   if (missingKeys.length > 0) {
     try {
       const records = await prisma.systemSettings.findMany({
-        where: { key: { in: missingKeys } }
+        where: { key: { in: missingKeys } },
+        select: { key: true, value: true }
       })
 
       const recordMap = new Map(records.map((r) => [r.key, r.value]))
@@ -131,6 +132,42 @@ export async function setSystemSetting(key: string, value: string): Promise<void
     }
   } catch (error) {
     console.error(`[Settings] Failed to save system setting: ${key}`, error)
+    throw error
+  }
+}
+
+/**
+ * Update multiple system settings concurrently.
+ * Performs parallel upserts in PostgreSQL and updates the Redis cache in batch.
+ */
+export async function setSystemSettings(settings: Record<string, string>): Promise<void> {
+  const entries = Object.entries(settings)
+  if (entries.length === 0) return
+
+  try {
+    await Promise.all(
+      entries.map(([key, value]) =>
+        prisma.systemSettings.upsert({
+          where: { key },
+          create: { key, value },
+          update: { value },
+        })
+      )
+    )
+
+    if (redis && redis.status === "ready") {
+      try {
+        const toCache: Record<string, string> = {}
+        for (const [key, value] of entries) {
+          toCache[`setting:${key}`] = value
+        }
+        await redis.mset(toCache)
+      } catch {
+        // Ignore cache write errors
+      }
+    }
+  } catch (error) {
+    console.error("[Settings] Failed to save system settings in batch", error)
     throw error
   }
 }

@@ -6,9 +6,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
-  devIndicators: {
-    position: 'bottom-right',
-  },
+  devIndicators: false,
   images: {
     remotePatterns: [
       {

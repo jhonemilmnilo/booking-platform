@@ -39,6 +39,7 @@ export default async function AdminLayout({
           "theme_color_secondary",
           "theme_color_accent",
           "brand_name",
+          "brand_logo",
         ],
       },
     },
@@ -49,6 +50,7 @@ export default async function AdminLayout({
   const themeColorSecondary = settingsMap["theme_color_secondary"] || "#FFFFFF"
   const themeColorAccent = settingsMap["theme_color_accent"] || "#1C1A17"
   const brandName = settingsMap["brand_name"] || "MIGS THE SHORE"
+  const brandLogo = settingsMap["brand_logo"] || ""
 
   return (
     <div className="min-h-screen bg-[#0b0c10] flex">
@@ -83,6 +85,7 @@ export default async function AdminLayout({
       {/* Admin Shell Navigation and Main Content */}
       <AdminShell
         initialBrandName={brandName}
+        initialBrandLogo={brandLogo}
         initialThemeColor={themeColorPrimary}
         initialThemeSecondary={themeColorSecondary}
         initialThemeAccent={themeColorAccent}
