@@ -31,7 +31,6 @@ export default async function RootLayout({
   }
 
   const brandName = settings.brandName || "MIGS THE SHORE";
-  const brandLogo = settings.brandLogo || "/favicon.svg";
   const pageTitle = `${brandName} | Bespoke Luxury Escape`;
   const pageDescription = settings.heroDescription || "Nestled along the pristine sands of the coastline, our luxury resort features sprawling lagoon pools.";
   const themeColorPrimary = settings.themeColorPrimary || "#D4AF37";
@@ -48,7 +47,7 @@ export default async function RootLayout({
       <head>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
-        <link rel="icon" href={brandLogo} />
+        <link rel="icon" href="/icon" sizes="any" />
 
         {/* Dynamic theme style overrides */}
         <style
