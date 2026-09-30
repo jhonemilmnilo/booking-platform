@@ -103,7 +103,7 @@ export default function VillasPage() {
             Private Sanctuaries
           </span>
           <h1 className="font-serif text-4xl md:text-6xl text-luxury-cream leading-tight">
-            Discover Our <span className="text-gold-gradient italic">Villa Collection</span>
+            Discover Our <span className="bg-clip-text text-transparent text-gold-gradient italic">Villa Collection</span>
           </h1>
           <p className="text-luxury-cream/70 leading-relaxed font-light text-sm md:text-base">
             Each villa is a curated world of its own — designed to dissolve the boundary between absolute comfort and the wild beauty of the ocean.
@@ -180,7 +180,7 @@ export default function VillasPage() {
             <div className="pt-2 relative z-10">
               <Link
                 href="/#inquiry"
-                className="inline-flex w-full sm:w-auto min-w-[280px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
+                className="inline-flex w-full sm:w-auto min-w-[280px] bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
               >
                 Submit Booking Inquiry <ArrowRight className="w-4 h-4" />
               </Link>

@@ -13,7 +13,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { verifyOtpAction, resendOtpAction, getPrimaryThemeColorAction, getOtpStatusAction } from "../actions"
+import { verifyOtpAction, resendOtpAction, getSystemSettingsAction, getOtpStatusAction } from "../actions"
+import { getClientCachedSettings } from "@/lib/client-cache"
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 
 import { Suspense } from "react"
@@ -45,6 +46,7 @@ function VerifyOtpContent() {
   const [resendTimer, setResendTimer] = React.useState(0)
   const [isResending, setIsResending] = React.useState(false)
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
+  const [brandName, setBrandName] = React.useState("MIGS THE SHORE")
   const [isLoading, setIsLoading] = React.useState(false)
   const [otpStatus, setOtpStatus] = React.useState<OtpStatusData | null>(null)
 
@@ -73,10 +75,17 @@ function VerifyOtpContent() {
   }, [fetchOtpStatus])
 
   React.useEffect(() => {
-    getPrimaryThemeColorAction()
+    const cached = getClientCachedSettings()
+    if (cached?.brandName) setBrandName(cached.brandName)
+    if (cached?.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary)
+
+    getSystemSettingsAction()
       .then((res) => {
         if (res.themeColorPrimary) {
           setThemeColorPrimary(res.themeColorPrimary)
+        }
+        if (res.brandName) {
+          setBrandName(res.brandName)
         }
       })
       .catch((err) => console.warn(err))
@@ -117,6 +126,9 @@ function VerifyOtpContent() {
       const result = await verifyOtpAction(email, values.code)
       if (result.success) {
         showToast.success("Identity verified successfully!")
+        if (result.role && typeof window !== "undefined") {
+          localStorage.setItem("user_role", result.role)
+        }
         setTimeout(() => {
           if (result.role === "ADMIN") {
             router.push("/admin/settings")
@@ -176,7 +188,7 @@ function VerifyOtpContent() {
           <div className="space-y-2 text-left">
             <div className="flex items-center gap-2 mb-2 lg:hidden">
               <Compass className="h-7 w-7 text-primary" />
-              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Booking Platform</span>
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">{brandName}</span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
               Verify Email
@@ -263,7 +275,7 @@ function VerifyOtpContent() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
         <Image
           src="/images/auth-bg.png"
-          alt="Booking Platform Overwater Villa"
+          alt={`${brandName} Overwater Villa`}
           fill
           priority
           sizes="50vw"

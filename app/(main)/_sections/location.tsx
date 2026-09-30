@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { getSystemSettingsAction } from "@/app/auth/actions"
+import { getClientCachedSettings, setClientCachedSettings } from "@/lib/client-cache"
 
 interface TouristSpot {
   name: string
@@ -18,9 +19,45 @@ export default function Location() {
     { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
   ])
 
+  const [resortLatitude, setResortLatitude] = React.useState("16.1651539")
+  const [resortLongitude, setResortLongitude] = React.useState("119.7698115")
+  const [titleLine1, setTitleLine1] = React.useState("Poised Above the")
+  const [titleLine2, setTitleLine2] = React.useState("Aegean Horizon")
+  const [description, setDescription] = React.useState(
+    "Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Our resort occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove."
+  )
+  const [resortRegion, setResortRegion] = React.useState("Pangasinan")
+
   React.useEffect(() => {
+    // 1. Immediately hydrate from client cache
+    const cached = getClientCachedSettings()
+    if (cached) {
+      if (cached.resortLatitude) setResortLatitude(cached.resortLatitude)
+      if (cached.resortLongitude) setResortLongitude(cached.resortLongitude)
+      if (cached.resortLocationTitleLine1) setTitleLine1(cached.resortLocationTitleLine1)
+      if (cached.resortLocationTitleLine2) setTitleLine2(cached.resortLocationTitleLine2)
+      if (cached.resortLocationDescription) setDescription(cached.resortLocationDescription)
+      if (cached.resortRegion) setResortRegion(cached.resortRegion)
+      if (cached.touristSpots) {
+        try {
+          const parsed = JSON.parse(cached.touristSpots)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTouristSpots(parsed)
+          }
+        } catch {}
+      }
+    }
+
+    // 2. Fresh fetch & background cache update
     getSystemSettingsAction()
       .then((settings) => {
+        if (settings.resortLatitude) setResortLatitude(settings.resortLatitude)
+        if (settings.resortLongitude) setResortLongitude(settings.resortLongitude)
+        if (settings.resortLocationTitleLine1) setTitleLine1(settings.resortLocationTitleLine1)
+        if (settings.resortLocationTitleLine2) setTitleLine2(settings.resortLocationTitleLine2)
+        if (settings.resortLocationDescription) setDescription(settings.resortLocationDescription)
+        if (settings.resortRegion) setResortRegion(settings.resortRegion)
+
         if (settings.touristSpots) {
           try {
             const parsed = JSON.parse(settings.touristSpots)
@@ -31,15 +68,18 @@ export default function Location() {
             console.error("Failed to parse tourist spots JSON:", e)
           }
         }
+        setClientCachedSettings(settings)
       })
       .catch((err) => {
         console.warn("Failed to load tourist spots dynamically:", err)
       })
   }, [])
 
+  const regionSuffix = resortRegion ? `, ${resortRegion}` : ""
+
   const mapSrc = selectedSpot
-    ? `https://maps.google.com/maps?saddr=16.1651539,119.7720002&daddr=${encodeURIComponent(selectedSpot.name + ", Pangasinan")}&output=embed`
-    : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3835.80164287841!2d119.7698115!3d16.1651539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3393bf4c24e3fb71%3A0x8c3d523edc639aaa!2sThe%20Oceanhill%20Villas!5e0!3m2!1sen!2sph!4v1719918239000!5m2!1sen!2sph"
+    ? `https://maps.google.com/maps?saddr=${encodeURIComponent(resortLatitude.trim() + "," + resortLongitude.trim())}&daddr=${encodeURIComponent(selectedSpot.name + regionSuffix)}&output=embed`
+    : `https://maps.google.com/maps?q=${encodeURIComponent(resortLatitude.trim() + "," + resortLongitude.trim())}&z=15&output=embed`
 
   return (
     <section id="location" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-obsidian to-luxury-charcoal relative">
@@ -49,13 +89,13 @@ export default function Location() {
           <div className="space-y-4">
             <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">The Location</span>
             <h2 className="font-serif text-3xl md:text-5xl text-luxury-cream leading-tight">
-              Poised Above the <br />
-              <span className="text-gold-gradient italic">Aegean Horizon</span>
+              {titleLine1} <br />
+              <span className="bg-clip-text text-transparent text-gold-gradient italic">{titleLine2}</span>
             </h2>
           </div>
 
           <p className="text-luxury-cream/70 leading-relaxed font-light text-base">
-            Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Ocean Hill occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove.
+            {description}
           </p>
 
           {/* Distances */}
@@ -107,8 +147,11 @@ export default function Location() {
               </button>
             )}
 
-            {/* Coordinates */}
-
+            {/* Coordinates Badge */}
+            <div className="absolute top-4 right-4 bg-luxury-obsidian/90 border border-luxury-gold/30 px-3 py-1.5 rounded-xl text-[10px] font-mono text-luxury-gold flex items-center gap-1.5 backdrop-blur-md shadow-lg select-all z-20">
+              <i className="fa-solid fa-crosshairs text-[10px]"></i>
+              <span>{resortLatitude}, {resortLongitude}</span>
+            </div>
           </div>
         </div>
       </div>

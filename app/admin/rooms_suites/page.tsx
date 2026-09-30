@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import Image from "next/image"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -10,6 +11,8 @@ import {
   updateRoomAction,
   deleteRoomAction,
 } from "./action"
+import { AdminSidebarToggle } from "@/app/admin/_components/admin-shell"
+import AdminUserDropdown from "@/app/admin/_components/admin-user-dropdown"
 
 interface Room {
   id: string
@@ -263,40 +266,87 @@ export default function AdminRoomsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0b0c10] text-[#EAE5D9] font-sans pb-16">
+    <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0b0c10] text-[#1C1A17] dark:text-[#EAE5D9] font-sans pb-16">
       {/* Top Header */}
-      <header className="border-b border-[#D4AF37]/20 bg-[#0b0c10]/90 backdrop-blur sticky top-0 z-20 px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-luxury-gold/20 bg-[#FAF8F5]/90 dark:bg-[#0b0c10]/90 backdrop-blur sticky top-0 z-20 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <i className="fa-solid fa-hotel text-[#D4AF37] text-xl"></i>
+          <AdminSidebarToggle />
+          <i className="fa-solid fa-hotel text-luxury-gold text-xl"></i>
           <div>
-            <h1 className="font-serif text-lg tracking-wider text-white">Suites & Villas Directory</h1>
-            <p className="text-[10px] text-white/40 uppercase tracking-widest font-semibold">Resort Lodging Assets</p>
+            <h1 className="font-serif text-lg tracking-wider text-[#1C1A17] dark:text-white">Suites & Villas Directory</h1>
+            <p className="text-[10px] text-[#7A746B] dark:text-white/40 uppercase tracking-widest font-semibold">Resort Lodging Assets</p>
           </div>
         </div>
 
-        <button
-          onClick={handleOpenCreateModal}
-          className="bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.15em] px-5 py-2.5 rounded-xl shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
-        >
-          <i className="fa-solid fa-plus mr-1.5"></i> Add Suite / Villa
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleOpenCreateModal}
+            className="bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.12em] px-4 py-2 rounded-xl shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 cursor-pointer whitespace-nowrap"
+          >
+            <i className="fa-solid fa-plus mr-1.5"></i> Add Suite / Villa
+          </button>
+
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[#5C564F] dark:text-white/80 hover:text-luxury-gold transition-all duration-200 border border-black/10 dark:border-white/10 hover:border-luxury-gold/50 rounded-xl px-3.5 py-2 bg-black/[0.03] dark:bg-white/5 hover:bg-black/[0.06] dark:hover:bg-white/10 shadow-sm cursor-pointer whitespace-nowrap"
+          >
+            <i className="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+            <span className="hidden sm:inline">View Live Site</span>
+          </Link>
+
+          <AdminUserDropdown />
+        </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="p-6 max-w-7xl mx-auto space-y-6">
+      <main className="w-full p-6 md:p-10 space-y-6">
         {isLoading ? (
-          <div className="py-20 flex flex-col items-center justify-center gap-4 text-white/50">
-            <i className="fa-solid fa-spinner fa-spin text-4xl text-[#D4AF37]"></i>
-            <span className="text-xs uppercase tracking-widest font-semibold">Loading Suite Portfolio...</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-[#111216] border border-black/10 dark:border-luxury-gold/15 rounded-3xl overflow-hidden flex flex-col justify-between shadow-sm dark:shadow-xl animate-pulse"
+              >
+                {/* Image Placeholder */}
+                <div className="h-48 w-full bg-black/[0.08] dark:bg-white/10 relative" />
+
+                {/* Content Placeholder */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    <div className="w-full h-3 bg-black/[0.08] dark:bg-white/10 rounded" />
+                    <div className="w-4/5 h-3 bg-black/[0.08] dark:bg-white/10 rounded" />
+                    <div className="w-2/3 h-3 bg-black/[0.05] dark:bg-white/5 rounded" />
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-black/5 dark:border-white/5">
+                    <div className="flex justify-between items-center">
+                      <div className="w-20 h-3 bg-black/[0.08] dark:bg-white/10 rounded" />
+                      <div className="w-24 h-4 bg-black/[0.08] dark:bg-white/10 rounded" />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <div className="w-16 h-3 bg-black/[0.05] dark:bg-white/5 rounded" />
+                      <div className="w-20 h-3 bg-black/[0.05] dark:bg-white/5 rounded" />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-3 border-t border-black/5 dark:border-white/5">
+                    <div className="flex-1 h-8 bg-black/[0.08] dark:bg-white/10 rounded-xl" />
+                    <div className="flex-1 h-8 bg-black/[0.05] dark:bg-white/5 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : rooms.length === 0 ? (
-          <div className="border border-[#D4AF37]/10 bg-white/5 rounded-3xl p-16 text-center max-w-lg mx-auto mt-12">
-            <i className="fa-solid fa-hotel text-5xl text-[#D4AF37]/35 mb-4 block"></i>
+          <div className="border border-luxury-gold/10 bg-white/5 rounded-3xl p-16 text-center max-w-lg mx-auto mt-12">
+            <i className="fa-solid fa-hotel text-5xl text-luxury-gold/35 mb-4 block"></i>
             <h3 className="font-serif text-xl text-white font-semibold mb-2">No Suites Found</h3>
             <p className="text-xs text-white/50 mb-6">Create your first database-backed resort suite or villa asset to populate the frontend carousel.</p>
             <button
               onClick={handleOpenCreateModal}
-              className="bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.15em] px-5 py-2.5 rounded-xl transition-all cursor-pointer"
+              className="bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.15em] px-5 py-2.5 rounded-xl transition-all cursor-pointer"
             >
               Add First Suite
             </button>
@@ -306,7 +356,7 @@ export default function AdminRoomsPage() {
             {rooms.map((room) => (
               <div
                 key={room.id}
-                className="bg-[#111216] border border-[#D4AF37]/15 rounded-3xl overflow-hidden hover:border-[#D4AF37]/45 transition-all duration-300 flex flex-col justify-between group shadow-xl"
+                className="bg-[#111216] border border-luxury-gold/15 rounded-3xl overflow-hidden hover:border-luxury-gold/45 transition-all duration-300 flex flex-col justify-between group shadow-xl"
               >
                 {/* Image Section */}
                 <div className="relative h-48 w-full bg-black/40 overflow-hidden">
@@ -319,15 +369,15 @@ export default function AdminRoomsPage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex items-end p-4">
                     <div>
-                      <span className="text-[10px] text-[#D4AF37] tracking-wider uppercase font-bold block">{room.size}</span>
+                      <span className="text-[10px] text-luxury-gold tracking-wider uppercase font-bold block">{room.size}</span>
                       <h3 className="font-serif text-base text-white font-bold truncate max-w-[240px]">{room.name}</h3>
                     </div>
                   </div>
 
                   {/* Badges / Images Count */}
                   <div className="absolute top-3 right-3 flex gap-2">
-                    <span className="bg-black/85 border border-[#D4AF37]/30 px-2 py-0.5 rounded text-[8px] tracking-widest uppercase font-bold text-white flex items-center gap-1 shadow-md">
-                      <i className="fa-regular fa-images text-[#D4AF37]"></i> {(room.images?.length || 0) + 1} Photos
+                    <span className="bg-black/85 border border-luxury-gold/30 px-2 py-0.5 rounded text-[8px] tracking-widest uppercase font-bold text-white flex items-center gap-1 shadow-md">
+                      <i className="fa-regular fa-images text-luxury-gold"></i> {(room.images?.length || 0) + 1} Photos
                     </span>
                   </div>
                 </div>
@@ -337,11 +387,11 @@ export default function AdminRoomsPage() {
                   <p className="text-white/60 text-xs leading-relaxed line-clamp-3">{room.description}</p>
 
                   <div className="space-y-2">
-                    <span className="text-[9px] text-[#D4AF37]/75 font-semibold uppercase tracking-wider block">Specs & Pricing</span>
+                    <span className="text-[9px] text-luxury-gold/75 font-semibold uppercase tracking-wider block">Specs & Pricing</span>
                     <div className="flex justify-between items-center bg-white/5 rounded-xl p-3 border border-white/5">
                       <div>
                         <span className="text-[9px] text-white/40 block uppercase">Rate / Night</span>
-                        <span className="font-serif text-[#D4AF37] text-sm font-bold">₱{room.pricePerNight.toLocaleString()}</span>
+                        <span className="font-serif text-luxury-gold text-sm font-bold">₱{room.pricePerNight.toLocaleString()}</span>
                       </div>
                       <div className="text-right">
                         <span className="text-[9px] text-white/40 block uppercase">Max Guests</span>
@@ -352,12 +402,12 @@ export default function AdminRoomsPage() {
 
                   {/* Amenities Badges */}
                   <div className="space-y-1.5">
-                    <span className="text-[9px] text-[#D4AF37]/75 font-semibold uppercase tracking-wider block">Key Amenities</span>
+                    <span className="text-[9px] text-luxury-gold/75 font-semibold uppercase tracking-wider block">Key Amenities</span>
                     <div className="flex flex-wrap gap-1">
                       {room.amenities.slice(0, 4).map((a, idx) => (
                         <span
                           key={idx}
-                          className="bg-[#D4AF37]/5 border border-[#D4AF37]/20 px-2 py-0.5 rounded text-[9px] text-white/80"
+                          className="bg-luxury-gold/5 border border-luxury-gold/20 px-2 py-0.5 rounded text-[9px] text-white/80"
                         >
                           {a}
                         </span>
@@ -372,10 +422,10 @@ export default function AdminRoomsPage() {
                 </div>
 
                 {/* Admin Actions Bar */}
-                <div className="border-t border-[#D4AF37]/10 bg-white/5 p-4 flex justify-between gap-3">
+                <div className="border-t border-luxury-gold/10 bg-white/5 p-4 flex justify-between gap-3">
                   <button
                     onClick={() => handleOpenEditModal(room)}
-                    className="flex-1 bg-white/5 hover:bg-[#D4AF37]/15 border border-[#D4AF37]/20 hover:border-[#D4AF37] hover:text-[#D4AF37] text-white/85 text-xs py-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5"
+                    className="flex-1 bg-white/5 hover:bg-luxury-gold/15 border border-luxury-gold/20 hover:border-luxury-gold hover:text-luxury-gold text-white/85 text-xs py-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <i className="fa-solid fa-pencil text-[10px]"></i> Edit Details
                   </button>
@@ -400,10 +450,10 @@ export default function AdminRoomsPage() {
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)}></div>
 
           {/* Modal Container */}
-          <div className="relative w-full max-w-6xl bg-[#111216] border border-[#D4AF37]/25 rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto z-10 flex flex-col justify-between">
+          <div className="relative w-full max-w-6xl bg-[#111216] border border-luxury-gold/25 rounded-3xl shadow-2xl p-6 md:p-8 max-h-[90vh] overflow-y-auto z-10 flex flex-col justify-between">
             
             {/* Header */}
-            <div className="flex justify-between items-center border-b border-[#D4AF37]/15 pb-4 mb-6">
+            <div className="flex justify-between items-center border-b border-luxury-gold/15 pb-4 mb-6">
               <div>
                 <h2 className="font-serif text-lg text-white font-bold">
                   {editingRoom ? `Edit "${editingRoom.name}"` : "Create New Suite / Villa"}
@@ -416,7 +466,7 @@ export default function AdminRoomsPage() {
                 <button
                   type="button"
                   onClick={() => setShowPreview(!showPreview)}
-                  className="px-3.5 py-1.5 rounded-xl border border-[#D4AF37]/35 bg-[#D4AF37]/5 hover:bg-[#D4AF37] hover:text-[#1c1a17] text-[10px] font-bold uppercase tracking-wider text-[#D4AF37] transition-all cursor-pointer flex items-center gap-1.5"
+                  className="px-3.5 py-1.5 rounded-xl border border-luxury-gold/35 bg-luxury-gold/5 hover:bg-luxury-gold hover:text-[#1c1a17] text-[10px] font-bold uppercase tracking-wider text-luxury-gold transition-all cursor-pointer flex items-center gap-1.5"
                 >
                   <i className={`fa-solid ${showPreview ? "fa-eye-slash" : "fa-eye"}`}></i>
                   {showPreview ? "Hide Preview" : "Show Preview"}
@@ -439,69 +489,69 @@ export default function AdminRoomsPage() {
                 <div className="space-y-4">
                   {/* Name */}
                   <div className="space-y-1">
-                    <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Suite / Villa Title</label>
+                    <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Suite / Villa Title</label>
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
                       placeholder="e.g. The Beachfront Royal Suite"
-                      className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
+                      className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                     />
                   </div>
                   {/* Size, Capacity, and Price Row */}
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Villa Size</label>
+                      <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Villa Size</label>
                       <input
                         type="text"
                         value={size}
                         onChange={(e) => setSize(e.target.value)}
                         required
                         placeholder="e.g. 6,800 Sq Ft"
-                        className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
+                        className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Max Guests</label>
+                      <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Max Guests</label>
                       <input
                         type="number"
                         value={capacity}
                         onChange={(e) => setCapacity(parseInt(e.target.value) || 1)}
                         required
                         min={1}
-                        className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
+                        className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Price Per Night (₱)</label>
+                      <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Price Per Night (₱)</label>
                       <input
                         type="number"
                         value={pricePerNight}
                         onChange={(e) => setPricePerNight(parseInt(e.target.value) || 0)}
                         required
                         min={0}
-                        className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] transition-all"
+                        className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                       />
                     </div>
                   </div>
 
                   {/* Description */}
                   <div className="space-y-1">
-                    <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Suite Description</label>
+                    <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Suite Description</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       required
                       rows={3}
                       placeholder="Enter a detailed description of the villa specifications, layout, views, and unique highlights..."
-                      className="w-full bg-black/40 border border-[#D4AF37]/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[#D4AF37] resize-none transition-all"
+                      className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold resize-none transition-all"
                     />
                   </div>
 
                   {/* Amenities */}
                   <div className="space-y-2">
-                    <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Amenities (Select or Add)</label>
+                    <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Amenities (Select or Add)</label>
                     <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto bg-black/20 border border-white/5 rounded-xl p-2.5">
                       {PRESET_AMENITIES.map((a) => {
                         const isChecked = selectedAmenities.includes(a)
@@ -512,7 +562,7 @@ export default function AdminRoomsPage() {
                             onClick={() => handleToggleAmenity(a)}
                             className={`text-[9px] px-2 py-0.5 rounded transition-colors cursor-pointer ${
                               isChecked
-                                ? "bg-[#D4AF37] text-[#1c1a17] font-bold"
+                                ? "bg-luxury-gold text-[#1c1a17] font-bold"
                                 : "bg-white/5 text-white/60 hover:text-white"
                             }`}
                           >
@@ -529,12 +579,12 @@ export default function AdminRoomsPage() {
                         value={customAmenity}
                         onChange={(e) => setCustomAmenity(e.target.value)}
                         placeholder="Or type a custom amenity..."
-                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#D4AF37]"
+                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-luxury-gold"
                       />
                       <button
                         type="button"
                         onClick={handleAddCustomAmenity}
-                        className="bg-white/10 hover:bg-[#D4AF37] hover:text-[#1c1a17] text-white text-xs px-3 rounded-xl transition-all cursor-pointer font-semibold"
+                        className="bg-white/10 hover:bg-luxury-gold hover:text-[#1c1a17] text-white text-xs px-3 rounded-xl transition-all cursor-pointer font-semibold"
                       >
                         Add Tag
                       </button>
@@ -543,13 +593,13 @@ export default function AdminRoomsPage() {
 
                   {/* Media Gallery (Product Details Style) */}
                   <div className="space-y-3">
-                    <label className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider block">Media Gallery</label>
+                    <label className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider block">Media Gallery</label>
                     
                     {/* Main Cover Image (Large) */}
                     <div className="space-y-1.5">
                       <span className="text-[8px] text-white/50 uppercase tracking-widest block">Primary Cover Image</span>
                       {imageUrl && imageUrl !== "UPLOADING" ? (
-                        <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-[#D4AF37]/30 shadow-lg bg-black/40 group">
+                        <div className="relative w-full h-44 sm:h-52 rounded-2xl overflow-hidden border border-luxury-gold/30 shadow-lg bg-black/40 group">
                           <Image
                             src={imageUrl}
                             alt="Cover Preview"
@@ -588,20 +638,20 @@ export default function AdminRoomsPage() {
                             </button>
                           </div>
                           {/* Top Badge */}
-                          <div className="absolute top-3 left-3 bg-black/70 border border-[#D4AF37]/30 px-2 py-0.5 rounded text-[8px] font-bold text-[#D4AF37] uppercase tracking-widest select-none">
+                          <div className="absolute top-3 left-3 bg-black/70 border border-luxury-gold/30 px-2 py-0.5 rounded text-[8px] font-bold text-luxury-gold uppercase tracking-widest select-none">
                             Primary Cover
                           </div>
                         </div>
                       ) : (
-                        <label className="w-full h-44 sm:h-52 flex flex-col items-center justify-center border border-dashed border-[#D4AF37]/35 hover:border-[#D4AF37] bg-black/25 hover:bg-black/35 rounded-2xl cursor-pointer transition-all text-center">
+                        <label className="w-full h-44 sm:h-52 flex flex-col items-center justify-center border border-dashed border-luxury-gold/35 hover:border-luxury-gold bg-black/25 hover:bg-black/35 rounded-2xl cursor-pointer transition-all text-center">
                           {imageUrl === "UPLOADING" ? (
                             <div className="flex flex-col items-center justify-center">
-                              <i className="fa-solid fa-spinner fa-spin text-[#D4AF37] text-3xl mb-2"></i>
+                              <i className="fa-solid fa-spinner fa-spin text-luxury-gold text-3xl mb-2"></i>
                               <span className="text-xs text-white font-bold uppercase tracking-wider">Uploading cover image...</span>
                             </div>
                           ) : (
                             <>
-                              <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37] text-3xl mb-2 animate-pulse"></i>
+                              <i className="fa-solid fa-cloud-arrow-up text-luxury-gold text-3xl mb-2 animate-pulse"></i>
                               <span className="text-xs text-white font-bold uppercase tracking-wider">Upload Cover Image</span>
                               <span className="text-[8px] text-white/40 uppercase tracking-widest mt-1">Recommended size: 1200 x 800 (Max 5MB)</span>
                             </>
@@ -634,7 +684,7 @@ export default function AdminRoomsPage() {
                           <div key={i} className="relative group aspect-[3/2] rounded-xl overflow-hidden bg-black/45 border border-white/10 flex items-center justify-center">
                             {img === "UPLOADING" ? (
                               <div className="flex flex-col items-center justify-center">
-                                <i className="fa-solid fa-spinner fa-spin text-[#D4AF37] text-[10px] mb-1"></i>
+                                <i className="fa-solid fa-spinner fa-spin text-luxury-gold text-[10px] mb-1"></i>
                                 <span className="text-[6px] text-white/40 uppercase tracking-wider font-semibold">Uploading</span>
                               </div>
                             ) : img.trim() ? (
@@ -661,7 +711,7 @@ export default function AdminRoomsPage() {
                             ) : (
                               <div className="w-full h-full p-1.5 flex flex-col justify-between items-center bg-black/20">
                                 <label className="flex-1 w-full flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 rounded-lg border border-dashed border-white/10 transition-colors">
-                                  <i className="fa-solid fa-cloud-arrow-up text-[#D4AF37] text-[10px] mb-0.5"></i>
+                                  <i className="fa-solid fa-cloud-arrow-up text-luxury-gold text-[10px] mb-0.5"></i>
                                   <span className="text-[7px] text-white/50 uppercase tracking-widest font-semibold">Upload</span>
                                   <input
                                     type="file"
@@ -695,7 +745,7 @@ export default function AdminRoomsPage() {
                       <button
                         type="button"
                         onClick={handleAddGalleryImageField}
-                        className="text-[10px] text-[#D4AF37] hover:underline font-semibold flex items-center gap-1 cursor-pointer pt-1"
+                        className="text-[10px] text-luxury-gold hover:underline font-semibold flex items-center gap-1 cursor-pointer pt-1"
                       >
                         <i className="fa-solid fa-plus text-[8px]"></i> Add Extra Image Field
                       </button>
@@ -704,7 +754,7 @@ export default function AdminRoomsPage() {
                 </div>
 
                 {/* Form Buttons */}
-                <div className="border-t border-[#D4AF37]/15 pt-6 mt-6 flex gap-4">
+                <div className="border-t border-luxury-gold/15 pt-6 mt-6 flex gap-4">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
@@ -715,7 +765,7 @@ export default function AdminRoomsPage() {
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex-1 bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-wider py-3 rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="flex-1 bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-wider py-3 rounded-xl shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     {isSaving && <i className="fa-solid fa-spinner fa-spin"></i>}
                     {editingRoom ? "Save Changes" : "Create Suite"}
@@ -725,21 +775,21 @@ export default function AdminRoomsPage() {
 
               {/* Right Column: Live Preview Panel */}
               {showPreview && (
-                <div className="lg:col-span-7 border border-[#D4AF37]/15 bg-black/30 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
-                  <div className="flex justify-between items-center border-b border-[#D4AF37]/10 pb-3">
-                    <span className="text-[10px] text-[#D4AF37] font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <div className="lg:col-span-7 border border-luxury-gold/15 bg-black/30 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
+                  <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-3">
+                    <span className="text-[10px] text-luxury-gold font-semibold uppercase tracking-wider flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
                       Live Preview
                     </span>
                   </div>
 
                   {/* Preview Frame */}
-                  <div className="bg-[#FCFBF8] text-[#1c1a17] p-5 md:p-6 border border-[#D4AF37]/20 rounded-[2.5rem] relative overflow-hidden grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch shadow-md">
+                  <div className="bg-[#FCFBF8] text-[#1c1a17] p-5 md:p-6 border border-luxury-gold/20 rounded-[2.5rem] relative overflow-hidden grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch shadow-md">
                     {/* Left: Details Card */}
-                    <div className="md:col-span-5 flex flex-col justify-between bg-white border border-[#D4AF37]/20 rounded-[2rem] p-6 relative overflow-hidden min-h-[350px] shadow-sm">
+                    <div className="md:col-span-5 flex flex-col justify-between bg-white border border-luxury-gold/20 rounded-[2rem] p-6 relative overflow-hidden min-h-[350px] shadow-sm">
                       <div className="space-y-5">
-                        <div className="flex justify-between items-center border-b border-[#D4AF37]/10 pb-3 text-[10px]">
-                          <span className="text-[#D4AF37] font-bold uppercase tracking-[0.25em] truncate max-w-[50%]">
+                        <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-3 text-[10px]">
+                          <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] truncate max-w-[50%]">
                             {size || "OCEANFRONT CLUB WING"}
                           </span>
                           <span className="font-serif text-sm text-[#1c1a17] font-semibold">
@@ -759,21 +809,21 @@ export default function AdminRoomsPage() {
 
                         {/* Suite Amenities */}
                         <div className="space-y-2.5 pt-1">
-                          <span className="text-[#D4AF37] font-bold uppercase text-[9px] tracking-[0.15em] block">Suite Amenities</span>
+                          <span className="text-luxury-gold font-bold uppercase text-[9px] tracking-[0.15em] block">Suite Amenities</span>
                           <div className="grid grid-cols-2 gap-2 text-[10px] text-[#1c1a17]/90 font-medium font-sans">
                             {selectedAmenities.length > 0 ? (
                               selectedAmenities.slice(0, 8).map((a, idx) => (
                                 <div key={idx} className="flex items-center gap-1.5 min-w-0">
-                                  <i className={`fa-solid ${getAmenityIcon(a)} text-[#D4AF37] text-[9px] flex-shrink-0`}></i>
+                                  <i className={`fa-solid ${getAmenityIcon(a)} text-luxury-gold text-[9px] flex-shrink-0`}></i>
                                   <span className="truncate">{a}</span>
                                 </div>
                               ))
                             ) : (
                               <>
-                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-droplet text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Private Pool</span></div>
-                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-wine-glass text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Breakfast Included</span></div>
-                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-key text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Private Kitchen</span></div>
-                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-spa text-[#D4AF37] text-[9px] flex-shrink-0"></i><span className="truncate">Access to Main Pool</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-droplet text-luxury-gold text-[9px] flex-shrink-0"></i><span className="truncate">Private Pool</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-wine-glass text-luxury-gold text-[9px] flex-shrink-0"></i><span className="truncate">Breakfast Included</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-key text-luxury-gold text-[9px] flex-shrink-0"></i><span className="truncate">Private Kitchen</span></div>
+                                <div className="flex items-center gap-1.5 min-w-0"><i className="fa-solid fa-spa text-luxury-gold text-[9px] flex-shrink-0"></i><span className="truncate">Access to Main Pool</span></div>
                               </>
                             )}
                           </div>
@@ -782,7 +832,7 @@ export default function AdminRoomsPage() {
                     </div>
 
                     {/* Right: Display Carousel Preview */}
-                    <div className="md:col-span-7 relative min-h-[350px] rounded-[2rem] overflow-hidden border border-[#D4AF37]/20 bg-[#1c1a17]">
+                    <div className="md:col-span-7 relative min-h-[350px] rounded-[2rem] overflow-hidden border border-luxury-gold/20 bg-[#1c1a17]">
                       {imageUrl && imageUrl !== "UPLOADING" ? (
                         <Image src={imageUrl} alt={name || "Suite Preview"} fill className="object-cover" unoptimized />
                       ) : (
@@ -797,12 +847,12 @@ export default function AdminRoomsPage() {
                         <div className="flex justify-between items-center w-full gap-2">
                           <button
                             type="button"
-                            className="bg-white hover:scale-105 text-[#1c1a17] px-3.5 py-1.5 rounded-full text-[8px] tracking-widest uppercase font-bold flex items-center gap-1 shadow-md transition-all cursor-pointer border border-[#D4AF37]/15"
+                            className="bg-white hover:scale-105 text-[#1c1a17] px-3.5 py-1.5 rounded-full text-[8px] tracking-widest uppercase font-bold flex items-center gap-1 shadow-md transition-all cursor-pointer border border-luxury-gold/15"
                           >
-                            <i className="fa-regular fa-images text-[#D4AF37]"></i> View Gallery
+                            <i className="fa-regular fa-images text-luxury-gold"></i> View Gallery
                           </button>
-                          <div className="bg-white text-[#1c1a17] px-3.5 py-1.5 rounded-full text-[8px] tracking-widest uppercase font-bold shadow-md border border-[#D4AF37]/15">
-                            <i className="fa-regular fa-eye text-[#D4AF37] mr-1"></i> Virtual Tour Enabled
+                          <div className="bg-white text-[#1c1a17] px-3.5 py-1.5 rounded-full text-[8px] tracking-widest uppercase font-bold shadow-md border border-luxury-gold/15">
+                            <i className="fa-regular fa-eye text-luxury-gold mr-1"></i> Virtual Tour Enabled
                           </div>
                         </div>
 
@@ -819,10 +869,10 @@ export default function AdminRoomsPage() {
                         {/* Bottom Stats overlay */}
                         <div className="flex justify-between items-center gap-2 text-[9px] text-[#1c1a17] bg-white rounded-full py-2.5 px-5 shadow-lg select-none mx-1 font-sans font-bold">
                           <span className="flex items-center gap-1.5 whitespace-nowrap">
-                            <i className="fa-solid fa-panorama text-[#D4AF37] flex-shrink-0"></i> 180° Aegean Views
+                            <i className="fa-solid fa-panorama text-luxury-gold flex-shrink-0"></i> 180° Aegean Views
                           </span>
                           <span className="flex items-center gap-1.5 whitespace-nowrap">
-                            <i className="fa-solid fa-user-group text-[#D4AF37] flex-shrink-0"></i> Up to {capacity} VIPs
+                            <i className="fa-solid fa-user-group text-luxury-gold flex-shrink-0"></i> Up to {capacity} VIPs
                           </span>
                         </div>
                       </div>

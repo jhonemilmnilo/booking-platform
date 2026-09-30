@@ -76,7 +76,7 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
           <div className="space-y-4">
             <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Select Your Domain</span>
             <h2 className="font-serif text-4xl md:text-6xl text-luxury-cream">
-              The Luxury <span className="text-gold-gradient italic">Suites & Villas</span>
+              The Luxury <span className="bg-clip-text text-transparent text-gold-gradient italic">Suites & Villas</span>
             </h2>
           </div>
           <p className="text-luxury-cream/60 max-w-md text-sm leading-relaxed">
@@ -155,7 +155,7 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                   </div>
                   <button
                     onClick={() => onBookClick(activeSuite)}
-                    className="w-full sm:w-auto text-center bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow transition-all duration-300 hover:scale-102 cursor-pointer"
+                    className="w-full sm:w-auto text-center bg-gold-gradient text-white font-bold text-xs uppercase tracking-[0.2em] px-6 py-3 rounded-xl shadow transition-all duration-300 hover:scale-102 cursor-pointer"
                   >
                     Configure Itinerary
                   </button>

@@ -199,13 +199,13 @@ export default function Diaries() {
           <div className="space-y-4">
             <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Guest Chronicles</span>
             <h2 className="font-serif text-3xl md:text-5xl text-luxury-cream leading-tight">
-              The Ocean Hill <br />
-              <span className="text-gold-gradient italic">Sanctuary Diaries</span>
+              The Private <br />
+              <span className="bg-clip-text text-transparent text-gold-gradient italic">Sanctuary Diaries</span>
             </h2>
           </div>
           <button
             onClick={() => setIsSubmitOpen(true)}
-            className="self-start md:self-auto bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-3.5 px-8 rounded-full shadow-lg active:scale-98 transition-all duration-300 border-none cursor-pointer"
+            className="self-start md:self-auto bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.2em] py-3.5 px-8 rounded-full shadow-lg active:scale-98 transition-all duration-300 border-none cursor-pointer"
           >
             Share Your Story <i className="fa-solid fa-pen-nib ml-2"></i>
           </button>
@@ -231,7 +231,7 @@ export default function Diaries() {
 
                 {/* Gold Play Button Overlay */}
                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="w-12 h-12 rounded-full bg-gold-gradient text-luxury-obsidian flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                  <div className="w-12 h-12 rounded-full bg-gold-gradient text-white flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform duration-300">
                     <i className="fa-solid fa-play text-sm ml-0.5"></i>
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default function Diaries() {
                 {/* Info Overlay */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">
                   <span className="font-serif text-sm tracking-wide font-semibold truncate">{reel.guestName}</span>
-                  <span className="text-[9px] text-[#D4AF37] font-semibold tracking-wider uppercase">{reel.stayDate}</span>
+                  <span className="text-[9px] text-luxury-gold font-semibold tracking-wider uppercase">{reel.stayDate}</span>
                 </div>
               </div>
             ))}
@@ -257,7 +257,7 @@ export default function Diaries() {
                   <div className="space-y-3">
                     <div className="flex gap-1">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <i key={i} className="fa-solid fa-crown text-[#D4AF37] text-[10px]"></i>
+                        <i key={i} className="fa-solid fa-crown text-luxury-gold text-[10px]"></i>
                       ))}
                     </div>
                     <p className="text-luxury-cream/80 text-xs md:text-sm font-light leading-relaxed italic line-clamp-3">
@@ -278,7 +278,7 @@ export default function Diaries() {
                   <div className="space-y-3">
                     <div className="flex gap-1">
                       {Array.from({ length: item.rating }).map((_, i) => (
-                        <i key={i} className="fa-solid fa-crown text-[#D4AF37] text-[10px]"></i>
+                        <i key={i} className="fa-solid fa-crown text-luxury-gold text-[10px]"></i>
                       ))}
                     </div>
                     <p className="text-luxury-cream/80 text-xs md:text-sm font-light leading-relaxed italic">
@@ -331,7 +331,7 @@ export default function Diaries() {
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-6 text-white pointer-events-none space-y-2">
                 <div>
                   <h4 className="font-serif text-lg tracking-wide font-semibold">{activeReelData.guestName}</h4>
-                  <span className="text-[10px] text-[#D4AF37] font-bold tracking-widest uppercase">{activeReelData.stayDate}</span>
+                  <span className="text-[10px] text-luxury-gold font-bold tracking-widest uppercase">{activeReelData.stayDate}</span>
                 </div>
                 <p className="text-white/80 text-xs font-light leading-relaxed">
                   &ldquo;{activeReelData.comment}&rdquo;
@@ -399,7 +399,7 @@ export default function Diaries() {
                         onClick={() => setRating(stars)}
                         className="bg-transparent border-none cursor-pointer focus:outline-none"
                       >
-                        <i className={`fa-solid fa-crown text-lg transition-transform hover:scale-110 ${stars <= rating ? "text-[#D4AF37]" : "text-white/20"}`}></i>
+                        <i className={`fa-solid fa-crown text-lg transition-transform hover:scale-110 ${stars <= rating ? "text-luxury-gold" : "text-white/20"}`}></i>
                       </button>
                     ))}
                   </div>
@@ -451,7 +451,7 @@ export default function Diaries() {
                       </div>
                       <div className="flex-1 min-w-0 space-y-1">
                         <span className="block text-[10px] font-semibold text-white truncate">{videoFile.name}</span>
-                        <span className="block text-[9px] text-[#D4AF37] font-mono">{(videoFile.size / (1024 * 1024)).toFixed(2)} MB</span>
+                        <span className="block text-[9px] text-luxury-gold font-mono">{(videoFile.size / (1024 * 1024)).toFixed(2)} MB</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -491,7 +491,7 @@ export default function Diaries() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="flex-1 bg-gold-gradient text-luxury-obsidian hover:brightness-110 font-bold py-3 rounded-xl text-xs uppercase tracking-[0.2em] border-none cursor-pointer transition-all disabled:opacity-50"
+                    className="flex-1 bg-gold-gradient text-white hover:brightness-110 font-bold py-3 rounded-xl text-xs uppercase tracking-[0.2em] border-none cursor-pointer transition-all disabled:opacity-50"
                   >
                     {isLoading ? (
                       <>

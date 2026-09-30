@@ -26,7 +26,8 @@ These rules must be strictly followed when writing database schema, server actio
 
 ## 7. Authentication & Registration Flow
 - **Social Login Auto-Registration**: If a user signs in via Google or Facebook but they do not have an existing user record in our `prisma.user` table, the system will automatically route them to the OTP verification step and register/create their user record upon successful verification. They do not need to manually register first.
-- **Enforced OTP Verification**: All authentication flows (both standard credentials and social logins) must be validated with an **8-digit OTP** sent to their email.
+- **Direct Login**: Existing users signing in with valid credentials (email & password or established social provider) authenticate directly without OTP.
+- **OTP Verification Targets**: OTP verification via email is strictly enforced for new user registrations (`signUpWithEmailAction`), first-time social login auto-registrations, and password reset flows.
 
 ## 8. Logging Rules & Security
 - **No Sensitive Log data**: Do not print or write passwords, OAuth access tokens, session keys, or personal identifying information (PII) in console logs.

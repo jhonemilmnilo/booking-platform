@@ -122,10 +122,10 @@ export default function Inquiry({
         <div className="space-y-8 text-center mb-10">
           <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Resort Reservation Access</span>
           <h2 className="font-serif text-3xl md:text-5xl text-luxury-cream">
-            Bespoke <span className="text-gold-gradient italic">Reservation Request</span>
+            Bespoke <span className="bg-clip-text text-transparent text-gold-gradient italic">Reservation Request</span>
           </h2>
           <p className="text-luxury-cream/60 text-sm max-w-lg mx-auto leading-relaxed">
-            Ocean Hill Resort operates on curated guest access. Complete our inquiry form to verify availability, and our private concierge will contact you within 2 hours.
+            Our luxury resort operates on curated guest access. Complete our inquiry form to verify availability, and our private concierge will contact you within 2 hours.
           </p>
         </div>
 
@@ -278,7 +278,7 @@ export default function Inquiry({
               className="accent-luxury-gold mt-1 cursor-pointer"
             />
             <label htmlFor="termsCheck" className="cursor-pointer">
-              I certify that the information provided is correct. I authorize Ocean Hill Resort guest relation services to contact me directly for stay curation.
+              I certify that the information provided is correct. I authorize the resort guest relation services to contact me directly for stay curation.
             </label>
           </div>
 
@@ -286,7 +286,7 @@ export default function Inquiry({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gold-gradient text-luxury-obsidian font-bold text-xs uppercase tracking-[0.25em] py-4.5 rounded-xl shadow-2xl transition-all duration-300 hover:brightness-110 active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full bg-gold-gradient text-white font-bold text-xs uppercase tracking-[0.25em] py-4.5 rounded-xl shadow-2xl transition-all duration-300 hover:brightness-110 active:scale-98 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

@@ -13,6 +13,14 @@ import { Room } from "@/components/shared/RoomCard"
 import { getHeroVideoUrlsAction, getSystemSettingsAction } from "@/app/auth/actions"
 import { getRoomsAction } from "@/app/admin/rooms_suites/action"
 import { BookingContext } from "./layout"
+import {
+  getClientCachedSettings,
+  setClientCachedSettings,
+  getClientCachedRooms,
+  setClientCachedRooms,
+  getClientCachedVideoUrls,
+  setClientCachedVideoUrls
+} from "@/lib/client-cache"
 
 // Import Modular Sections
 import Hero from "./_sections/hero"
@@ -89,12 +97,13 @@ export default function Home() {
   // GSAP animation scope ref
   const mainScopeRef = React.useRef<HTMLDivElement | null>(null)
 
-  // Video and system settings states
-  const [videoSrc, setVideoSrc] = React.useState("")
+  // Video and system settings states (defaulting to safe initial video so hero is never blank)
+  const [videoSrc, setVideoSrc] = React.useState("/videos/enhance_ocean_hill_villas.mp4")
   const [heroSubtitle, setHeroSubtitle] = React.useState("The Apex of Oceanfront Luxury")
   const [heroTitleLine1, setHeroTitleLine1] = React.useState("Where Sky Meets")
   const [heroTitleLine2, setHeroTitleLine2] = React.useState("Sanctuary")
-  const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the Aegean coastline, Ocean Hill Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+  const [heroDescription, setHeroDescription] = React.useState("Nestled along the pristine sands of the coastline, our luxury resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.")
+  const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
   const [dbRooms, setDbRooms] = React.useState<Room[]>([])
 
   // Inquiry Prefills
@@ -110,39 +119,67 @@ export default function Home() {
 
   const videoPlayerRef = React.useRef<HTMLVideoElement | null>(null)
 
-  // Initialize data and settings
+  // Initialize data and settings with cache hydration
   React.useEffect(() => {
-    // Fetch database rooms
+    const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches
+
+    // 1. Immediately hydrate from client cache
+    const cachedSettings = getClientCachedSettings()
+    if (cachedSettings) {
+      if (cachedSettings.heroSubtitle) setHeroSubtitle(cachedSettings.heroSubtitle)
+      if (cachedSettings.heroTitleLine1) setHeroTitleLine1(cachedSettings.heroTitleLine1)
+      if (cachedSettings.heroTitleLine2) setHeroTitleLine2(cachedSettings.heroTitleLine2)
+      if (cachedSettings.heroDescription) setHeroDescription(cachedSettings.heroDescription)
+      if (cachedSettings.themeColorPrimary) setThemeColorPrimary(cachedSettings.themeColorPrimary)
+      if (cachedSettings.heroVideoUrl) {
+        setVideoSrc(isMobile && cachedSettings.heroVideoUrlMobile ? cachedSettings.heroVideoUrlMobile : cachedSettings.heroVideoUrl)
+      }
+    }
+
+    const cachedVideos = getClientCachedVideoUrls()
+    if (cachedVideos) {
+      setVideoSrc(isMobile ? cachedVideos.mobileUrl : cachedVideos.desktopUrl)
+    }
+
+    const cachedRooms = getClientCachedRooms()
+    if (cachedRooms && cachedRooms.length > 0) {
+      setDbRooms(cachedRooms)
+      setSelectedVilla(cachedRooms[0].id)
+    }
+
+    // 2. Fresh fetch & background cache update
     getRoomsAction()
       .then((res) => {
         if (res.success && res.data && res.data.length > 0) {
           setDbRooms(res.data)
           setSelectedVilla(res.data[0].id)
+          setClientCachedRooms(res.data)
         }
       })
       .catch((err) => {
         console.warn("[Rooms] Error loading DB rooms:", err)
       })
 
-    // Determine video source dynamically
-    const isMobile = window.matchMedia("(max-width: 768px)").matches
-
     getHeroVideoUrlsAction()
       .then((urls) => {
         setVideoSrc(isMobile ? urls.mobileUrl : urls.desktopUrl)
+        setClientCachedVideoUrls(urls)
       })
       .catch((err) => {
         console.warn("[Video] Fallback to static videos:", err)
         setVideoSrc(isMobile ? "/videos/enhance_ocean_hill_villas_mobile.mp4" : "/videos/enhance_ocean_hill_villas.mp4")
       })
 
-    // Fetch system configs
     getSystemSettingsAction()
       .then((settings) => {
         setHeroSubtitle(settings.heroSubtitle)
         setHeroTitleLine1(settings.heroTitleLine1)
         setHeroTitleLine2(settings.heroTitleLine2)
         setHeroDescription(settings.heroDescription)
+        if (settings.themeColorPrimary) {
+          setThemeColorPrimary(settings.themeColorPrimary)
+        }
+        setClientCachedSettings(settings)
       })
       .catch((err) => {
         console.warn("[Settings] Error loading settings:", err)
@@ -208,6 +245,12 @@ export default function Home() {
           }
         )
       })
+
+      const refreshTimer = setTimeout(() => {
+        ScrollTrigger.refresh()
+      }, 500)
+
+      return () => clearTimeout(refreshTimer)
     }, mainScopeRef)
 
     return () => ctx.revert()
@@ -263,7 +306,7 @@ export default function Home() {
         heroTitleLine1={heroTitleLine1}
         heroTitleLine2={heroTitleLine2}
         heroDescription={heroDescription}
-        themeColorPrimary="#D4AF37"
+        themeColorPrimary={themeColorPrimary}
         onSearchSubmit={handleHeroBookingSubmit}
         videoPlayerRef={videoPlayerRef}
         rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
@@ -289,8 +332,8 @@ export default function Home() {
         {/* Location coordinates and layout map */}
         <Location />
 
-        {/* Reservation Request inquiry form */}
-        <Inquiry
+        {/* Reservation Request inquiry form (temporarily hidden) */}
+        {/* <Inquiry
           selectedVilla={selectedVilla}
           setSelectedVilla={setSelectedVilla}
           securityTier={securityTier}
@@ -300,7 +343,7 @@ export default function Home() {
           heroCheckIn={heroCheckIn}
           heroGuests={heroGuests}
           rooms={dbRooms.length > 0 ? dbRooms : MOCK_ROOMS}
-        />
+        /> */}
       </div>
     </div>
   )

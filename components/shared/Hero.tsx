@@ -45,7 +45,7 @@ export default function Hero() {
             Welcome to Paradise
           </span>
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl max-w-3xl leading-[1.15]">
-            Find Your Sanctuary at <span className="text-accent">OceanHilling Platform</span>
+            Find Your Sanctuary in <span className="text-accent">Pure Luxury</span>
           </h1>
           <p className="max-w-2xl mx-auto text-lg text-white/80 font-light md:text-xl">
             Escape the noise and immerse yourself in private beachside villas, crystal turquoise waters, and organic modern luxury.

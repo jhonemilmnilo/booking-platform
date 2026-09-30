@@ -35,7 +35,7 @@ export default function Footer({
             ) : (
               <svg className="w-8 h-8 text-luxury-gold" viewBox="0 0 100 100" fill="none" stroke="currentColor">
                 <path d="M50 5 L85 25 L85 65 L50 95 L15 65 L15 25 Z" strokeWidth="2" />
-                <circle cx="50" cy="48" r="8" fill="#D4AF37" />
+                <circle cx="50" cy="48" r="8" fill="currentColor" />
               </svg>
             )}
             <span className="font-serif text-lg tracking-[0.2em] text-luxury-cream uppercase font-semibold">
@@ -96,7 +96,7 @@ export default function Footer({
           <h4 className="font-serif text-luxury-cream tracking-widest uppercase text-xs font-bold">Guest Relations Office</h4>
           <div className="text-xs text-luxury-cream/60 space-y-2">
             <p>
-              <i className="fa-solid fa-envelope text-luxury-gold mr-1"></i> relations@oceanhillresort.com
+              <i className="fa-solid fa-envelope text-luxury-gold mr-1"></i> concierge@theshoreresort.com
             </p>
             <p>
               <i className="fa-solid fa-phone-volume text-luxury-gold mr-1"></i> +30 210 555 9821
@@ -109,7 +109,7 @@ export default function Footer({
       </div>
 
       <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-luxury-gold/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-luxury-cream/40">
-        <span>&copy; {new Date().getFullYear()} Ocean Hill Resort Group S.A. All rights reserved.</span>
+        <span>&copy; {new Date().getFullYear()} {brandName || "MIGS THE SHORE"} Resort Group S.A. All rights reserved.</span>
         <div className="flex gap-6">
           <a href="#" className="hover:text-luxury-gold">Privacy Directives</a>
           <a href="#" className="hover:text-luxury-gold">VIP Disclosures</a>

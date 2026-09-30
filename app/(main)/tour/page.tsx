@@ -134,7 +134,7 @@ export default function TourPage() {
             Exclusive Visual Dossier
           </span>
           <h1 className="font-serif text-4xl md:text-6xl text-luxury-cream leading-tight">
-            Explore the <span className="text-gold-gradient italic">Sanctuary Details</span>
+            Explore the <span className="bg-clip-text text-transparent text-gold-gradient italic">Sanctuary Details</span>
           </h1>
           <p className="text-luxury-cream/70 leading-relaxed font-light text-sm md:text-base">
             Take a sensory walk through our spotlight destinations below to explore the engineering, amenities, and absolute privacy of each location.
@@ -226,7 +226,7 @@ export default function TourPage() {
             <div className="pt-2 relative z-10">
               <Link
                 href="/#inquiry"
-                className="inline-flex w-full sm:w-auto min-w-[280px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
+                className="inline-flex w-full sm:w-auto min-w-[280px] bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
               >
                 Submit Booking Inquiry <ArrowRight className="w-4 h-4" />
               </Link>

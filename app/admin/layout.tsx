@@ -1,20 +1,94 @@
 import * as React from "react"
-import AdminSidebar from "./_components/admin-sidebar"
+import { redirect } from "next/navigation"
+import AdminShell from "./_components/admin-shell"
+import { createClient } from "@/lib/supabase/server"
+import prisma from "@/lib/prisma/client"
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/auth/login?error=Please%20sign%20in%20to%20access%20the%20Admin%20Portal")
+  }
+
+  const dbUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: user.id },
+        ...(user.email ? [{ email: user.email.toLowerCase() }] : [])
+      ]
+    },
+    select: { role: true }
+  })
+
+  if (!dbUser || dbUser.role !== "ADMIN") {
+    redirect("/?error=Unauthorized%20access")
+  }
+
+  // Pre-fetch resort theme settings on the server so initial render has the exact colors
+  const settingsRecords = await prisma.systemSettings.findMany({
+    where: {
+      key: {
+        in: [
+          "theme_color_primary",
+          "theme_color_secondary",
+          "theme_color_accent",
+          "brand_name",
+        ],
+      },
+    },
+    select: { key: true, value: true },
+  })
+  const settingsMap = Object.fromEntries(settingsRecords.map((r) => [r.key, r.value]))
+  const themeColorPrimary = settingsMap["theme_color_primary"] || "#D4AF37"
+  const themeColorSecondary = settingsMap["theme_color_secondary"] || "#FFFFFF"
+  const themeColorAccent = settingsMap["theme_color_accent"] || "#1C1A17"
+  const brandName = settingsMap["brand_name"] || "MIGS THE SHORE"
+
   return (
     <div className="min-h-screen bg-[#0b0c10] flex">
-      {/* Sidebar Navigation */}
-      <AdminSidebar />
+      {/* Server-injected CSS theme variables so the page never flashes default gold/yellow */}
+      <style
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: `
+            :root {
+              --theme-color-primary: ${themeColorPrimary};
+              --theme-color-primary-light: color-mix(in srgb, ${themeColorPrimary} 55%, white);
+              --theme-color-primary-dark: color-mix(in srgb, ${themeColorPrimary} 70%, black);
+              --theme-color-secondary: ${themeColorSecondary};
+              --theme-color-accent: ${themeColorAccent};
+              --color-luxury-gold: ${themeColorPrimary};
+              --color-luxury-lightGold: color-mix(in srgb, ${themeColorPrimary} 55%, white);
+              --color-luxury-darkGold: color-mix(in srgb, ${themeColorPrimary} 70%, black);
+              --color-luxury-obsidian: ${themeColorSecondary};
+              --color-luxury-cream: ${themeColorAccent};
+              --primary: ${themeColorPrimary};
+            }
+            html.admin-sidebar-collapsed .admin-sidebar-aside {
+              width: 5rem !important;
+            }
+            html.admin-sidebar-collapsed .admin-main-content {
+              margin-left: 5rem !important;
+            }
+          `,
+        }}
+      />
 
-      {/* Main Content Area */}
-      <div className="flex-1 ml-64 min-h-screen flex flex-col">
+      {/* Admin Shell Navigation and Main Content */}
+      <AdminShell
+        initialBrandName={brandName}
+        initialThemeColor={themeColorPrimary}
+        initialThemeSecondary={themeColorSecondary}
+        initialThemeAccent={themeColorAccent}
+      >
         {children}
-      </div>
+      </AdminShell>
     </div>
   )
 }

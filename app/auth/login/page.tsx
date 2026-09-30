@@ -13,7 +13,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { loginWithEmailAction, getSocialLoginUrlAction, getPrimaryThemeColorAction } from "../actions"
+import { loginWithEmailAction, getSocialLoginUrlAction, getSystemSettingsAction } from "../actions"
+import { getClientCachedSettings } from "@/lib/client-cache"
 
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
@@ -29,6 +30,7 @@ function LoginContent() {
   const [showPassword, setShowPassword] = React.useState(false)
   const [attemptsLeft, setAttemptsLeft] = React.useState<number | null>(null)
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
+  const [brandName, setBrandName] = React.useState("MIGS THE SHORE")
   
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -53,10 +55,17 @@ function LoginContent() {
   }, [])
 
   React.useEffect(() => {
-    getPrimaryThemeColorAction()
+    const cached = getClientCachedSettings()
+    if (cached?.brandName) setBrandName(cached.brandName)
+    if (cached?.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary)
+
+    getSystemSettingsAction()
       .then((res) => {
         if (res.themeColorPrimary) {
           setThemeColorPrimary(res.themeColorPrimary)
+        }
+        if (res.brandName) {
+          setBrandName(res.brandName)
         }
       })
       .catch((err) => console.warn(err))
@@ -81,22 +90,18 @@ function LoginContent() {
     startTransition(async () => {
       const result = await loginWithEmailAction(values)
       if (result.success) {
-        if (result.otpRequired) {
-          if (result.otpAlreadySent) {
-            showToast.info("Verification code already sent", "Please check your inbox or spam folder.")
-          } else {
-            showToast.success("Verification code sent to your email.")
-          }
-          setTimeout(() => {
-            router.push(`/auth/verify?email=${encodeURIComponent(values.email)}`)
-          }, 1500)
-        } else {
-          showToast.success("Successfully logged in!")
-          setTimeout(() => {
-            router.push("/")
-            router.refresh()
-          }, 1500)
+        showToast.success("Successfully logged in!")
+        if (result.role && typeof window !== "undefined") {
+          localStorage.setItem("user_role", result.role)
         }
+        setTimeout(() => {
+          if (result.role === "ADMIN") {
+            router.push("/admin/settings")
+          } else {
+            router.push("/")
+          }
+          router.refresh()
+        }, 1500)
       } else {
         setIsLoading(false)
         showToast.error(result.error || "Login failed.")
@@ -134,7 +139,7 @@ function LoginContent() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
         <Image
           src="/images/auth-bg.png"
-          alt="Booking Platform Overwater Villa"
+          alt={`${brandName} Overwater Villa`}
           fill
           priority
           sizes="50vw"
@@ -144,7 +149,7 @@ function LoginContent() {
         
         <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
-            Experience Booking Platform
+            Experience {brandName}
           </h2>
           <p className="text-sm font-medium text-emerald-100/90 max-w-md leading-relaxed">
             Welcome to your digital portal. Sign in to view reservation queues, manage stay durations, and access exclusive oceanfront amenities.
@@ -159,7 +164,7 @@ function LoginContent() {
           <div className="space-y-2 text-left">
             <div className="flex items-center gap-2 mb-2 lg:hidden">
               <Compass className="h-7 w-7 text-primary" />
-              <span className="font-bold text-sm uppercase tracking-wider text-foreground">Booking Platform</span>
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">{brandName}</span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
               Sign In
@@ -247,6 +252,12 @@ function LoginContent() {
             <div className="space-y-1.5 text-left">
               <div className="flex items-center justify-between">
                 <Label htmlFor="login-password" className="text-muted-foreground font-bold uppercase text-[9px] tracking-widest">Password</Label>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider"
+                >
+                  Forgot password?
+                </Link>
               </div>
               <div className="relative flex items-center">
                 <Lock 

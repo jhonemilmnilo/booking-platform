@@ -27,7 +27,7 @@ const CAMPAIGN_REELS = [
     duration: "11 sec Loop",
     previewUrl: "/images/image5.png",
     videoUrl: "/videos/enhance_ocean_hill_villas_mobile.mp4",
-    description: "The golden hour reel. As champagne is poured on your private balcony terrace, the ocean turns to glass. This is the essence of Ocean Hill — where every sunset is your personal cinematic experience."
+    description: "The golden hour reel. As champagne is poured on your private balcony terrace, the ocean turns to glass. This is the essence of our coastal sanctuary — where every sunset is your personal cinematic experience."
   },
   {
     title: "Ocean Drift",
@@ -35,7 +35,7 @@ const CAMPAIGN_REELS = [
     duration: "15 sec Loop",
     previewUrl: "/images/image4.png",
     videoUrl: "/videos/enhance_ocean_hill_villas.webm",
-    description: "A fluid drift through our private yacht harbor and overwater bungalows at blue hour. The stillness of the sea mirrors the absolute serenity of a stay at Ocean Hill Villas."
+    description: "A fluid drift through our private yacht harbor and overwater bungalows at blue hour. The stillness of the sea mirrors the absolute serenity of a stay at our luxury resort villas."
   },
   {
     title: "Sky & Shore",
@@ -71,7 +71,7 @@ export default function Cinema() {
         <div className="text-center space-y-4">
           <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Exclusive Campaigns</span>
           <h2 className="font-serif text-4xl md:text-6xl text-luxury-cream">
-            The Cinematic <span className="text-gold-gradient italic">Showcase</span>
+            The Cinematic <span className="bg-clip-text text-transparent text-gold-gradient italic">Showcase</span>
           </h2>
           <p className="text-luxury-cream/60 max-w-2xl mx-auto text-sm md:text-base">
             Immerse yourself in our cinematic commercials designed to evoke the essence of true oceanfront luxury living.
@@ -157,7 +157,7 @@ export default function Cinema() {
         <div className="flex justify-center pt-4">
           <Link
             href="/villas"
-            className="inline-flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
+            className="inline-flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
           >
             Explore Our Villas <i className="fa-solid fa-arrow-right text-xs"></i>
           </Link>

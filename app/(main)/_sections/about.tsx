@@ -89,7 +89,7 @@ export default function About() {
             <span className="text-luxury-gold uppercase tracking-[0.3em] text-xs font-semibold block">Resort Walkthrough</span>
             <h2 className="font-serif text-3xl md:text-5xl text-luxury-cream leading-tight">
               Experience the <br />
-              <span className="text-gold-gradient italic">Sanctuary Tour</span>
+              <span className="bg-clip-text text-transparent text-gold-gradient italic">Sanctuary Tour</span>
             </h2>
           </div>
 
@@ -100,7 +100,7 @@ export default function About() {
           <div className="pt-2">
             <Link
               href="/tour"
-              className="hidden lg:inline-flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
+              className="hidden lg:inline-flex w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all items-center justify-center gap-2 border-none text-center"
             >
               Explore More <i className="fa-solid fa-arrow-right text-xs"></i>
             </Link>
@@ -112,7 +112,7 @@ export default function About() {
       <div className="mt-8 flex justify-center lg:hidden w-full px-6">
         <Link
           href="/tour"
-          className="w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-luxury-obsidian font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 border-none text-center"
+          className="w-full sm:w-auto min-w-[240px] bg-gold-gradient hover:brightness-110 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 px-8 rounded-full shadow-lg active:scale-98 transition-all flex items-center justify-center gap-2 border-none text-center"
         >
           Explore More <i className="fa-solid fa-arrow-right text-xs"></i>
         </Link>

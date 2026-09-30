@@ -22,6 +22,14 @@ export async function GET(request: Request) {
         const exists = await prisma.user.findUnique({
           where: { email: emailClean }
         })
+
+        // Existing user logging in via social provider: authenticate directly
+        if (exists && !isSignup) {
+          if (exists.role === "ADMIN") {
+            return NextResponse.redirect(`${origin}/admin/settings`)
+          }
+          return NextResponse.redirect(`${origin}/`)
+        }
         
         const isSignupActive = isSignup || !exists
 

@@ -13,7 +13,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { signUpWithEmailAction, getSocialLoginUrlAction, getPrimaryThemeColorAction } from "../actions"
+import { signUpWithEmailAction, getSocialLoginUrlAction, getSystemSettingsAction } from "../actions"
+import { getClientCachedSettings } from "@/lib/client-cache"
 
 import LoadingOverlay from "@/components/shared/LoadingOverlay"
 import { Suspense } from "react"
@@ -31,6 +32,7 @@ function SignUpContent() {
 
   const router = useRouter()
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
+  const [brandName, setBrandName] = React.useState("MIGS THE SHORE")
   const searchParams = useSearchParams()
   const errorParam = searchParams.get("error")
 
@@ -63,10 +65,17 @@ function SignUpContent() {
   }, [])
 
   React.useEffect(() => {
-    getPrimaryThemeColorAction()
+    const cached = getClientCachedSettings()
+    if (cached?.brandName) setBrandName(cached.brandName)
+    if (cached?.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary)
+
+    getSystemSettingsAction()
       .then((res) => {
         if (res.themeColorPrimary) {
           setThemeColorPrimary(res.themeColorPrimary)
+        }
+        if (res.brandName) {
+          setBrandName(res.brandName)
         }
       })
       .catch((err) => console.warn(err))
@@ -115,7 +124,7 @@ function SignUpContent() {
       <div className="hidden lg:flex lg:w-1/2 relative bg-primary items-center justify-center overflow-hidden">
         <Image
           src="/images/auth-bg.png"
-          alt="OceanHilling Platform Overwater Villa"
+          alt={`${brandName} Overwater Villa`}
           fill
           priority
           sizes="50vw"
@@ -125,7 +134,7 @@ function SignUpContent() {
 
         <div className="absolute bottom-16 left-16 right-16 text-white space-y-4 text-left z-10">
           <h2 className="text-4xl font-extrabold tracking-tight leading-tight uppercase font-display">
-            Experience OceanHilling Platform
+            Experience {brandName}
           </h2>
           <p className="text-sm font-medium text-emerald-100/90 max-w-md leading-relaxed">
             Welcome to your digital portal. Sign in to view reservation queues, manage stay durations, and access exclusive oceanfront amenities.
@@ -140,7 +149,7 @@ function SignUpContent() {
           <div className="space-y-2 text-left">
             <div className="flex items-center gap-2 mb-2 lg:hidden">
               <Compass className="h-7 w-7 text-primary" />
-              <span className="font-bold text-sm uppercase tracking-wider text-foreground">OceanHilling Platform</span>
+              <span className="font-bold text-sm uppercase tracking-wider text-foreground">{brandName}</span>
             </div>
             <h1 className="text-3xl font-black tracking-tight text-foreground uppercase">
               Create Account
