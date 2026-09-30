@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import {
   getPendingReviewsAction,
@@ -25,7 +24,6 @@ interface Review {
 }
 
 export default function AdminReviewsPage() {
-  const router = useRouter()
   const [pendingReviews, setPendingReviews] = React.useState<Review[]>([])
   const [approvedReviews, setApprovedReviews] = React.useState<Review[]>([])
   const [isLoading, setIsLoading] = React.useState(true)

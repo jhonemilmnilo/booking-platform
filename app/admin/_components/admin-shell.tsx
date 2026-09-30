@@ -79,7 +79,7 @@ export default function AdminShell({
       )
 
       const saved = localStorage.getItem("admin_sidebar_collapsed") === "true"
-      setIsCollapsed(saved)
+      queueMicrotask(() => setIsCollapsed(saved))
       if (saved) {
         root.classList.add("admin-sidebar-collapsed")
       } else {

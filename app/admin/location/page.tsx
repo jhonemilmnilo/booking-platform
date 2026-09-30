@@ -8,6 +8,11 @@ import { getClientCachedSettings, setClientCachedSettings } from "@/lib/client-c
 import { AdminSidebarToggle } from "@/app/admin/_components/admin-shell"
 import AdminUserDropdown from "@/app/admin/_components/admin-user-dropdown"
 
+// Skeleton bone — defined at module level to satisfy react-hooks/static-components
+function SkeletonBone({ className = "" }: { className?: string }) {
+  return <div className={`bg-black/[0.08] dark:bg-white/[0.06] rounded-xl animate-pulse ${className}`} />
+}
+
 interface TouristSpot {
   name: string
   distance: string
@@ -124,7 +129,8 @@ export default function AdminLocationPage() {
 
   // Sync rawText when touristSpots changes
   React.useEffect(() => {
-    setRawText(touristSpots.map((s) => `${s.name}: ${s.distance}`).join("\n"))
+    const text = touristSpots.map((s) => `${s.name}: ${s.distance}`).join("\n")
+    queueMicrotask(() => setRawText(text))
   }, [touristSpots])
 
   // ─── Form Handlers ──────────────────────────────────────────────────────────
@@ -246,40 +252,37 @@ export default function AdminLocationPage() {
 
   // ─── Skeleton Loading ───────────────────────────────────────────────────────
   if (isLoading) {
-    const Bone = ({ className = "" }: { className?: string }) => (
-      <div className={`bg-black/[0.08] dark:bg-white/[0.06] rounded-xl animate-pulse ${className}`} />
-    )
 
     return (
       <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0b0c10] text-[#1C1A17] dark:text-[#EAE5D9] font-sans pb-16">
         <header className="border-b border-luxury-gold/20 bg-[#FAF8F5]/90 dark:bg-[#0b0c10]/90 backdrop-blur sticky top-0 z-20 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AdminSidebarToggle />
-            <Bone className="w-7 h-7 rounded-lg" />
+            <SkeletonBone className="w-7 h-7 rounded-lg" />
             <div className="space-y-1.5">
-              <Bone className="w-44 h-4 rounded-lg" />
-              <Bone className="w-32 h-2.5 rounded-lg" />
+              <SkeletonBone className="w-44 h-4 rounded-lg" />
+              <SkeletonBone className="w-32 h-2.5 rounded-lg" />
             </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Bone className="w-28 h-8 rounded-xl" />
-            <Bone className="w-32 h-8 rounded-xl" />
+            <SkeletonBone className="w-28 h-8 rounded-xl" />
+            <SkeletonBone className="w-32 h-8 rounded-xl" />
           </div>
         </header>
 
         <main className="w-full px-6 md:px-10 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-7 space-y-8 bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-3xl p-6 md:p-8 shadow-sm dark:shadow-xl">
-            <Bone className="w-56 h-7 rounded-xl" />
+            <SkeletonBone className="w-56 h-7 rounded-xl" />
             <div className="space-y-4">
-              <Bone className="w-full h-12 rounded-xl" />
-              <Bone className="w-full h-12 rounded-xl" />
-              <Bone className="w-full h-32 rounded-xl" />
+              <SkeletonBone className="w-full h-12 rounded-xl" />
+              <SkeletonBone className="w-full h-12 rounded-xl" />
+              <SkeletonBone className="w-full h-32 rounded-xl" />
             </div>
           </div>
           <div className="lg:col-span-5">
             <div className="bg-white dark:bg-[#16171b] border border-black/10 dark:border-white/10 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl">
-              <Bone className="w-48 h-5 rounded-lg" />
-              <Bone className="w-full h-80 rounded-2xl" />
+              <SkeletonBone className="w-48 h-5 rounded-lg" />
+              <SkeletonBone className="w-full h-80 rounded-2xl" />
             </div>
           </div>
         </main>

@@ -32,20 +32,22 @@ export default function Location() {
     // 1. Immediately hydrate from client cache
     const cached = getClientCachedSettings()
     if (cached) {
-      if (cached.resortLatitude) setResortLatitude(cached.resortLatitude)
-      if (cached.resortLongitude) setResortLongitude(cached.resortLongitude)
-      if (cached.resortLocationTitleLine1) setTitleLine1(cached.resortLocationTitleLine1)
-      if (cached.resortLocationTitleLine2) setTitleLine2(cached.resortLocationTitleLine2)
-      if (cached.resortLocationDescription) setDescription(cached.resortLocationDescription)
-      if (cached.resortRegion) setResortRegion(cached.resortRegion)
-      if (cached.touristSpots) {
-        try {
-          const parsed = JSON.parse(cached.touristSpots)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setTouristSpots(parsed)
-          }
-        } catch {}
-      }
+      queueMicrotask(() => {
+        if (cached.resortLatitude) setResortLatitude(cached.resortLatitude as string)
+        if (cached.resortLongitude) setResortLongitude(cached.resortLongitude as string)
+        if (cached.resortLocationTitleLine1) setTitleLine1(cached.resortLocationTitleLine1 as string)
+        if (cached.resortLocationTitleLine2) setTitleLine2(cached.resortLocationTitleLine2 as string)
+        if (cached.resortLocationDescription) setDescription(cached.resortLocationDescription as string)
+        if (cached.resortRegion) setResortRegion(cached.resortRegion as string)
+        if (cached.touristSpots) {
+          try {
+            const parsed = JSON.parse(cached.touristSpots as string)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTouristSpots(parsed)
+            }
+          } catch {}
+        }
+      })
     }
 
     // 2. Fresh fetch & background cache update

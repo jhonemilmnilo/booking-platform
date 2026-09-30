@@ -77,6 +77,9 @@ export default async function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              // Inject server-side settings for instant client access (no extra network round-trip)
+              window.__SYSTEM_SETTINGS__ = ${JSON.stringify(settings)};
+
               try {
                 var adminTheme = localStorage.getItem("admin_theme_mode");
                 if (adminTheme === "light") {
@@ -127,12 +130,7 @@ export default async function RootLayout({
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         />
-        {/* Inject System Settings for Instant Client-Side Access */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.__SYSTEM_SETTINGS__ = ${JSON.stringify(settings)};`,
-          }}
-        />
+
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {children}

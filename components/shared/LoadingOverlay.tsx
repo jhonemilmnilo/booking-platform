@@ -21,8 +21,10 @@ export default function LoadingOverlay({
 
   React.useEffect(() => {
     // Check if settings are already injected in the window
-    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__?.brandName) {
-      const cachedName = (window as any).__SYSTEM_SETTINGS__.brandName
+    interface SettingsWindow { brandName?: string }
+    const injected = (window as Window & { __SYSTEM_SETTINGS__?: SettingsWindow }).__SYSTEM_SETTINGS__
+    if (injected?.brandName) {
+      const cachedName = injected.brandName
       // Defer state update to next microtask to prevent synchronous cascading renders warning
       Promise.resolve().then(() => {
         setDbBrandName(cachedName)

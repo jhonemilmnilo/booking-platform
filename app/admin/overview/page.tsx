@@ -113,8 +113,30 @@ export default function AdminOverviewPage() {
   }, [])
 
   React.useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    let ignore = false
+    getOverviewStatsAction()
+      .then((res) => {
+        if (ignore) return
+        if (res.success && res.data) {
+          setData(res.data as OverviewData)
+          setError(null)
+        } else {
+          setError(res.error ?? "Failed to load dashboard data.")
+        }
+      })
+      .catch((err) => {
+        if (ignore) return
+        console.error("[AdminOverview] Fetch error:", err)
+        setError("An unexpected network error occurred while loading dashboard.")
+      })
+      .finally(() => {
+        if (ignore) return
+        setIsLoading(false)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const fmtCurrency = (n: number) =>
     new Intl.NumberFormat("en-PH", {

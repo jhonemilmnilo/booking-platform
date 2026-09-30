@@ -24,7 +24,7 @@ export interface SystemSettingsCache {
   resortLocationDescription?: string
   resortRegion?: string
   resortAmenities?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface CachedVideoUrls {
@@ -61,19 +61,19 @@ export function setClientCachedSettings(settings: SystemSettingsCache): void {
   } catch {}
 }
 
-export function getClientCachedRooms(): any[] | null {
+export function getClientCachedRooms<T = unknown>(): T[] | null {
   if (typeof window === "undefined") return null
   try {
     const raw = localStorage.getItem(ROOMS_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw)
-    return Array.isArray(parsed?.data) && parsed.data.length > 0 ? parsed.data : null
+    return Array.isArray(parsed?.data) && parsed.data.length > 0 ? (parsed.data as T[]) : null
   } catch {
     return null
   }
 }
 
-export function setClientCachedRooms(rooms: any[]): void {
+export function setClientCachedRooms(rooms: unknown[]): void {
   if (typeof window === "undefined") return
   try {
     localStorage.setItem(

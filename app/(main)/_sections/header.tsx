@@ -21,9 +21,7 @@ export default function Header({
   brandLogo,
   isLoggedIn,
   isAdmin = false,
-  onBookClick,
   onLogOut,
-  mockRooms,
 }: HeaderProps) {
   const pathname = usePathname()
   const [isHeaderScrolled, setIsHeaderScrolled] = React.useState(false)

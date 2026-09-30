@@ -10,11 +10,35 @@ import { getClientCachedSettings, setClientCachedSettings } from "@/lib/client-c
 import { AdminSidebarToggle } from "@/app/admin/_components/admin-shell"
 import AdminUserDropdown from "@/app/admin/_components/admin-user-dropdown"
 
+// Declared at module level to satisfy react-hooks/static-components
+interface SaveBtnProps { large?: boolean; isSaving: boolean; hasChanges: boolean; onClick: () => void }
+function SaveBtn({ large = false, isSaving, hasChanges, onClick }: SaveBtnProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isSaving || !hasChanges}
+      className={`flex items-center gap-2 bg-luxury-gold hover:bg-luxury-gold/90 disabled:opacity-40 disabled:cursor-not-allowed text-luxury-obsidian font-bold uppercase tracking-widest rounded-xl transition-all duration-200 shadow-lg cursor-pointer ${large ? "text-xs px-6 py-3" : "text-xs px-4 py-2"}`}
+    >
+      {isSaving
+        ? <><i className="fa-solid fa-spinner fa-spin text-sm"></i> Saving…</>
+        : <><i className="fa-solid fa-floppy-disk text-sm"></i> {large ? "Save All Changes" : "Save Changes"}</>}
+    </button>
+  )
+}
+
+// Skeleton bone — defined at module level to satisfy react-hooks/static-components
+function SkeletonBone({ className = "" }: { className?: string }) {
+  return <div className={`bg-black/[0.08] dark:bg-white/[0.06] rounded-xl animate-pulse ${className}`} />
+}
+
 export default function AdminSettingsPage() {
-  const router = useRouter()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _router = useRouter()
 
   // ─── Settings state ────────────────────────────────────────────────────────
-  const [brandName, setBrandName] = React.useState(() => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_brandName, setBrandName] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
       if (c?.brandName) return c.brandName
@@ -181,29 +205,25 @@ export default function AdminSettingsPage() {
         toast.error("Failed to load existing system settings.")
       })
       .finally(() => setIsLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ─── Skeleton loading ─────────────────────────────────────────────────────
   if (isLoading) {
-    const Bone = ({ className = "" }: { className?: string }) => (
-      <div className={`bg-black/[0.08] dark:bg-white/[0.06] rounded-xl animate-pulse ${className}`} />
-    )
     return (
       <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0b0c10] text-[#1C1A17] dark:text-[#EAE5D9] font-sans pb-16">
         {/* Skeleton header */}
         <header className="border-b border-luxury-gold/20 bg-[#FAF8F5]/90 dark:bg-[#0b0c10]/90 backdrop-blur sticky top-0 z-20 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AdminSidebarToggle />
-            <Bone className="w-7 h-7 rounded-lg" />
+            <SkeletonBone className="w-7 h-7 rounded-lg" />
             <div className="space-y-1.5">
-              <Bone className="w-40 h-4 rounded-lg" />
-              <Bone className="w-24 h-2.5 rounded-lg" />
+              <SkeletonBone className="w-40 h-4 rounded-lg" />
+              <SkeletonBone className="w-24 h-2.5 rounded-lg" />
             </div>
           </div>
           <div className="flex items-center gap-2.5">
-            <Bone className="w-28 h-8 rounded-xl" />
-            <Bone className="w-32 h-8 rounded-xl" />
+            <SkeletonBone className="w-28 h-8 rounded-xl" />
+            <SkeletonBone className="w-32 h-8 rounded-xl" />
           </div>
         </header>
 
@@ -211,47 +231,47 @@ export default function AdminSettingsPage() {
           {/* Form skeleton */}
           <div className="lg:col-span-7 space-y-8 bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-3xl p-6 md:p-8 shadow-sm dark:shadow-xl">
             {/* Title */}
-            <Bone className="w-56 h-7 rounded-xl" />
+            <SkeletonBone className="w-56 h-7 rounded-xl" />
 
             {/* Section: Hero Copy */}
             <div className="space-y-5">
-              <Bone className="w-36 h-3 rounded-lg" />
-              <Bone className="w-full h-11 rounded-xl" />
+              <SkeletonBone className="w-36 h-3 rounded-lg" />
+              <SkeletonBone className="w-full h-11 rounded-xl" />
               <div className="grid grid-cols-2 gap-4">
-                <Bone className="h-11 rounded-xl" />
-                <Bone className="h-11 rounded-xl" />
+                <SkeletonBone className="h-11 rounded-xl" />
+                <SkeletonBone className="h-11 rounded-xl" />
               </div>
-              <Bone className="w-full h-24 rounded-xl" />
-              <Bone className="w-full h-28 rounded-xl" />
+              <SkeletonBone className="w-full h-24 rounded-xl" />
+              <SkeletonBone className="w-full h-28 rounded-xl" />
             </div>
 
             {/* Section: Location */}
             <div className="space-y-5 pt-2">
-              <Bone className="w-44 h-3 rounded-lg" />
+              <SkeletonBone className="w-44 h-3 rounded-lg" />
               <div className="grid grid-cols-2 gap-4">
-                <Bone className="h-11 rounded-xl" />
-                <Bone className="h-11 rounded-xl" />
+                <SkeletonBone className="h-11 rounded-xl" />
+                <SkeletonBone className="h-11 rounded-xl" />
               </div>
-              <Bone className="w-full h-[180px] rounded-xl" />
-              <Bone className="w-full h-11 rounded-xl" />
+              <SkeletonBone className="w-full h-[180px] rounded-xl" />
+              <SkeletonBone className="w-full h-11 rounded-xl" />
               <div className="grid grid-cols-2 gap-4">
-                <Bone className="h-11 rounded-xl" />
-                <Bone className="h-11 rounded-xl" />
+                <SkeletonBone className="h-11 rounded-xl" />
+                <SkeletonBone className="h-11 rounded-xl" />
               </div>
-              <Bone className="w-full h-20 rounded-xl" />
+              <SkeletonBone className="w-full h-20 rounded-xl" />
             </div>
 
             {/* Section: Videos */}
             <div className="space-y-5 pt-2">
-              <Bone className="w-40 h-3 rounded-lg" />
-              <Bone className="w-full h-16 rounded-xl" />
-              <Bone className="w-full h-16 rounded-xl" />
+              <SkeletonBone className="w-40 h-3 rounded-lg" />
+              <SkeletonBone className="w-full h-16 rounded-xl" />
+              <SkeletonBone className="w-full h-16 rounded-xl" />
             </div>
 
             {/* Bottom bar */}
             <div className="pt-4 border-t border-black/10 dark:border-white/10 flex items-center justify-between">
-              <Bone className="w-40 h-3 rounded-lg" />
-              <Bone className="w-36 h-10 rounded-xl" />
+              <SkeletonBone className="w-40 h-3 rounded-lg" />
+              <SkeletonBone className="w-36 h-10 rounded-xl" />
             </div>
           </div>
 
@@ -259,10 +279,10 @@ export default function AdminSettingsPage() {
           <div className="lg:col-span-5">
             <div className="sticky top-28 bg-white dark:bg-[#16171b] border border-black/10 dark:border-white/10 rounded-3xl p-6 space-y-5 shadow-sm dark:shadow-xl">
               <div className="space-y-2">
-                <Bone className="w-36 h-3 rounded-lg" />
-                <Bone className="w-52 h-2.5 rounded-lg" />
+                <SkeletonBone className="w-36 h-3 rounded-lg" />
+                <SkeletonBone className="w-52 h-2.5 rounded-lg" />
               </div>
-              <Bone className="w-full aspect-video rounded-2xl" />
+              <SkeletonBone className="w-full aspect-video rounded-2xl" />
             </div>
           </div>
         </main>
@@ -270,20 +290,6 @@ export default function AdminSettingsPage() {
     )
   }
 
-
-  // ─── Reusable Save button ──────────────────────────────────────────────────
-  const SaveBtn = ({ large = false }: { large?: boolean }) => (
-    <button
-      type="button"
-      onClick={saveAllChanges}
-      disabled={isSaving || !hasChanges}
-      className={`flex items-center gap-2 bg-luxury-gold hover:bg-luxury-gold/90 disabled:opacity-40 disabled:cursor-not-allowed text-luxury-obsidian font-bold uppercase tracking-widest rounded-xl transition-all duration-200 shadow-lg cursor-pointer ${large ? "text-xs px-6 py-3" : "text-xs px-4 py-2"}`}
-    >
-      {isSaving
-        ? <><i className="fa-solid fa-spinner fa-spin text-sm"></i> Saving…</>
-        : <><i className="fa-solid fa-floppy-disk text-sm"></i> {large ? "Save All Changes" : "Save Changes"}</>}
-    </button>
-  )
 
   // ─── Page ──────────────────────────────────────────────────────────────────
   return (
@@ -305,7 +311,7 @@ export default function AdminSettingsPage() {
               <i className="fa-solid fa-circle-dot text-[8px]"></i> Unsaved changes
             </span>
           )}
-          <SaveBtn large={false} />
+          <SaveBtn large={false} isSaving={isSaving} hasChanges={hasChanges} onClick={saveAllChanges} />
           <Link
             href="/"
             target="_blank"

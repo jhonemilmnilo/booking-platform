@@ -72,80 +72,16 @@ export default function MainLayout({
   const [socialTiktok, setSocialTiktok] = React.useState("https://tiktok.com")
   const [socialTwitter, setSocialTwitter] = React.useState("https://twitter.com")
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [themeColorSecondary, setThemeColorSecondary] = React.useState("#FFFFFF")
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [themeColorAccent, setThemeColorAccent] = React.useState("#1C1A17")
 
-  // Initialize data and settings with client-side caching
-  React.useEffect(() => {
-    // 1. Immediately hydrate from cache to eliminate FOUC / wrong initial states
-    const cached = getClientCachedSettings()
-    let hasValidCache = false
-
-    if (cached) {
-      hasValidCache = true
-      if (cached.brandName) setBrandName(cached.brandName)
-      if (cached.brandLogo !== undefined) setBrandLogo(cached.brandLogo)
-      if (cached.socialFacebook) setSocialFacebook(cached.socialFacebook)
-      if (cached.socialInstagram) setSocialInstagram(cached.socialInstagram)
-      if (cached.socialTiktok) setSocialTiktok(cached.socialTiktok)
-      if (cached.socialTwitter) setSocialTwitter(cached.socialTwitter)
-      if (cached.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary)
-      if (cached.themeColorSecondary) setThemeColorSecondary(cached.themeColorSecondary)
-      if (cached.themeColorAccent) setThemeColorAccent(cached.themeColorAccent)
-      applyThemeToDom(cached.themeColorPrimary, cached.themeColorSecondary, cached.themeColorAccent)
-    }
-
-    // 2. Fetch fresh settings from server (stale-while-revalidate)
-    // If settings are already injected in the window by the server, use them to avoid a network roundtrip
-    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__) {
-      const settings = (window as any).__SYSTEM_SETTINGS__
-      setBrandName(settings.brandName || "Ocean Hill")
-      setBrandLogo(settings.brandLogo || "")
-      setSocialFacebook(settings.socialFacebook || "https://facebook.com")
-      setSocialInstagram(settings.socialInstagram || "https://instagram.com")
-      setSocialTiktok(settings.socialTiktok || "https://tiktok.com")
-      setSocialTwitter(settings.socialTwitter || "https://twitter.com")
-      setThemeColorPrimary(settings.themeColorPrimary || "#D4AF37")
-      setThemeColorSecondary(settings.themeColorSecondary || "#FFFFFF")
-      setThemeColorAccent(settings.themeColorAccent || "#1C1A17")
-      return
-    }
-
-    getSystemSettingsAction()
-      .then((settings) => {
-        setBrandName(settings.brandName || "MIGS THE SHORE")
-        setBrandLogo(settings.brandLogo || "")
-        setSocialFacebook(settings.socialFacebook || "https://facebook.com")
-        setSocialInstagram(settings.socialInstagram || "https://instagram.com")
-        setSocialTiktok(settings.socialTiktok || "https://tiktok.com")
-        setSocialTwitter(settings.socialTwitter || "https://twitter.com")
-        setThemeColorPrimary(settings.themeColorPrimary || "#D4AF37")
-        setThemeColorSecondary(settings.themeColorSecondary || "#FFFFFF")
-        setThemeColorAccent(settings.themeColorAccent || "#1C1A17")
-
-        applyThemeToDom(settings.themeColorPrimary, settings.themeColorSecondary, settings.themeColorAccent)
-
-        // Cache for subsequent reloads
-        setClientCachedSettings(settings)
-      })
-      .catch((err) => {
-        console.warn("[Layout Settings] Error loading settings:", err)
-      })
-      .finally(() => {
-        setIsInitialLoading(false)
-      })
-
-    // If cached data was available, smoothly dismiss the initial loader after a brief luxury intro
-    if (hasValidCache) {
-      const timer = setTimeout(() => {
-        setIsInitialLoading(false)
-      }, 400)
-      return () => clearTimeout(timer)
-    }
-  }, [])
-
-  const applyThemeToDom = (primary?: string, secondary?: string, accent?: string) => {
+  // ─── Helper: apply CSS custom properties to DOM ─────────────────────────────
+  // Declared before the useEffect that calls it to satisfy react-hooks/immutability
+  const applyThemeToDom = React.useCallback((primary?: string, secondary?: string, accent?: string) => {
     if (typeof document === "undefined") return
     const p = primary
     const s = secondary || "#FFFFFF"
@@ -187,16 +123,111 @@ export default function MainLayout({
       root.style.setProperty("--theme-color-accent", accent)
       root.style.setProperty("--color-luxury-cream", accent)
     }
-  }
+  }, [])
+
+  // Initialize data and settings with client-side caching
+  React.useEffect(() => {
+    // 1. Immediately hydrate from cache — deferred to avoid synchronous setState-in-effect lint
+    const cached = getClientCachedSettings()
+    let hasValidCache = false
+
+    if (cached) {
+      hasValidCache = true
+      queueMicrotask(() => {
+        if (cached.brandName) setBrandName(cached.brandName as string)
+        if (cached.brandLogo !== undefined) setBrandLogo(cached.brandLogo as string)
+        if (cached.socialFacebook) setSocialFacebook(cached.socialFacebook as string)
+        if (cached.socialInstagram) setSocialInstagram(cached.socialInstagram as string)
+        if (cached.socialTiktok) setSocialTiktok(cached.socialTiktok as string)
+        if (cached.socialTwitter) setSocialTwitter(cached.socialTwitter as string)
+        if (cached.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary as string)
+        if (cached.themeColorSecondary) setThemeColorSecondary(cached.themeColorSecondary as string)
+        if (cached.themeColorAccent) setThemeColorAccent(cached.themeColorAccent as string)
+      })
+      applyThemeToDom(
+        cached.themeColorPrimary as string | undefined,
+        cached.themeColorSecondary as string | undefined,
+        cached.themeColorAccent as string | undefined
+      )
+    }
+
+    // 2. Fetch fresh settings from server (stale-while-revalidate)
+    // If settings are already injected in the window by the server, use them to avoid a network roundtrip
+    interface SystemSettingsWindow { brandName?: string; brandLogo?: string; socialFacebook?: string; socialInstagram?: string; socialTiktok?: string; socialTwitter?: string; themeColorPrimary?: string; themeColorSecondary?: string; themeColorAccent?: string }
+    const injected = (window as Window & { __SYSTEM_SETTINGS__?: SystemSettingsWindow }).__SYSTEM_SETTINGS__
+    if (injected) {
+      queueMicrotask(() => {
+        setBrandName(injected.brandName || "Ocean Hill")
+        setBrandLogo(injected.brandLogo || "")
+        setSocialFacebook(injected.socialFacebook || "https://facebook.com")
+        setSocialInstagram(injected.socialInstagram || "https://instagram.com")
+        setSocialTiktok(injected.socialTiktok || "https://tiktok.com")
+        setSocialTwitter(injected.socialTwitter || "https://twitter.com")
+        setThemeColorPrimary(injected.themeColorPrimary || "#D4AF37")
+        setThemeColorSecondary(injected.themeColorSecondary || "#FFFFFF")
+        setThemeColorAccent(injected.themeColorAccent || "#1C1A17")
+      })
+      applyThemeToDom(
+        injected.themeColorPrimary,
+        injected.themeColorSecondary,
+        injected.themeColorAccent
+      )
+      const timer = setTimeout(() => {
+        setIsInitialLoading(false)
+      }, 350)
+      return () => clearTimeout(timer)
+    }
+
+    const safetyTimer = setTimeout(() => {
+      setIsInitialLoading(false)
+    }, 1200)
+
+    getSystemSettingsAction()
+      .then((settings) => {
+        setBrandName(settings.brandName || "MIGS THE SHORE")
+        setBrandLogo(settings.brandLogo || "")
+        setSocialFacebook(settings.socialFacebook || "https://facebook.com")
+        setSocialInstagram(settings.socialInstagram || "https://instagram.com")
+        setSocialTiktok(settings.socialTiktok || "https://tiktok.com")
+        setSocialTwitter(settings.socialTwitter || "https://twitter.com")
+        setThemeColorPrimary(settings.themeColorPrimary || "#D4AF37")
+        setThemeColorSecondary(settings.themeColorSecondary || "#FFFFFF")
+        setThemeColorAccent(settings.themeColorAccent || "#1C1A17")
+
+        applyThemeToDom(settings.themeColorPrimary, settings.themeColorSecondary, settings.themeColorAccent)
+
+        // Cache for subsequent reloads
+        setClientCachedSettings(settings)
+      })
+      .catch((err) => {
+        console.warn("[Layout Settings] Error loading settings:", err)
+      })
+      .finally(() => {
+        setIsInitialLoading(false)
+      })
+
+    // If cached data was available, smoothly dismiss the initial loader after a brief luxury intro
+    if (hasValidCache) {
+      const timer = setTimeout(() => {
+        setIsInitialLoading(false)
+      }, 350)
+      return () => {
+        clearTimeout(timer)
+        clearTimeout(safetyTimer)
+      }
+    }
+
+    return () => {
+      clearTimeout(safetyTimer)
+    }
+  }, [applyThemeToDom])
 
   // Listen to auth changes and sync user role
   React.useEffect(() => {
-    // 1. Immediately hydrate role from client cache if available
-    if (typeof window !== "undefined") {
-      const cachedRole = localStorage.getItem("user_role")
-      if (cachedRole === "ADMIN") {
-        setIsAdmin(true)
-      }
+    // 1. Immediately hydrate role from client cache — deferred to avoid setState-in-effect lint
+    const cachedRole = localStorage.getItem("user_role")
+    if (cachedRole === "ADMIN") {
+      queueMicrotask(() => setIsAdmin(true))
     }
 
     const supabase = createClient()
@@ -238,11 +269,15 @@ export default function MainLayout({
     }
     checkInitialSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsLoggedIn(!!session)
-      if (session) {
-        syncUserRole()
-      } else {
+      // Only sync role on actual sign-in/out events — not on TOKEN_REFRESHED (every ~5min)
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        if (session) {
+          syncUserRole()
+        }
+      } else if (event === "SIGNED_OUT") {
         setIsAdmin(false)
         if (typeof window !== "undefined") {
           localStorage.removeItem("user_role")

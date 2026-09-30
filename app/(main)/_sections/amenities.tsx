@@ -92,18 +92,8 @@ export const AMENITIES_DATA: AmenityItem[] = [
 ]
 
 export default function Amenities() {
-  const [amenitiesList, setAmenitiesList] = React.useState<AmenityItem[]>(() => {
-    if (typeof window !== "undefined") {
-      const c = getClientCachedSettings()
-      if (c?.resortAmenities) {
-        try {
-          const parsed = JSON.parse(c.resortAmenities)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
-        } catch {}
-      }
-    }
-    return AMENITIES_DATA
-  })
+  // Always start with static data to match SSR — never read from localStorage/window during initial render
+  const [amenitiesList, setAmenitiesList] = React.useState<AmenityItem[]>(AMENITIES_DATA)
 
   const [activeCategory, setActiveCategory] = React.useState<string>("all")
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
@@ -111,24 +101,40 @@ export default function Amenities() {
   const [canScrollRight, setCanScrollRight] = React.useState(true)
   const [activeIndex, setActiveIndex] = React.useState(0)
 
-  // Hydrate fresh data from system settings
+  // Hydrate fresh data from system settings — runs only after mount (client-side)
   React.useEffect(() => {
+    const applyAmenities = (raw: string) => {
+      try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAmenitiesList(parsed)
+          const cur = getClientCachedSettings() || {}
+          setClientCachedSettings({ ...cur, resortAmenities: raw })
+        }
+      } catch {}
+    }
+
+    // 1. Try window.__SYSTEM_SETTINGS__ first (injected by server — zero network cost)
+    interface AmenitiesWindow { resortAmenities?: string }
+    const injected = (window as Window & { __SYSTEM_SETTINGS__?: AmenitiesWindow }).__SYSTEM_SETTINGS__
+    if (injected?.resortAmenities) {
+      applyAmenities(injected.resortAmenities)
+      return
+    }
+
+    // 2. Try client-side cache next
+    const cached = getClientCachedSettings()
+    if (cached?.resortAmenities) {
+      applyAmenities(cached.resortAmenities)
+    }
+
+    // 3. Fall back to DB fetch only if nothing is cached
     let isMounted = true
     getSystemSettingsAction()
       .then((settings) => {
         if (!isMounted) return
         if (settings.resortAmenities) {
-          try {
-            const parsed = JSON.parse(settings.resortAmenities)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              setAmenitiesList(parsed)
-              const cur = getClientCachedSettings() || {}
-              setClientCachedSettings({
-                ...cur,
-                resortAmenities: settings.resortAmenities,
-              })
-            }
-          } catch {}
+          applyAmenities(settings.resortAmenities)
         }
       })
       .catch((err) => {

@@ -18,7 +18,7 @@ import {
   clearAllRateLimits
 } from "@/lib/rate-limit"
 import { revalidatePath } from "next/cache"
-import { getSystemSetting, setSystemSetting, getSystemSettings } from "@/lib/settings"
+import { getSystemSetting, setSystemSetting } from "@/lib/settings"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),

@@ -9,6 +9,11 @@ import { AdminSidebarToggle } from "@/app/admin/_components/admin-shell"
 import AdminUserDropdown from "@/app/admin/_components/admin-user-dropdown"
 import { AmenityItem } from "@/app/(main)/_sections/amenities"
 
+// Skeleton bone — defined at module level to satisfy react-hooks/static-components
+function SkeletonBone({ className = "" }: { className?: string }) {
+  return <div className={`bg-black/[0.08] dark:bg-white/[0.06] rounded-xl animate-pulse ${className}`} />
+}
+
 const AVAILABLE_ICONS = [
   { icon: "fa-umbrella-beach", label: "Beach Umbrella" },
   { icon: "fa-water", label: "Water / Waves" },
@@ -250,7 +255,7 @@ export default function AdminAmenitiesPage() {
       title: formTitle.trim(),
       subtitle: formSubtitle.trim() || "Exclusive Resort Amenity",
       description: formDescription.trim(),
-      category: formCategory as any,
+      category: formCategory as AmenityItem["category"],
       categoryLabel: formCategoryLabel.trim() || "Resort Amenity",
       icon: formIcon,
       hours: formHours.trim() || "Inquire with Concierge",
@@ -400,24 +405,21 @@ export default function AdminAmenitiesPage() {
 
   // ─── Skeleton Loading ───────────────────────────────────────────────────────
   if (isLoading) {
-    const Bone = ({ className = "" }: { className?: string }) => (
-      <div className={`bg-black/[0.08] dark:bg-white/[0.06] rounded-xl animate-pulse ${className}`} />
-    )
 
     return (
       <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#0b0c10] text-[#1C1A17] dark:text-[#EAE5D9] font-sans pb-16">
         <header className="border-b border-luxury-gold/20 bg-[#FAF8F5]/90 dark:bg-[#0b0c10]/90 backdrop-blur sticky top-0 z-20 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AdminSidebarToggle />
-            <Bone className="w-9 h-9 rounded-xl" />
+            <SkeletonBone className="w-9 h-9 rounded-xl" />
             <div className="space-y-1.5">
-              <Bone className="w-44 h-4 rounded-lg" />
-              <Bone className="w-64 h-2.5 rounded-lg" />
+              <SkeletonBone className="w-44 h-4 rounded-lg" />
+              <SkeletonBone className="w-64 h-2.5 rounded-lg" />
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Bone className="w-24 h-8 rounded-xl" />
-            <Bone className="w-32 h-8 rounded-xl" />
+            <SkeletonBone className="w-24 h-8 rounded-xl" />
+            <SkeletonBone className="w-32 h-8 rounded-xl" />
           </div>
         </header>
 
@@ -425,32 +427,32 @@ export default function AdminAmenitiesPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-[#131418] border border-black/10 dark:border-white/[0.08] rounded-2xl p-4 shadow-sm dark:shadow-lg space-y-2">
-                <Bone className="w-24 h-3 rounded-lg" />
-                <Bone className="w-16 h-7 rounded-lg" />
-                <Bone className="w-32 h-2.5 rounded-lg" />
+                <SkeletonBone className="w-24 h-3 rounded-lg" />
+                <SkeletonBone className="w-16 h-7 rounded-lg" />
+                <SkeletonBone className="w-32 h-2.5 rounded-lg" />
               </div>
             ))}
           </div>
 
           <div className="bg-white dark:bg-[#131418] border border-black/10 dark:border-white/[0.08] rounded-2xl p-4 shadow-sm dark:shadow-lg flex items-center justify-between gap-4">
-            <Bone className="w-64 h-10 rounded-xl" />
-            <Bone className="w-36 h-10 rounded-xl" />
+            <SkeletonBone className="w-64 h-10 rounded-xl" />
+            <SkeletonBone className="w-36 h-10 rounded-xl" />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white dark:bg-[#131418] border border-black/10 dark:border-white/[0.08] rounded-3xl p-5 shadow-sm dark:shadow-xl space-y-4">
                 <div className="flex items-center justify-between">
-                  <Bone className="w-10 h-10 rounded-2xl" />
-                  <Bone className="w-20 h-5 rounded-full" />
+                  <SkeletonBone className="w-10 h-10 rounded-2xl" />
+                  <SkeletonBone className="w-20 h-5 rounded-full" />
                 </div>
                 <div className="space-y-2">
-                  <Bone className="w-40 h-5 rounded-lg" />
-                  <Bone className="w-full h-12 rounded-lg" />
+                  <SkeletonBone className="w-40 h-5 rounded-lg" />
+                  <SkeletonBone className="w-full h-12 rounded-lg" />
                 </div>
                 <div className="pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between">
-                  <Bone className="w-28 h-4 rounded-lg" />
-                  <Bone className="w-16 h-8 rounded-xl" />
+                  <SkeletonBone className="w-28 h-4 rounded-lg" />
+                  <SkeletonBone className="w-16 h-8 rounded-xl" />
                 </div>
               </div>
             ))}
@@ -631,7 +633,7 @@ export default function AdminAmenitiesPage() {
                 </button>
               </div>
             ) : (
-              filteredAmenities.map((item, idx) => {
+              filteredAmenities.map((item) => {
                 const actualIndex = amenities.findIndex((a) => a.id === item.id)
                 return (
                   <div

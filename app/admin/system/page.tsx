@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { getSystemSettingsAction, updateSystemSettingsAction, uploadBrandLogoAction } from "@/app/auth/actions"
 import { getClientCachedSettings, setClientCachedSettings } from "@/lib/client-cache"
@@ -22,7 +21,6 @@ interface SystemSettingsValues {
 }
 
 export default function GeneralSystemSettingsPage() {
-  const router = useRouter()
 
   // General settings states - initialize from cache immediately so there's never a flash of gold/yellow
   const [brandName, setBrandName] = React.useState(() => {

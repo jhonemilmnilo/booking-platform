@@ -30,7 +30,7 @@ import Rooms from "./_sections/rooms"
 import Amenities from "./_sections/amenities"
 import Diaries from "./_sections/diaries"
 import Location from "./_sections/location"
-import Inquiry from "./_sections/inquiry"
+// import Inquiry from "./_sections/inquiry"
 
 const MOCK_ROOMS: Room[] = [
   {
@@ -106,16 +106,7 @@ export default function Home() {
   const [themeColorPrimary, setThemeColorPrimary] = React.useState("#D4AF37")
   const [dbRooms, setDbRooms] = React.useState<Room[]>([])
 
-  // Inquiry Prefills
-  const [selectedVilla, setSelectedVilla] = React.useState("royal-suite")
-  const [securityTier, setSecurityTier] = React.useState("Standard Resort Guest")
-  const [customRequests, setCustomRequests] = React.useState("")
-  const [heroCheckIn] = React.useState(() => {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    return tomorrow.toISOString().split("T")[0]
-  })
-  const [heroGuests] = React.useState("2 Guests")
+
 
   const videoPlayerRef = React.useRef<HTMLVideoElement | null>(null)
 
@@ -126,25 +117,30 @@ export default function Home() {
     // 1. Immediately hydrate from client cache
     const cachedSettings = getClientCachedSettings()
     if (cachedSettings) {
-      if (cachedSettings.heroSubtitle) setHeroSubtitle(cachedSettings.heroSubtitle)
-      if (cachedSettings.heroTitleLine1) setHeroTitleLine1(cachedSettings.heroTitleLine1)
-      if (cachedSettings.heroTitleLine2) setHeroTitleLine2(cachedSettings.heroTitleLine2)
-      if (cachedSettings.heroDescription) setHeroDescription(cachedSettings.heroDescription)
-      if (cachedSettings.themeColorPrimary) setThemeColorPrimary(cachedSettings.themeColorPrimary)
-      if (cachedSettings.heroVideoUrl) {
-        setVideoSrc(isMobile && cachedSettings.heroVideoUrlMobile ? cachedSettings.heroVideoUrlMobile : cachedSettings.heroVideoUrl)
-      }
+      queueMicrotask(() => {
+        if (cachedSettings.heroSubtitle) setHeroSubtitle(cachedSettings.heroSubtitle as string)
+        if (cachedSettings.heroTitleLine1) setHeroTitleLine1(cachedSettings.heroTitleLine1 as string)
+        if (cachedSettings.heroTitleLine2) setHeroTitleLine2(cachedSettings.heroTitleLine2 as string)
+        if (cachedSettings.heroDescription) setHeroDescription(cachedSettings.heroDescription as string)
+        if (cachedSettings.themeColorPrimary) setThemeColorPrimary(cachedSettings.themeColorPrimary as string)
+        if (cachedSettings.heroVideoUrl) {
+          setVideoSrc(isMobile && cachedSettings.heroVideoUrlMobile ? cachedSettings.heroVideoUrlMobile as string : cachedSettings.heroVideoUrl as string)
+        }
+      })
     }
 
     const cachedVideos = getClientCachedVideoUrls()
     if (cachedVideos) {
-      setVideoSrc(isMobile ? cachedVideos.mobileUrl : cachedVideos.desktopUrl)
+      queueMicrotask(() => {
+        setVideoSrc(isMobile ? cachedVideos.mobileUrl : cachedVideos.desktopUrl)
+      })
     }
 
-    const cachedRooms = getClientCachedRooms()
+    const cachedRooms = getClientCachedRooms<Room>()
     if (cachedRooms && cachedRooms.length > 0) {
-      setDbRooms(cachedRooms)
-      setSelectedVilla(cachedRooms[0].id)
+      queueMicrotask(() => {
+        setDbRooms(cachedRooms)
+      })
     }
 
     // 2. Fresh fetch & background cache update
@@ -152,7 +148,6 @@ export default function Home() {
       .then((res) => {
         if (res.success && res.data && res.data.length > 0) {
           setDbRooms(res.data)
-          setSelectedVilla(res.data[0].id)
           setClientCachedRooms(res.data)
         }
       })
@@ -277,11 +272,13 @@ export default function Home() {
       return
     }
 
+    /*
     setSelectedVilla(villa)
     setSecurityTier(curation)
     setCustomRequests(
       `Requesting booking stay:\nCheck-in Date: ${checkIn}\nCheck-out Date: ${checkOut}\nParty Count: ${guests}`
     )
+    */
 
     const inquirySection = document.getElementById("inquiry")
     if (inquirySection) {

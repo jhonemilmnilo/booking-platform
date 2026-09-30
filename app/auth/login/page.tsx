@@ -56,8 +56,10 @@ function LoginContent() {
 
   React.useEffect(() => {
     const cached = getClientCachedSettings()
-    if (cached?.brandName) setBrandName(cached.brandName)
-    if (cached?.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary)
+    queueMicrotask(() => {
+      if (cached?.brandName) setBrandName(cached.brandName as string)
+      if (cached?.themeColorPrimary) setThemeColorPrimary(cached.themeColorPrimary as string)
+    })
 
     getSystemSettingsAction()
       .then((res) => {

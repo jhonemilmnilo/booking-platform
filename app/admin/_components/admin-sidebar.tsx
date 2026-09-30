@@ -48,7 +48,6 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({
   initialBrandName,
-  initialThemeColor,
   isCollapsed = false,
   onToggleCollapse,
 }: AdminSidebarProps = {}) {
@@ -80,27 +79,16 @@ export default function AdminSidebar({
     return "MIGS THE SHORE"
   })
 
-  const [themeColorPrimary, setThemeColorPrimary] = React.useState(() => {
-    if (initialThemeColor) return initialThemeColor
-    if (typeof window !== "undefined") {
-      const c = getClientCachedSettings()
-      if (c?.themeColorPrimary) return c.themeColorPrimary
-    }
-    return "#D4AF37"
-  })
-
   const loadSettings = React.useCallback(() => {
-    const cached = getClientCachedSettings()
-    if (cached?.brandName) {
-      setBrandName(cached.brandName)
-    }
-    if (cached?.themeColorPrimary) {
-      setThemeColorPrimary(cached.themeColorPrimary)
-    }
+    queueMicrotask(() => {
+      const cached = getClientCachedSettings()
+      if (cached?.brandName) {
+        setBrandName(cached.brandName)
+      }
+    })
     getSystemSettingsAction()
       .then((s) => {
         if (s.brandName) setBrandName(s.brandName)
-        if (s.themeColorPrimary) setThemeColorPrimary(s.themeColorPrimary)
         if (typeof window !== "undefined") {
           setClientCachedSettings({
             ...(getClientCachedSettings() || {}),

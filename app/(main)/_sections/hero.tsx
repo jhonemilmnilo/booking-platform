@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Room } from "@/components/shared/RoomCard"
 
+/* Temporarily hidden reservation inquiry bar components & helpers
 interface Option {
   value: string;
   label: string;
@@ -18,86 +18,12 @@ interface CustomSelectProps {
 }
 
 function CustomSelect({ value, onChange, options, placeholder, icon }: CustomSelectProps) {
-  const [isOpen, setIsOpen] = React.useState(false)
-  const containerRef = React.useRef<HTMLDivElement>(null)
-
-  const selectedOption = options.find((o) => o.value === value)
-
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
-
-  return (
-    <div ref={containerRef} className="relative w-full">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between text-left focus:outline-none cursor-pointer p-0"
-      >
-        <div className="flex items-center gap-2 overflow-hidden w-full">
-          <i className={`fa-solid ${icon} text-luxury-gold text-xs flex-shrink-0`}></i>
-          <span className={`text-[10px] lg:text-[11px] xl:text-xs font-semibold truncate ${!value ? "text-luxury-cream/40" : "text-luxury-cream"}`}>
-            {selectedOption ? selectedOption.label : placeholder}
-          </span>
-        </div>
-        <i
-          className={`fa-solid fa-chevron-down text-luxury-gold/50 text-[10px] ml-2 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        ></i>
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute left-0 bottom-full mb-3 w-64 bg-white/98 backdrop-blur border border-luxury-gold/30 rounded-2xl py-2 shadow-2xl z-50 gold-glow text-luxury-cream"
-          >
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value)
-                  setIsOpen(false)
-                }}
-                className={`w-full flex items-center justify-between text-left px-4 py-2.5 text-xs hover:bg-luxury-gold/10 transition-colors ${
-                  option.value === value ? "text-luxury-gold font-bold bg-luxury-gold/5" : "text-luxury-cream"
-                }`}
-              >
-                <span>{option.label}</span>
-                {option.value === value && <i className="fa-solid fa-check text-luxury-gold text-xs"></i>}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
+...
 }
 
-
-const GUEST_OPTIONS = [
-  { value: "1 Guest", label: "1 Room, 1 Guest" },
-  { value: "2 Guests", label: "1 Room, 2 Guests" },
-  { value: "4 Guests", label: "1 Room, 4 Guests" },
-  { value: "6 Guests", label: "2 Rooms, 6 Guests" }
-]
-
-const CURATION_OPTIONS = [
-  { value: "Standard Resort Guest", label: "Standard Guest" },
-  { value: "VIP Beach Club Access", label: "VIP Beach Club" },
-  { value: "Presidential All-Inclusive Access", label: "Presidential Access" }
-]
+const GUEST_OPTIONS = [...]
+const CURATION_OPTIONS = [...]
+*/
 
 interface HeroProps {
   videoSrc: string;
@@ -106,7 +32,7 @@ interface HeroProps {
   heroTitleLine2: string;
   heroDescription: string;
   themeColorPrimary?: string;
-  onSearchSubmit: (villa: string, checkIn: string, checkOut: string, guests: string, curation: string) => void;
+  onSearchSubmit?: (villa: string, checkIn: string, checkOut: string, guests: string, curation: string) => void;
   videoPlayerRef: React.RefObject<HTMLVideoElement | null>;
   rooms?: Room[];
 }
@@ -117,36 +43,8 @@ export default function Hero({
   heroTitleLine1,
   heroTitleLine2,
   heroDescription,
-  themeColorPrimary,
-  onSearchSubmit,
   videoPlayerRef,
-  rooms = [],
 }: HeroProps) {
-  // Hero booking search form states
-  const [heroVilla, setHeroVilla] = React.useState("")
-
-  const villaOptions = React.useMemo(() => {
-    if (rooms && rooms.length > 0) {
-      return rooms.map((room) => ({
-        value: room.id,
-        label: room.name,
-      }))
-    }
-    return [
-      { value: "royal-suite", label: "Royal Suite" },
-      { value: "garden-villa", label: "Garden Villa" },
-      { value: "lagoon-suite", label: "Lagoon Suite" }
-    ]
-  }, [rooms])
-  const [heroCheckIn, setHeroCheckIn] = React.useState("")
-  const [heroCheckOut, setHeroCheckOut] = React.useState("")
-  const [heroGuests, setHeroGuests] = React.useState("")
-  const [heroCuration, setHeroCuration] = React.useState("")
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    onSearchSubmit(heroVilla, heroCheckIn, heroCheckOut, heroGuests, heroCuration)
-  }
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#07080A]">
