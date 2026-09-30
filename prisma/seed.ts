@@ -11,7 +11,7 @@ const adminPassword = "AdminPassword123!"
 
 async function main() {
   console.log("[Seed] Starting database seeding...")
-  
+
   // Dynamically import prisma to bypass ES Module import hoisting order
   const { default: prisma } = await import("../lib/prisma/client")
 
@@ -111,7 +111,7 @@ async function main() {
       { key: "hero_title_line_2", value: "Sanctuary" },
       {
         key: "hero_description",
-        value: "Nestled along the pristine sands of the coastline, our luxury resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
+        value: "Nestled along the pristine sands of the Aegean coastline, OceanHilling Resort features sprawling lagoon pools, private beach club lounges, and world-class personalized curation.",
       },
       { key: "theme_color_primary", value: "#D4AF37" },
       { key: "theme_color_secondary", value: "#FFFFFF" },
@@ -237,7 +237,7 @@ async function main() {
     // 5. Seed Default Bookings
     console.log(`[Seed] Seeding sample bookings...`)
     const today = new Date()
-    
+
     // helper to get date offset
     const getDateOffset = (days: number) => {
       const d = new Date(today)

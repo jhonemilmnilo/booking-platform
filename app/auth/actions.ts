@@ -18,7 +18,7 @@ import {
   clearAllRateLimits
 } from "@/lib/rate-limit"
 import { revalidatePath } from "next/cache"
-import { getSystemSetting, setSystemSetting } from "@/lib/settings"
+import { getSystemSetting, setSystemSetting, getSystemSettings } from "@/lib/settings"
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -97,9 +97,9 @@ export async function loginWithEmailAction(formData: z.infer<typeof loginSchema>
         }
       }
       const attemptsLeft = limitCheck.remaining
-      return { 
-        success: false, 
-        error: `Invalid email or password. You have ${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} left.` 
+      return {
+        success: false,
+        error: `Invalid email or password. You have ${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} left.`
       }
     }
 
@@ -178,7 +178,7 @@ export async function signUpWithEmailAction(formData: z.infer<typeof signUpSchem
       const hours = Math.floor(elapsedMs / 3600000)
       const minutes = Math.floor((elapsedMs % 3600000) / 60000)
       const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-      
+
       let timeString = ""
       if (hours > 0) {
         timeString = `${hours} hour(s) and ${minutes} minute(s)`
@@ -362,8 +362,8 @@ export async function verifyOtpAction(email: string, code: string) {
 
 export async function getSocialLoginUrlAction(provider: "google" | "facebook", origin: string, isSignup?: boolean) {
   const supabase = await createClient()
-  const redirectTo = isSignup 
-    ? `${origin}/auth/callback?signup=true` 
+  const redirectTo = isSignup
+    ? `${origin}/auth/callback?signup=true`
     : `${origin}/auth/callback`
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -432,7 +432,7 @@ export async function resendOtpAction(email: string) {
       const hours = Math.floor(elapsedMs / 3600000)
       const minutes = Math.floor((elapsedMs % 3600000) / 60000)
       const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-      
+
       let timeString = ""
       if (hours > 0) {
         timeString = `${hours} hour(s) and ${minutes} minute(s)`
@@ -534,7 +534,7 @@ export async function getSystemSettingsAction() {
         .replace(/ocean\s*hill\s*(resort|villas?)/gi, "our luxury resort")
         .replace(/ocean\s*hill/gi, "our resort")
     }
-    
+
     const themeColorPrimary = await getSystemSetting("theme_color_primary", "#D4AF37")
     const themeColorSecondary = await getSystemSetting("theme_color_secondary", "#FFFFFF")
     const themeColorAccent = await getSystemSetting("theme_color_accent", "#1C1A17")
@@ -570,7 +570,7 @@ export async function getSystemSettingsAction() {
         { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
       ])
     )
- 
+
     const resortAmenities = await getSystemSetting(
       "resort_amenities",
       JSON.stringify([
@@ -647,25 +647,25 @@ export async function getSystemSettingsAction() {
     )
 
     return {
-      heroSubtitle,
-      heroTitleLine1,
-      heroTitleLine2,
-      heroDescription,
-      themeColorPrimary,
-      themeColorSecondary,
-      themeColorAccent,
-      theme_color_primary: themeColorPrimary,
-      theme_color_secondary: themeColorSecondary,
-      theme_color_accent: themeColorAccent,
-      heroVideoUrl,
-      heroVideoUrlMobile,
-      brandName,
-      brandLogo,
-      socialFacebook,
-      socialInstagram,
-      socialTiktok,
-      socialTwitter,
-      touristSpots,
+      heroSubtitle: settings.hero_subtitle,
+      heroTitleLine1: settings.hero_title_line_1,
+      heroTitleLine2: settings.hero_title_line_2,
+      heroDescription: settings.hero_description,
+      themeColorPrimary: settings.theme_color_primary,
+      themeColorSecondary: settings.theme_color_secondary,
+      themeColorAccent: settings.theme_color_accent,
+      theme_color_primary: settings.theme_color_primary,
+      theme_color_secondary: settings.theme_color_secondary,
+      theme_color_accent: settings.theme_color_accent,
+      heroVideoUrl: settings.hero_video_url,
+      heroVideoUrlMobile: settings.hero_video_url_mobile,
+      brandName: settings.brand_name,
+      brandLogo: settings.brand_logo,
+      socialFacebook: settings.social_facebook,
+      socialInstagram: settings.social_instagram,
+      socialTiktok: settings.social_tiktok,
+      socialTwitter: settings.social_twitter,
+      touristSpots: settings.tourist_spots,
       resortLatitude,
       resortLongitude,
       resortLocationTitleLine1,
@@ -905,7 +905,7 @@ export async function forgotPasswordAction(email: string) {
       const hours = Math.floor(elapsedMs / 3600000)
       const minutes = Math.floor((elapsedMs % 3600000) / 60000)
       const seconds = Math.ceil((elapsedMs % 60000) / 1000)
-      
+
       let timeString = ""
       if (hours > 0) {
         timeString = `${hours} hour(s) and ${minutes} minute(s)`

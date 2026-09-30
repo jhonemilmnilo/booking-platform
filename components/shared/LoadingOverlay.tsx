@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { getSystemSettingsAction } from "@/app/auth/actions"
 
 interface LoadingOverlayProps {
   isVisible: boolean
@@ -12,18 +13,49 @@ interface LoadingOverlayProps {
 
 export default function LoadingOverlay({
   isVisible,
-  title = "Establishing Secure Gateway",
-  description = "Please wait while we authenticate your sanctuary access...",
+  title,
+  description = "Establishing a secure connection to your sanctuary gateway.",
   solid = false,
 }: LoadingOverlayProps) {
+  const [dbBrandName, setDbBrandName] = React.useState("")
+
+  React.useEffect(() => {
+    // Check if settings are already injected in the window
+    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__?.brandName) {
+      const cachedName = (window as any).__SYSTEM_SETTINGS__.brandName
+      // Defer state update to next microtask to prevent synchronous cascading renders warning
+      Promise.resolve().then(() => {
+        setDbBrandName(cachedName)
+      })
+      return
+    }
+
+    if (title || dbBrandName) return
+
+    let isMounted = true
+    getSystemSettingsAction()
+      .then((settings) => {
+        if (isMounted && settings?.brandName) {
+          setDbBrandName(settings.brandName)
+        }
+      })
+      .catch((err) => {
+        console.error("[LoadingOverlay] Failed to fetch brand name from database:", err)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [title, dbBrandName])
+
   // Ensure "Gateway" moves cleanly to the 2nd line and prevents mid-word breaks
   const formattedTitle = title.includes("\n")
     ? title
     : title === "Establishing Secure Gateway"
-    ? "Establishing Secure\nGateway"
-    : title.endsWith(" Gateway")
-    ? title.replace(/ Gateway$/, "\nGateway")
-    : title
+      ? "Establishing Secure\nGateway"
+      : title.endsWith(" Gateway")
+        ? title.replace(/ Gateway$/, "\nGateway")
+        : title
 
   const lines = formattedTitle.split("\n")
   let globalCharIndex = 0
@@ -36,11 +68,10 @@ export default function LoadingOverlay({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.45, ease: "easeInOut" }}
-          className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-300 ${
-            solid
+          className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-all duration-300 ${solid
               ? "bg-[#07080A]"
               : "bg-background/40 backdrop-blur-xl"
-          }`}
+            }`}
         >
           {/* Ambient Gold Radial Glow if Solid */}
           {solid && (
@@ -119,3 +150,4 @@ export default function LoadingOverlay({
     </AnimatePresence>
   )
 }
+

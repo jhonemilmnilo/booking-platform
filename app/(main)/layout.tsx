@@ -46,7 +46,7 @@ const MOCK_ROOMS: Room[] = [
   },
 ]
 
-export const BookingContext = React.createContext<(room: Room) => void>(() => {})
+export const BookingContext = React.createContext<(room: Room) => void>(() => { })
 
 export default function MainLayout({
   children,
@@ -97,6 +97,21 @@ export default function MainLayout({
     }
 
     // 2. Fetch fresh settings from server (stale-while-revalidate)
+    // If settings are already injected in the window by the server, use them to avoid a network roundtrip
+    if (typeof window !== "undefined" && (window as any).__SYSTEM_SETTINGS__) {
+      const settings = (window as any).__SYSTEM_SETTINGS__
+      setBrandName(settings.brandName || "Ocean Hill")
+      setBrandLogo(settings.brandLogo || "")
+      setSocialFacebook(settings.socialFacebook || "https://facebook.com")
+      setSocialInstagram(settings.socialInstagram || "https://instagram.com")
+      setSocialTiktok(settings.socialTiktok || "https://tiktok.com")
+      setSocialTwitter(settings.socialTwitter || "https://twitter.com")
+      setThemeColorPrimary(settings.themeColorPrimary || "#D4AF37")
+      setThemeColorSecondary(settings.themeColorSecondary || "#FFFFFF")
+      setThemeColorAccent(settings.themeColorAccent || "#1C1A17")
+      return
+    }
+
     getSystemSettingsAction()
       .then((settings) => {
         setBrandName(settings.brandName || "MIGS THE SHORE")
@@ -290,7 +305,7 @@ export default function MainLayout({
         onLogOut={handleLogOut}
         mockRooms={MOCK_ROOMS}
       />
-      
+
       {children}
 
       <Footer
@@ -302,29 +317,29 @@ export default function MainLayout({
         socialTwitter={socialTwitter}
       />
 
-      <BookingModal 
-        room={selectedRoom} 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <BookingModal
+        room={selectedRoom}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       />
 
-      <LoadingOverlay 
-        isVisible={isLoggingOut} 
-        title="Securing Session" 
-        description="Logging out of your sanctuary access..." 
+      <LoadingOverlay
+        isVisible={isLoggingOut}
+        title="Securing Session"
+        description="Logging out of your sanctuary access..."
       />
 
-      <LoadingOverlay 
-        isVisible={isNavigatingToLogin} 
-        title="Redirecting to Gateway" 
-        description="Please wait while we establish your security verification gateway..." 
+      <LoadingOverlay
+        isVisible={isNavigatingToLogin}
+        title="Redirecting to Gateway"
+        description="Please wait while we establish your security verification gateway..."
       />
 
-      <LoadingOverlay 
-        isVisible={isInitialLoading} 
+      <LoadingOverlay
+        isVisible={isInitialLoading}
         solid={true}
-        title="Accessing Sanctuary" 
-        description="Preparing your bespoke oceanfront experience..." 
+        title="Accessing Sanctuary"
+        description="Preparing your bespoke oceanfront experience..."
       />
     </BookingContext.Provider>
   )
