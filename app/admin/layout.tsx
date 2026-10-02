@@ -75,6 +75,40 @@ export default async function AdminLayout({
             html.admin-sidebar-collapsed .admin-sidebar-aside {
               width: 5rem !important;
             }
+            html.admin-sidebar-collapsed .admin-sidebar-aside:hover,
+            html.admin-sidebar-collapsed .admin-sidebar-aside.is-hovered {
+              width: 16rem !important;
+              box-shadow: 12px 0 35px -5px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 0, 0, 0.5) !important;
+            }
+            html.admin-sidebar-collapsed .admin-sidebar-aside:hover .admin-sidebar-brand-text,
+            html.admin-sidebar-collapsed .admin-sidebar-aside.is-hovered .admin-sidebar-brand-text {
+              max-width: 130px !important;
+              opacity: 1 !important;
+              transform: translateX(0) !important;
+              pointer-events: auto !important;
+            }
+            html.admin-sidebar-collapsed .admin-sidebar-aside:hover .admin-sidebar-label,
+            html.admin-sidebar-collapsed .admin-sidebar-aside.is-hovered .admin-sidebar-label,
+            html.admin-sidebar-collapsed .admin-sidebar-aside:hover .admin-sidebar-logout-text,
+            html.admin-sidebar-collapsed .admin-sidebar-aside.is-hovered .admin-sidebar-logout-text {
+              max-width: 170px !important;
+              opacity: 1 !important;
+              transform: translateX(0) !important;
+              pointer-events: auto !important;
+            }
+            html.admin-sidebar-collapsed .admin-sidebar-aside:hover .admin-sidebar-toggle-btn,
+            html.admin-sidebar-collapsed .admin-sidebar-aside.is-hovered .admin-sidebar-toggle-btn {
+              opacity: 1 !important;
+              transform: scale(1) !important;
+              width: 1.75rem !important;
+              pointer-events: auto !important;
+            }
+            html.admin-sidebar-collapsed .admin-sidebar-aside:hover .admin-sidebar-tooltip,
+            html.admin-sidebar-collapsed .admin-sidebar-aside.is-hovered .admin-sidebar-tooltip {
+              display: none !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+            }
             html.admin-sidebar-collapsed .admin-main-content {
               margin-left: 5rem !important;
             }
