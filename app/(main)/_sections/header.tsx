@@ -29,8 +29,23 @@ export default function Header({
   const [isHeaderScrolled, setIsHeaderScrolled] = React.useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const [isHeaderVisible, setIsHeaderVisible] = React.useState(true)
+  const [isReelOpen, setIsReelOpen] = React.useState(false)
   const [activeSection, setActiveSection] = React.useState("")
   const lastScrollY = React.useRef(0)
+
+  // Listen to reel open/close events
+  React.useEffect(() => {
+    const handleReelOpen = () => setIsReelOpen(true)
+    const handleReelClose = () => setIsReelOpen(false)
+
+    window.addEventListener("sanctuary-reel-open", handleReelOpen)
+    window.addEventListener("sanctuary-reel-close", handleReelClose)
+
+    return () => {
+      window.removeEventListener("sanctuary-reel-open", handleReelOpen)
+      window.removeEventListener("sanctuary-reel-close", handleReelClose)
+    }
+  }, [])
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -81,6 +96,7 @@ export default function Header({
   }, [pathname])
 
   const showSolidHeader = isHeaderScrolled || isMobileMenuOpen || pathname !== "/"
+  const isActuallyVisible = isHeaderVisible && !isReelOpen
 
   return (
     <header
@@ -89,7 +105,7 @@ export default function Header({
         showSolidHeader
           ? "bg-white/95 dark:bg-[#0b0c10]/95 py-2.5 md:py-3.5 border-b border-black/10 dark:border-luxury-gold/15 backdrop-blur-md shadow-md dark:shadow-2xl"
           : "bg-transparent"
-      } ${isHeaderVisible ? "translate-y-0" : "-translate-y-full"}`}
+      } ${isActuallyVisible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"}`}
     >
       <Link href="/" className="flex items-center gap-2.5 sm:gap-3 whitespace-nowrap flex-shrink-0 group">
         {brandLogo ? (

@@ -33,16 +33,16 @@ export default function Location() {
     const cached = getClientCachedSettings()
     if (cached) {
       queueMicrotask(() => {
-        if (cached.resortLatitude) setResortLatitude(cached.resortLatitude as string)
-        if (cached.resortLongitude) setResortLongitude(cached.resortLongitude as string)
-        if (cached.resortLocationTitleLine1) setTitleLine1(cached.resortLocationTitleLine1 as string)
-        if (cached.resortLocationTitleLine2) setTitleLine2(cached.resortLocationTitleLine2 as string)
-        if (cached.resortLocationDescription) setDescription(cached.resortLocationDescription as string)
-        if (cached.resortRegion) setResortRegion(cached.resortRegion as string)
-        if (cached.touristSpots) {
+        if (cached.resortLatitude !== undefined) setResortLatitude(cached.resortLatitude as string)
+        if (cached.resortLongitude !== undefined) setResortLongitude(cached.resortLongitude as string)
+        if (cached.resortLocationTitleLine1 !== undefined) setTitleLine1(cached.resortLocationTitleLine1 as string)
+        if (cached.resortLocationTitleLine2 !== undefined) setTitleLine2(cached.resortLocationTitleLine2 as string)
+        if (cached.resortLocationDescription !== undefined) setDescription(cached.resortLocationDescription as string)
+        if (cached.resortRegion !== undefined) setResortRegion(cached.resortRegion as string)
+        if (cached.touristSpots !== undefined) {
           try {
             const parsed = JSON.parse(cached.touristSpots as string)
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed)) {
               setTouristSpots(parsed)
             }
           } catch {}
@@ -53,17 +53,17 @@ export default function Location() {
     // 2. Fresh fetch & background cache update
     getSystemSettingsAction()
       .then((settings) => {
-        if (settings.resortLatitude) setResortLatitude(settings.resortLatitude)
-        if (settings.resortLongitude) setResortLongitude(settings.resortLongitude)
-        if (settings.resortLocationTitleLine1) setTitleLine1(settings.resortLocationTitleLine1)
-        if (settings.resortLocationTitleLine2) setTitleLine2(settings.resortLocationTitleLine2)
-        if (settings.resortLocationDescription) setDescription(settings.resortLocationDescription)
-        if (settings.resortRegion) setResortRegion(settings.resortRegion)
+        if (settings.resortLatitude !== undefined) setResortLatitude(settings.resortLatitude)
+        if (settings.resortLongitude !== undefined) setResortLongitude(settings.resortLongitude)
+        if (settings.resortLocationTitleLine1 !== undefined) setTitleLine1(settings.resortLocationTitleLine1)
+        if (settings.resortLocationTitleLine2 !== undefined) setTitleLine2(settings.resortLocationTitleLine2)
+        if (settings.resortLocationDescription !== undefined) setDescription(settings.resortLocationDescription)
+        if (settings.resortRegion !== undefined) setResortRegion(settings.resortRegion)
 
-        if (settings.touristSpots) {
+        if (settings.touristSpots !== undefined) {
           try {
             const parsed = JSON.parse(settings.touristSpots)
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed)) {
               setTouristSpots(parsed)
             }
           } catch (e) {

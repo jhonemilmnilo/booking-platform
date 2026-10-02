@@ -124,15 +124,34 @@ async function main() {
       { key: "social_instagram", value: "https://instagram.com" },
       { key: "social_tiktok", value: "https://tiktok.com" },
       { key: "social_twitter", value: "https://twitter.com" },
+      { key: "resort_latitude", value: "16.1651539" },
+      { key: "resort_longitude", value: "119.7698115" },
+      { key: "resort_location_title_line_1", value: "Poised Above the" },
+      { key: "resort_location_title_line_2", value: "Aegean Horizon" },
+      {
+        key: "resort_location_description",
+        value: "Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Our resort occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove.",
+      },
+      { key: "resort_region", value: "Pangasinan" },
+      {
+        key: "tourist_spots",
+        value: JSON.stringify([
+          { name: "Abagatanen White Beach", distance: "1 min Walk" },
+          { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+          { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+          { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+          { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" },
+        ]),
+      },
     ]
 
     for (const setting of defaultSettings) {
       await prisma.systemSettings.upsert({
         where: { key: setting.key },
-        update: { value: setting.value },
+        update: {}, // preserve existing user customization
         create: { key: setting.key, value: setting.value },
       })
-      console.log(`[Seed] Upserted setting: ${setting.key} -> "${setting.value.substring(0, 30)}..."`)
+      console.log(`[Seed] Initialized setting: ${setting.key} -> "${setting.value.substring(0, 30)}..."`)
     }
 
     // 4. Seed Default Suites/Rooms
@@ -337,6 +356,77 @@ async function main() {
         },
       })
       console.log(`[Seed] Upserted booking: ${booking.reference} (${booking.status}) -> "${booking.guestName}"`)
+    }
+
+    // 6. Seed Default Reviews & Cinematic Reels
+    console.log(`[Seed] Seeding sample guest reviews & cinematic reels...`)
+    const defaultReviews = [
+      {
+        guestName: "Alessandra Rossi",
+        rating: 5,
+        stayDate: "May 2026",
+        comment: "Breathtaking views and top-tier hospitality. The private infinity pool is unmatched.",
+        videoUrl: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+        imageUrl: "/images/image7.webp",
+        isApproved: true,
+      },
+      {
+        guestName: "Julian Vance",
+        rating: 5,
+        stayDate: "June 2026",
+        comment: "Simply paradise. Waking up to the sea waves is something I will never forget.",
+        videoUrl: "/videos/enhance_ocean_hill_villas.mp4",
+        imageUrl: "/images/image1.png",
+        isApproved: true,
+      },
+      {
+        guestName: "Clara Dupont",
+        rating: 5,
+        stayDate: "April 2026",
+        comment: "Bespoke privileges made our honeymoon feel so magical. 10/10 curation.",
+        videoUrl: "/ocean_hill_villa.mp4",
+        imageUrl: "/images/image2.png",
+        isApproved: true,
+      },
+      {
+        guestName: "Lord Marcus Sterling",
+        rating: 5,
+        stayDate: "March 2026",
+        comment: "An architectural marvel on the shoreline. The private chef curation and attentive staff redefined luxury for us.",
+        videoUrl: "/videos/enhance_ocean_hill_villas_mobile.mp4",
+        imageUrl: "/images/image3.png",
+        isApproved: true,
+      },
+      {
+        guestName: "Evelyn & Thomas Zhao",
+        rating: 5,
+        stayDate: "February 2026",
+        comment: "Watching the sunset from the overwater terrace with complimentary champagne is an experience we will cherish forever.",
+        videoUrl: null,
+        imageUrl: "/images/image4.png",
+        isApproved: true,
+      },
+      {
+        guestName: "Dr. Henrik Lindqvist",
+        rating: 5,
+        stayDate: "January 2026",
+        comment: "Peace, privacy, and impeccable service. The wellness pavilion and lagoon villas exceeded every expectation.",
+        videoUrl: null,
+        imageUrl: "/images/image5.png",
+        isApproved: true,
+      }
+    ]
+
+    const existingReviewsCount = await prisma.review.count()
+    if (existingReviewsCount === 0) {
+      for (const review of defaultReviews) {
+        await prisma.review.create({
+          data: review,
+        })
+        console.log(`[Seed] Created review: "${review.guestName}" (${review.stayDate})`)
+      }
+    } else {
+      console.log(`[Seed] Found ${existingReviewsCount} existing reviews. Skipping review seeding.`)
     }
 
     console.log("[Seed] Database seeding finished successfully!")

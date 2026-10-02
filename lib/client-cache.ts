@@ -37,6 +37,18 @@ export interface CachedVideoUrls {
 const SETTINGS_KEY = "sanctuary_settings_cache_v2"
 const ROOMS_KEY = "sanctuary_rooms_cache_v2"
 const VIDEO_KEY = "sanctuary_video_cache_v2"
+const REVIEWS_KEY = "sanctuary_reviews_cache_v1"
+
+export interface CachedReview {
+  id: string
+  guestName: string
+  rating: number
+  stayDate: string | null
+  comment: string
+  videoUrl: string | null
+  imageUrl: string | null
+  createdAt: string | Date
+}
 
 export function getClientCachedSettings(): SystemSettingsCache | null {
   if (typeof window === "undefined") return null
@@ -112,3 +124,29 @@ export function setClientCachedVideoUrls(urls: CachedVideoUrls): void {
     )
   } catch {}
 }
+
+export function getClientCachedReviews<T = CachedReview>(): T[] | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = localStorage.getItem(REVIEWS_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed?.data) && parsed.data.length > 0 ? (parsed.data as T[]) : null
+  } catch {
+    return null
+  }
+}
+
+export function setClientCachedReviews(reviews: unknown[]): void {
+  if (typeof window === "undefined") return
+  try {
+    localStorage.setItem(
+      REVIEWS_KEY,
+      JSON.stringify({
+        data: reviews,
+        timestamp: Date.now(),
+      })
+    )
+  } catch {}
+}
+

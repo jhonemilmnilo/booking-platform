@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { Room } from "@/components/shared/RoomCard"
@@ -68,6 +69,51 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
     return isMobile ? activeSuite.amenities.slice(0, 4) : activeSuite.amenities
   }, [activeSuite, isMobile])
 
+  const suiteGallery = React.useMemo(() => {
+    const list: string[] = []
+    if (activeSuite?.imageUrl) list.push(activeSuite.imageUrl)
+    if (activeSuite?.images && Array.isArray(activeSuite.images)) {
+      for (const img of activeSuite.images) {
+        if (img && !list.includes(img)) list.push(img)
+      }
+    }
+    return list.length > 0 ? list : ["/images/image7.webp"]
+  }, [activeSuite])
+
+  const [activeGalleryIndex, setActiveGalleryIndex] = React.useState(0)
+  const [galleryDirection, setGalleryDirection] = React.useState(0)
+  const [isGalleryPaused, setIsGalleryPaused] = React.useState(false)
+
+  // Reset gallery to photo 0 whenever the active suite changes
+  React.useEffect(() => {
+    setActiveGalleryIndex(0)
+    setGalleryDirection(0)
+  }, [activeSuiteIndex])
+
+  // Automatically slide through gallery photos every 4.5 seconds
+  React.useEffect(() => {
+    if (suiteGallery.length <= 1 || isGalleryPaused) return
+
+    const timer = setInterval(() => {
+      setGalleryDirection(1)
+      setActiveGalleryIndex((prev) => (prev + 1) % suiteGallery.length)
+    }, 4500)
+
+    return () => clearInterval(timer)
+  }, [suiteGallery.length, isGalleryPaused])
+
+  const nextGalleryImage = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setGalleryDirection(1)
+    setActiveGalleryIndex((prev) => (prev + 1) % suiteGallery.length)
+  }
+
+  const prevGalleryImage = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation()
+    setGalleryDirection(-1)
+    setActiveGalleryIndex((prev) => (prev - 1 + suiteGallery.length) % suiteGallery.length)
+  }
+
   return (
     <section id="villas" className="py-24 md:py-36 px-6 md:px-12 bg-gradient-to-b from-luxury-charcoal to-luxury-obsidian relative">
       <div className="max-w-7xl mx-auto space-y-16">
@@ -79,13 +125,44 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
               The Luxury <span className="bg-clip-text text-transparent text-gold-gradient italic">Suites & Villas</span>
             </h2>
           </div>
-          <p className="text-luxury-cream/60 max-w-md text-sm leading-relaxed">
-            Select from our curated beachfront villas and oceanfront suites, each offering direct access to the warm sands and private infinity pools.
-          </p>
+          <div className="flex flex-col items-start md:items-end gap-3 max-w-md">
+            <p className="text-luxury-cream/70 text-xs sm:text-sm leading-relaxed text-left md:text-right">
+              Select from our curated beachfront villas and oceanfront suites, each offering direct access to the warm sands and private infinity pools.
+            </p>
+            <Link
+              href="/villas"
+              className="group inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-gold-gradient hover:brightness-110 active:scale-95 text-white font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-luxury-gold/20 hover:shadow-luxury-gold/35 transition-all duration-300 cursor-pointer"
+            >
+              <span>See More Suites</span>
+              <i className="fa-solid fa-arrow-right text-xs transition-transform duration-300 group-hover:translate-x-1"></i>
+            </Link>
+          </div>
         </div>
 
         {/* Suite Showcase interface */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch gsap-reveal-fade-up">
+        <div className="relative gsap-reveal-fade-up">
+          {/* Action Navigation Buttons - Flanking the entire showcase to change suites */}
+          <button
+            type="button"
+            onClick={prevSuite}
+            className="absolute -left-4 sm:-left-5 lg:-left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 dark:bg-[#16171b]/95 hover:bg-luxury-gold dark:hover:bg-luxury-gold text-[#1C1A17] dark:text-luxury-cream hover:text-white dark:hover:text-white border border-black/10 dark:border-luxury-gold/30 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer shadow-2xl z-30 backdrop-blur-sm"
+            aria-label="Previous Suite"
+            title="Previous Suite"
+          >
+            <i className="fa-solid fa-chevron-left text-sm"></i>
+          </button>
+
+          <button
+            type="button"
+            onClick={nextSuite}
+            className="absolute -right-4 sm:-right-5 lg:-right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/95 dark:bg-[#16171b]/95 hover:bg-luxury-gold dark:hover:bg-luxury-gold text-[#1C1A17] dark:text-luxury-cream hover:text-white dark:hover:text-white border border-black/10 dark:border-luxury-gold/30 flex items-center justify-center transition-all duration-300 transform hover:scale-110 active:scale-95 cursor-pointer shadow-2xl z-30 backdrop-blur-sm"
+            aria-label="Next Suite"
+            title="Next Suite"
+          >
+            <i className="fa-solid fa-chevron-right text-sm"></i>
+          </button>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
           {/* Details Box Column Wrapper (Static) */}
           <div className="lg:col-span-5 relative h-[520px] sm:h-[500px] lg:h-[500px] w-full">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
@@ -164,7 +241,7 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
             </AnimatePresence>
           </div>
 
-          {/* Display Showcase Column Wrapper (Static) */}
+          {/* Display Showcase Column Wrapper: Slidable Suite Gallery */}
           <div className="lg:col-span-7 relative h-[450px] lg:h-[500px] w-full">
             <AnimatePresence initial={false} custom={slideDirection} mode="popLayout">
               <motion.div
@@ -178,51 +255,114 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
                   x: { type: "tween", duration: 0.5, ease: "easeOut" },
                   opacity: { duration: 0.35 }
                 }}
-                className="absolute inset-0 rounded-3xl overflow-hidden border border-luxury-gold/20 bg-luxury-obsidian w-full h-full"
+                onMouseEnter={() => setIsGalleryPaused(true)}
+                onMouseLeave={() => setIsGalleryPaused(false)}
+                onTouchStart={() => setIsGalleryPaused(true)}
+                onTouchEnd={() => setIsGalleryPaused(false)}
+                className="absolute inset-0 rounded-3xl overflow-hidden border border-luxury-gold/20 bg-luxury-obsidian w-full h-full group"
               >
-                <Image src={activeSuite.imageUrl} alt={activeSuite.name} fill className="object-cover" priority />
+                {/* Slidable Photo with Framer Motion slide & drag */}
+                <div className="relative w-full h-full overflow-hidden select-none">
+                  <AnimatePresence initial={false} custom={galleryDirection} mode="popLayout">
+                    <motion.div
+                      key={activeGalleryIndex}
+                      custom={galleryDirection}
+                      variants={slideVariants}
+                      initial="enter"
+                      animate="center"
+                      exit="exit"
+                      transition={{
+                        x: { type: "tween", duration: 0.4, ease: "easeOut" },
+                        opacity: { duration: 0.3 }
+                      }}
+                      drag="x"
+                      dragConstraints={{ left: 0, right: 0 }}
+                      dragElastic={0.2}
+                      onDragEnd={(_, info) => {
+                        if (info.offset.x < -35) {
+                          nextGalleryImage()
+                        } else if (info.offset.x > 35) {
+                          prevGalleryImage()
+                        }
+                      }}
+                      className="absolute inset-0 cursor-grab active:cursor-grabbing w-full h-full"
+                    >
+                      <Image
+                        src={suiteGallery[activeGalleryIndex] || activeSuite.imageUrl}
+                        alt={`${activeSuite.name} Photo ${activeGalleryIndex + 1}`}
+                        fill
+                        className="object-cover pointer-events-none"
+                        priority
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
 
-                {/* Overlay with navigation */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-between p-6 z-10">
-                  <div className="self-end bg-luxury-obsidian/95 border border-luxury-gold/30 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-luxury-cream shadow-md">
-                    <i className="fa-regular fa-eye text-luxury-gold mr-1"></i> Virtual Tour Enabled
+                {/* Overlay elements with navigation */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30 flex flex-col justify-between p-6 pointer-events-none z-10">
+                  {/* Top Bar: Gallery Counter & Virtual Tour */}
+                  <div className="flex items-center justify-between w-full pointer-events-auto">
+                    {suiteGallery.length > 1 ? (
+                      <div className="bg-luxury-obsidian/90 backdrop-blur-md border border-luxury-gold/30 px-3.5 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-luxury-cream shadow-md flex items-center gap-1.5">
+                        <i className="fa-solid fa-camera text-luxury-gold text-[10px]"></i>
+                        <span>Photo {activeGalleryIndex + 1} of {suiteGallery.length}</span>
+                      </div>
+                    ) : (
+                      <div />
+                    )}
+
+                    <div className="bg-luxury-obsidian/95 border border-luxury-gold/30 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase font-semibold text-luxury-cream shadow-md">
+                      <i className="fa-regular fa-eye text-luxury-gold mr-1"></i> Virtual Tour Enabled
+                    </div>
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={prevSuite}
-                      className="w-12 h-12 rounded-full bg-luxury-obsidian/95 hover:bg-luxury-gold text-luxury-cream border border-luxury-gold/20 flex items-center justify-center transition-all duration-300 transform hover:-translate-x-1 cursor-pointer shadow-md"
-                      aria-label="Previous Suite"
-                    >
-                      <i className="fa-solid fa-chevron-left"></i>
-                    </button>
-                    <button
-                      onClick={nextSuite}
-                      className="w-12 h-12 rounded-full bg-luxury-obsidian/95 hover:bg-luxury-gold text-luxury-cream border border-luxury-gold/20 flex items-center justify-center transition-all duration-300 transform hover:translate-x-1 cursor-pointer shadow-md"
-                      aria-label="Next Suite"
-                    >
-                      <i className="fa-solid fa-chevron-right"></i>
-                    </button>
-                  </div>
+                  {/* Bottom: Gallery Indicators & Specs Bar */}
+                  <div className="space-y-3 w-full pointer-events-auto">
+                    {/* Gallery Dot Indicators */}
+                    {suiteGallery.length > 1 && (
+                      <div className="flex items-center justify-center gap-1.5">
+                        {suiteGallery.map((_, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setGalleryDirection(idx > activeGalleryIndex ? 1 : -1)
+                              setActiveGalleryIndex(idx)
+                            }}
+                            className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                              idx === activeGalleryIndex
+                                ? "w-6 bg-luxury-gold shadow-md"
+                                : "w-2 bg-white/40 hover:bg-white/80"
+                            }`}
+                            aria-label={`Go to photo ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
 
-                  <div className="flex justify-around items-center gap-4 text-xs text-luxury-cream bg-luxury-obsidian/95 border border-luxury-gold/20 rounded-xl py-3 px-6 shadow-lg select-none">
-                    <span className="flex items-center gap-2 whitespace-nowrap">
-                      <i className="fa-solid fa-panorama text-luxury-gold flex-shrink-0"></i>{" "}
-                      {activeSuiteIndex === 0
-                        ? "180° Aegean Views"
-                        : activeSuiteIndex === 1
-                          ? "Unobstructed Sunsets"
-                          : "Lagoon & Coral Views"}
-                    </span>
-                    <span className="flex items-center gap-2 whitespace-nowrap">
-                      <i className="fa-solid fa-user-group text-luxury-gold flex-shrink-0"></i> Up to {activeSuite.capacity} VIPs
-                    </span>
+                    {/* Room Specs Bar */}
+                    <div className="flex justify-around items-center gap-4 text-xs text-luxury-cream bg-luxury-obsidian/95 border border-luxury-gold/20 rounded-xl py-3 px-6 shadow-lg select-none">
+                      <span className="flex items-center gap-2 whitespace-nowrap">
+                        <i className="fa-solid fa-panorama text-luxury-gold flex-shrink-0"></i>{" "}
+                        {activeSuiteIndex === 0
+                          ? "180° Aegean Views"
+                          : activeSuiteIndex === 1
+                            ? "Unobstructed Sunsets"
+                            : "Lagoon & Coral Views"}
+                      </span>
+                      <span className="flex items-center gap-2 whitespace-nowrap">
+                        <i className="fa-solid fa-user-group text-luxury-gold flex-shrink-0"></i> Up to {activeSuite.capacity} VIPs
+                      </span>
+                    </div>
                   </div>
                 </div>
               </motion.div>
             </AnimatePresence>
           </div>
         </div>
+      </div>
+
       </div>
     </section>
   )
