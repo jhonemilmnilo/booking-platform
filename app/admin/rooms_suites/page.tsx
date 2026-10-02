@@ -67,13 +67,13 @@ export default function AdminRoomsPage() {
   // Form states
   const [name, setName] = React.useState("")
   const [description, setDescription] = React.useState("")
-  const [pricePerNight, setPricePerNight] = React.useState<number>(10000)
-  const [capacity, setCapacity] = React.useState<number>(2)
-  const [imageUrl, setImageUrl] = React.useState("/images/image1.png")
-  const [size, setSize] = React.useState("5,000 Sq Ft")
+  const [pricePerNight, setPricePerNight] = React.useState<number | "">("")
+  const [capacity, setCapacity] = React.useState<number | "">("")
+  const [imageUrl, setImageUrl] = React.useState("")
+  const [size, setSize] = React.useState("")
   const [selectedAmenities, setSelectedAmenities] = React.useState<string[]>([])
   const [customAmenity, setCustomAmenity] = React.useState("")
-  const [galleryImages, setGalleryImages] = React.useState<string[]>([""])
+  const [galleryImages, setGalleryImages] = React.useState<string[]>([])
   const [showPreview, setShowPreview] = React.useState(false)
   const handleFileUpload = async (
     file: File,
@@ -142,13 +142,13 @@ export default function AdminRoomsPage() {
     setEditingRoom(null)
     setName("")
     setDescription("")
-    setPricePerNight(10000)
-    setCapacity(2)
-    setImageUrl("/images/image1.png")
-    setSize("5,000 Sq Ft")
+    setPricePerNight("")
+    setCapacity("")
+    setImageUrl("")
+    setSize("")
     setSelectedAmenities([])
     setCustomAmenity("")
-    setGalleryImages([""])
+    setGalleryImages([])
     setIsModalOpen(true)
   }
 
@@ -161,9 +161,9 @@ export default function AdminRoomsPage() {
     setCapacity(room.capacity)
     setImageUrl(room.imageUrl)
     setSize(room.size)
-    setSelectedAmenities(room.amenities)
+    setSelectedAmenities(room.amenities || [])
     setCustomAmenity("")
-    setGalleryImages(room.images.length > 0 ? [...room.images] : [""])
+    setGalleryImages(room.images && room.images.length > 0 ? [...room.images] : [])
     setIsModalOpen(true)
   }
 
@@ -201,22 +201,51 @@ export default function AdminRoomsPage() {
   // Remove field in gallery image array
   const handleRemoveGalleryImageField = (index: number) => {
     const next = galleryImages.filter((_, i) => i !== index)
-    setGalleryImages(next.length === 0 ? [""] : next)
+    setGalleryImages(next)
   }
 
   // Handle Form Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const parsedPrice = typeof pricePerNight === "number" ? pricePerNight : parseInt(String(pricePerNight)) || 0
+    const parsedCapacity = typeof capacity === "number" ? capacity : parseInt(String(capacity)) || 1
+
+    if (!name.trim()) {
+      toast.error("Please enter a suite or villa title.")
+      return
+    }
+
+    if (!size.trim()) {
+      toast.error("Please enter the villa size or layout.")
+      return
+    }
+
+    if (parsedCapacity <= 0) {
+      toast.error("Please specify a valid maximum guest capacity.")
+      return
+    }
+
+    if (parsedPrice <= 0) {
+      toast.error("Please specify a valid price per night.")
+      return
+    }
+
+    if (!imageUrl.trim() || imageUrl === "UPLOADING") {
+      toast.error("Please upload or provide a primary cover image.")
+      return
+    }
+
     setIsSaving(true)
 
     // Filter out empty custom gallery image inputs
-    const finalGallery = galleryImages.map((img) => img.trim()).filter((img) => img !== "")
+    const finalGallery = galleryImages.map((img) => img.trim()).filter((img) => img !== "" && img !== "UPLOADING")
 
     const payload = {
       name: name.trim(),
       description: description.trim(),
-      pricePerNight,
-      capacity,
+      pricePerNight: parsedPrice,
+      capacity: parsedCapacity,
       imageUrl: imageUrl.trim(),
       size: size.trim(),
       amenities: selectedAmenities,
@@ -508,7 +537,7 @@ export default function AdminRoomsPage() {
                         value={size}
                         onChange={(e) => setSize(e.target.value)}
                         required
-                        placeholder="e.g. 6,800 Sq Ft"
+                        placeholder="e.g. 5,000 Sq Ft"
                         className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                       />
                     </div>
@@ -517,9 +546,13 @@ export default function AdminRoomsPage() {
                       <input
                         type="number"
                         value={capacity}
-                        onChange={(e) => setCapacity(parseInt(e.target.value) || 1)}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setCapacity(val === "" ? "" : Math.max(1, parseInt(val) || 1))
+                        }}
                         required
                         min={1}
+                        placeholder="e.g. 2"
                         className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                       />
                     </div>
@@ -528,9 +561,13 @@ export default function AdminRoomsPage() {
                       <input
                         type="number"
                         value={pricePerNight}
-                        onChange={(e) => setPricePerNight(parseInt(e.target.value) || 0)}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setPricePerNight(val === "" ? "" : Math.max(0, parseInt(val) || 0))
+                        }}
                         required
                         min={0}
+                        placeholder="e.g. 10000"
                         className="w-full bg-black/40 border border-luxury-gold/25 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-luxury-gold transition-all"
                       />
                     </div>
@@ -790,10 +827,10 @@ export default function AdminRoomsPage() {
                       <div className="space-y-5">
                         <div className="flex justify-between items-center border-b border-luxury-gold/10 pb-3 text-[10px]">
                           <span className="text-luxury-gold font-bold uppercase tracking-[0.25em] truncate max-w-[50%]">
-                            {size || "OCEANFRONT CLUB WING"}
+                            {size || "VILLA SIZE"}
                           </span>
                           <span className="font-serif text-sm text-[#1c1a17] font-semibold">
-                            ₱{pricePerNight.toLocaleString()}{" "}
+                            ₱{(Number(pricePerNight) || 0).toLocaleString()}{" "}
                             <span className="text-[8px] font-sans text-black/40 uppercase tracking-widest">/ Night</span>
                           </span>
                         </div>
@@ -872,7 +909,7 @@ export default function AdminRoomsPage() {
                             <i className="fa-solid fa-panorama text-luxury-gold flex-shrink-0"></i> 180° Aegean Views
                           </span>
                           <span className="flex items-center gap-1.5 whitespace-nowrap">
-                            <i className="fa-solid fa-user-group text-luxury-gold flex-shrink-0"></i> Up to {capacity} VIPs
+                            <i className="fa-solid fa-user-group text-luxury-gold flex-shrink-0"></i> Up to {capacity || 1} VIPs
                           </span>
                         </div>
                       </div>
