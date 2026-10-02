@@ -7,6 +7,7 @@ import { getSystemSettingsAction, updateSystemSettingsAction } from "@/app/auth/
 import { getClientCachedSettings, setClientCachedSettings } from "@/lib/client-cache"
 import { AdminSidebarToggle } from "@/app/admin/_components/admin-shell"
 import AdminUserDropdown from "@/app/admin/_components/admin-user-dropdown"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Skeleton bone — defined at module level to satisfy react-hooks/static-components
 function SkeletonBone({ className = "" }: { className?: string }) {
@@ -18,12 +19,21 @@ interface TouristSpot {
   distance: string
 }
 
+// Fallback dummy template when no attractions have been configured in database
+const DUMMY_TOURIST_SPOTS: TouristSpot[] = [
+  { name: "Abagatanen White Beach", distance: "1 min Walk" },
+  { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
+  { name: "Bani Olanen Beach", distance: "12 mins Drive" },
+  { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
+  { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
+]
+
 export default function AdminLocationPage() {
   // ─── Initial Hydration from Cache ───────────────────────────────────────────
   const [resortLatitude, setResortLatitude] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
-      if (c?.resortLatitude) return c.resortLatitude
+      if (c?.resortLatitude !== undefined) return c.resortLatitude
     }
     return "16.1651539"
   })
@@ -31,7 +41,7 @@ export default function AdminLocationPage() {
   const [resortLongitude, setResortLongitude] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
-      if (c?.resortLongitude) return c.resortLongitude
+      if (c?.resortLongitude !== undefined) return c.resortLongitude
     }
     return "119.7698115"
   })
@@ -39,7 +49,7 @@ export default function AdminLocationPage() {
   const [resortRegion, setResortRegion] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
-      if (c?.resortRegion) return c.resortRegion
+      if (c?.resortRegion !== undefined) return c.resortRegion
     }
     return "Pangasinan"
   })
@@ -47,7 +57,7 @@ export default function AdminLocationPage() {
   const [titleLine1, setTitleLine1] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
-      if (c?.resortLocationTitleLine1) return c.resortLocationTitleLine1
+      if (c?.resortLocationTitleLine1 !== undefined) return c.resortLocationTitleLine1
     }
     return "Poised Above the"
   })
@@ -55,7 +65,7 @@ export default function AdminLocationPage() {
   const [titleLine2, setTitleLine2] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
-      if (c?.resortLocationTitleLine2) return c.resortLocationTitleLine2
+      if (c?.resortLocationTitleLine2 !== undefined) return c.resortLocationTitleLine2
     }
     return "Aegean Horizon"
   })
@@ -63,7 +73,7 @@ export default function AdminLocationPage() {
   const [description, setDescription] = React.useState(() => {
     if (typeof window !== "undefined") {
       const c = getClientCachedSettings()
-      if (c?.resortLocationDescription) return c.resortLocationDescription
+      if (c?.resortLocationDescription !== undefined) return c.resortLocationDescription
     }
     return "Accessible directly via scenic coastal highways, private yacht tenders, or our beachside boardwalk. Our resort occupies a prime oceanfront location offering unrivaled panoramic views while staying secluded in a private sandy cove."
   })
@@ -74,17 +84,11 @@ export default function AdminLocationPage() {
       if (c?.touristSpots) {
         try {
           const parsed = JSON.parse(c.touristSpots)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+          if (Array.isArray(parsed)) return parsed
         } catch {}
       }
     }
-    return [
-      { name: "Abagatanen White Beach", distance: "1 min Walk" },
-      { name: "Agno Umbrella Rocks", distance: "8 mins Shore Drive" },
-      { name: "Bani Olanen Beach", distance: "12 mins Drive" },
-      { name: "Hundred Islands (Alaminos)", distance: "35 mins Resort Shuttle" },
-      { name: "Cape Bolinao Lighthouse", distance: "45 mins Private Charter" }
-    ]
+    return DUMMY_TOURIST_SPOTS
   })
 
   // ─── Component State ────────────────────────────────────────────────────────
@@ -94,22 +98,24 @@ export default function AdminLocationPage() {
   const [selectedSpotPreview, setSelectedSpotPreview] = React.useState<TouristSpot | null>(null)
   const [isRawMode, setIsRawMode] = React.useState(false)
   const [rawText, setRawText] = React.useState("")
+  const [spotToDelete, setSpotToDelete] = React.useState<{ index: number; name: string; distance: string } | null>(null)
+  const [isDeletingSpot, setIsDeletingSpot] = React.useState(false)
 
   // Initial fetch from database
   React.useEffect(() => {
     getSystemSettingsAction()
       .then((settings) => {
-        if (settings.resortLatitude) setResortLatitude(settings.resortLatitude)
-        if (settings.resortLongitude) setResortLongitude(settings.resortLongitude)
-        if (settings.resortRegion) setResortRegion(settings.resortRegion)
-        if (settings.resortLocationTitleLine1) setTitleLine1(settings.resortLocationTitleLine1)
-        if (settings.resortLocationTitleLine2) setTitleLine2(settings.resortLocationTitleLine2)
-        if (settings.resortLocationDescription) setDescription(settings.resortLocationDescription)
+        if (settings.resortLatitude !== undefined && settings.resortLatitude !== null) setResortLatitude(settings.resortLatitude)
+        if (settings.resortLongitude !== undefined && settings.resortLongitude !== null) setResortLongitude(settings.resortLongitude)
+        if (settings.resortRegion !== undefined && settings.resortRegion !== null) setResortRegion(settings.resortRegion)
+        if (settings.resortLocationTitleLine1 !== undefined && settings.resortLocationTitleLine1 !== null) setTitleLine1(settings.resortLocationTitleLine1)
+        if (settings.resortLocationTitleLine2 !== undefined && settings.resortLocationTitleLine2 !== null) setTitleLine2(settings.resortLocationTitleLine2)
+        if (settings.resortLocationDescription !== undefined && settings.resortLocationDescription !== null) setDescription(settings.resortLocationDescription)
 
-        if (settings.touristSpots) {
+        if (settings.touristSpots !== undefined && settings.touristSpots !== null) {
           try {
             const parsed = JSON.parse(settings.touristSpots)
-            if (Array.isArray(parsed) && parsed.length > 0) {
+            if (Array.isArray(parsed)) {
               setTouristSpots(parsed)
             }
           } catch (e) {
@@ -152,8 +158,63 @@ export default function AdminLocationPage() {
   }
 
   const handleRemoveSpot = (index: number) => {
-    setTouristSpots((prev) => prev.filter((_, i) => i !== index))
-    setHasChanges(true)
+    const target = touristSpots[index]
+    if (!target) return
+    setSpotToDelete({
+      index,
+      name: target.name || "Untitled Destination",
+      distance: target.distance || "Time unspecified",
+    })
+  }
+
+  const confirmDeleteSpot = async () => {
+    if (!spotToDelete) return
+    const deletedName = spotToDelete.name
+    const nextSpots = touristSpots.filter((_, i) => i !== spotToDelete.index)
+
+    setIsDeletingSpot(true)
+    try {
+      setTouristSpots(nextSpots)
+      if (selectedSpotPreview?.name === deletedName) {
+        setSelectedSpotPreview(null)
+      }
+
+      // Persist immediately to Database
+      const payload: Record<string, string> = {
+        resort_latitude: resortLatitude.trim(),
+        resort_longitude: resortLongitude.trim(),
+        resort_region: resortRegion.trim(),
+        resort_location_title_line_1: titleLine1.trim(),
+        resort_location_title_line_2: titleLine2.trim(),
+        resort_location_description: description.trim(),
+        tourist_spots: JSON.stringify(nextSpots),
+      }
+
+      const res = await updateSystemSettingsAction(payload)
+      if (res.success) {
+        setHasChanges(false)
+        const existingCache = getClientCachedSettings() || {}
+        setClientCachedSettings({
+          ...existingCache,
+          resortLatitude: resortLatitude.trim(),
+          resortLongitude: resortLongitude.trim(),
+          resortRegion: resortRegion.trim(),
+          resortLocationTitleLine1: titleLine1.trim(),
+          resortLocationTitleLine2: titleLine2.trim(),
+          resortLocationDescription: description.trim(),
+          touristSpots: JSON.stringify(nextSpots),
+        })
+        toast.success(`Removed "${deletedName}" and saved changes!`)
+      } else {
+        toast.error(`Delete failed: ${res.error}`)
+      }
+    } catch (err) {
+      console.error("[AdminLocation] Delete spot error:", err)
+      toast.error("Failed to remove attraction.")
+    } finally {
+      setIsDeletingSpot(false)
+      setSpotToDelete(null)
+    }
   }
 
   const handleMoveSpot = (index: number, direction: "up" | "down") => {
@@ -211,6 +272,17 @@ export default function AdminLocationPage() {
       const res = await updateSystemSettingsAction(payload)
       if (res.success) {
         setHasChanges(false)
+        const existingCache = getClientCachedSettings() || {}
+        setClientCachedSettings({
+          ...existingCache,
+          resortLatitude: lat,
+          resortLongitude: lng,
+          resortRegion: resortRegion.trim(),
+          resortLocationTitleLine1: titleLine1.trim(),
+          resortLocationTitleLine2: titleLine2.trim(),
+          resortLocationDescription: description.trim(),
+          touristSpots: JSON.stringify(touristSpots),
+        })
         toast.success("Location coordinates and attractions saved successfully!")
       } else {
         toast.error(`Save failed: ${res.error}`)
@@ -226,13 +298,13 @@ export default function AdminLocationPage() {
   const handleDiscard = () => {
     const c = getClientCachedSettings()
     if (c) {
-      if (c.resortLatitude) setResortLatitude(c.resortLatitude)
-      if (c.resortLongitude) setResortLongitude(c.resortLongitude)
-      if (c.resortRegion) setResortRegion(c.resortRegion)
-      if (c.resortLocationTitleLine1) setTitleLine1(c.resortLocationTitleLine1)
-      if (c.resortLocationTitleLine2) setTitleLine2(c.resortLocationTitleLine2)
-      if (c.resortLocationDescription) setDescription(c.resortLocationDescription)
-      if (c.touristSpots) {
+      if (c.resortLatitude !== undefined) setResortLatitude(c.resortLatitude)
+      if (c.resortLongitude !== undefined) setResortLongitude(c.resortLongitude)
+      if (c.resortRegion !== undefined) setResortRegion(c.resortRegion)
+      if (c.resortLocationTitleLine1 !== undefined) setTitleLine1(c.resortLocationTitleLine1)
+      if (c.resortLocationTitleLine2 !== undefined) setTitleLine2(c.resortLocationTitleLine2)
+      if (c.resortLocationDescription !== undefined) setDescription(c.resortLocationDescription)
+      if (c.touristSpots !== undefined) {
         try {
           const parsed = JSON.parse(c.touristSpots)
           if (Array.isArray(parsed)) setTouristSpots(parsed)
@@ -751,6 +823,86 @@ export default function AdminLocationPage() {
           </div>
         </div>
       </main>
+
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {spotToDelete && (
+          <div
+            className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4"
+            onClick={() => setSpotToDelete(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md bg-white dark:bg-[#16171b] border border-rose-500/20 dark:border-rose-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-[#1C1A17] dark:text-[#EAE5D9]"
+            >
+              {/* Header Icon + Title */}
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xl shrink-0">
+                  <i className="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-serif text-lg font-bold text-[#1C1A17] dark:text-white">
+                    Remove Attraction?
+                  </h3>
+                  <p className="text-xs text-[#7A746B] dark:text-white/60 leading-relaxed font-light">
+                    Are you sure you want to remove &ldquo;{spotToDelete.name || "Untitled Destination"}&rdquo; from nearby attractions and transit times?
+                  </p>
+                </div>
+              </div>
+
+              {/* Destination Preview Box */}
+              <div className="bg-black/[0.03] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-luxury-gold uppercase tracking-wider font-semibold flex items-center gap-1.5">
+                    <i className="fa-solid fa-map-pin text-[11px]"></i>
+                    Attraction #{spotToDelete.index + 1}
+                  </span>
+                  <span className="text-[11px] text-luxury-gold font-medium bg-luxury-gold/10 px-2.5 py-0.5 rounded-full border border-luxury-gold/20">
+                    {spotToDelete.distance || "Time unspecified"}
+                  </span>
+                </div>
+                <p className="text-sm font-serif font-bold text-[#1C1A17] dark:text-white truncate">
+                  {spotToDelete.name || "Untitled Destination"}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeletingSpot}
+                  onClick={() => setSpotToDelete(null)}
+                  className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-[#5C564F] dark:text-white/80 font-semibold px-5 py-2.5 rounded-xl text-xs border border-black/10 dark:border-white/10 cursor-pointer transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingSpot}
+                  onClick={confirmDeleteSpot}
+                  className="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-lg shadow-rose-500/25 border-none cursor-pointer transition-all flex items-center gap-2 disabled:opacity-50"
+                >
+                  {isDeletingSpot ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                      <span>Removing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-trash-can"></i>
+                      <span>Remove Attraction</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

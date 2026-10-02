@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { getSystemSettingsAction, updateSystemSettingsAction } from "@/app/auth/actions"
 import { getClientCachedSettings, setClientCachedSettings } from "@/lib/client-cache"
@@ -148,6 +149,10 @@ export default function AdminAmenitiesPage() {
   const [formPerks, setFormPerks] = React.useState<string[]>([])
   const [newPerkInput, setNewPerkInput] = React.useState("")
 
+  // Custom Delete Confirmation Modal State
+  const [itemToDelete, setItemToDelete] = React.useState<AmenityItem | null>(null)
+  const [isDeletingItem, setIsDeletingItem] = React.useState(false)
+
   // Fetch settings from server
   React.useEffect(() => {
     let isMounted = true
@@ -277,11 +282,15 @@ export default function AdminAmenitiesPage() {
     }
   }
 
-  // Delete Amenity directly
-  const handleDelete = async (id: string, title: string) => {
-    if (!window.confirm(`Are you sure you want to remove "${title}"?`)) return
-    const nextList = amenities.filter((a) => a.id !== id)
+  // Delete Amenity confirmation
+  const confirmDeleteAmenity = async () => {
+    if (!itemToDelete) return
+    setIsDeletingItem(true)
+    const nextList = amenities.filter((a) => a.id !== itemToDelete.id)
+    const title = itemToDelete.title
+    setItemToDelete(null)
     await persistAmenities(nextList, `Removed "${title}"`)
+    setIsDeletingItem(false)
   }
 
   // Move Up / Move Down directly
@@ -310,85 +319,6 @@ export default function AdminAmenitiesPage() {
   // Remove Perk Tag
   const handleRemovePerk = (tag: string) => {
     setFormPerks((prev) => prev.filter((p) => p !== tag))
-  }
-
-  // Reset to default amenities directly
-  const handleResetDefaults = async () => {
-    if (!window.confirm("Reset amenities to the default 6 luxury signature showcases?")) {
-      return
-    }
-    const defaultList: AmenityItem[] = [
-      {
-        id: "beach-club",
-        title: "Private Beach Club",
-        subtitle: "Pristine Sands & Daybeds",
-        description: "Enjoy exclusive access to our secluded white sand cove, fully serviced with luxury loungers, double daybeds, and dedicated beachside concierges.",
-        category: "beach",
-        categoryLabel: "Beachfront",
-        icon: "fa-umbrella-beach",
-        hours: "6:00 AM – 7:00 PM",
-        perks: ["Private Cove", "Double Daybeds", "Butler Service"],
-        highlightBadge: "Signature",
-      },
-      {
-        id: "water-sports",
-        title: "Water Sports & Charters",
-        subtitle: "Coastal Exploration",
-        description: "Paddleboards, sea kayaks, and custom luxury yacht charters are available directly from the private resort pier for bespoke ocean exploration.",
-        category: "beach",
-        categoryLabel: "Sea Adventures",
-        icon: "fa-ship",
-        hours: "8:00 AM – 5:00 PM",
-        perks: ["Private Yachts", "Sea Kayaks", "Guided Reef Tours"],
-      },
-      {
-        id: "fine-dining",
-        title: "Fine Oceanfront Dining",
-        subtitle: "Mediterranean Gastronomy",
-        description: "Indulge in gourmet Mediterranean cuisine crafted from locally sourced coastal ingredients, served directly over the water under the evening stars.",
-        category: "dining",
-        categoryLabel: "Gourmet Dining",
-        icon: "fa-utensils",
-        hours: "11:30 AM – 11:00 PM",
-        perks: ["Michelin-Caliber Chefs", "Overwater Deck", "Private Cellar"],
-        highlightBadge: "Award Winning",
-      },
-      {
-        id: "poolside-loungers",
-        title: "Poolside Loungers & Cabanas",
-        subtitle: "Lagoon & Infinity Terraces",
-        description: "Relax beside our multi-tiered heated lagoon and infinity pools, featuring shaded luxury cabanas, chilled towel service, and panoramic ocean vistas.",
-        category: "wellness",
-        categoryLabel: "Relaxation",
-        icon: "fa-water",
-        hours: "7:00 AM – 10:00 PM",
-        perks: ["Infinity Edge", "Heated Waters", "Chilled Towels"],
-      },
-      {
-        id: "wellness-spa",
-        title: "Wellness & Spa Pavilion",
-        subtitle: "Holistic Rejuvenation",
-        description: "Experience world-class massage therapy, Himalayan salt saunas, and sensory wellness treatments designed to restore body and mind right on the shore.",
-        category: "wellness",
-        categoryLabel: "Holistic Health",
-        icon: "fa-spa",
-        hours: "9:00 AM – 9:00 PM",
-        perks: ["Herbal Steam", "Deep Tissue Massage", "Sound Healing"],
-        highlightBadge: "Holistic",
-      },
-      {
-        id: "sunset-bar",
-        title: "Sunset Cabana Bar",
-        subtitle: "Artisanal Libations",
-        description: "Sip custom botanical cocktails, fresh cold-pressed tropical juices, and vintage reserve wines served directly to your lounge chair by master mixologists.",
-        category: "dining",
-        categoryLabel: "Seaside Drinks",
-        icon: "fa-martini-glass-citrus",
-        hours: "3:00 PM – Midnight",
-        perks: ["Master Mixology", "Craft Botanical Cocktails", "Sunset DJ Sets"],
-      },
-    ]
-    await persistAmenities(defaultList, "Amenities reset to defaults and published to live site!")
   }
 
   // Filtered view
@@ -601,14 +531,6 @@ export default function AdminAmenitiesPage() {
               <i className="fa-solid fa-plus text-[10px]"></i>
               <span>Add Amenity</span>
             </button>
-
-            <button
-              onClick={handleResetDefaults}
-              className="text-xs p-2 rounded-xl bg-white/[0.04] border border-white/10 text-white/40 hover:text-white hover:border-white/20 transition-all cursor-pointer"
-              title="Reset to Default 6 Signature Amenities"
-            >
-              <i className="fa-solid fa-rotate-left"></i>
-            </button>
           </div>
         </div>
 
@@ -721,7 +643,7 @@ export default function AdminAmenitiesPage() {
                           <span>Edit</span>
                         </button>
                         <button
-                          onClick={() => handleDelete(item.id, item.title)}
+                          onClick={() => setItemToDelete(item)}
                           className="w-7 h-7 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 text-rose-400 flex items-center justify-center text-xs transition-all cursor-pointer"
                           title="Delete Amenity"
                         >
@@ -1045,6 +967,80 @@ export default function AdminAmenitiesPage() {
           </div>
         </div>
       )}
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {itemToDelete && (
+          <div className="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md bg-white dark:bg-[#16171b] border border-rose-500/20 dark:border-rose-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-[#1C1A17] dark:text-[#EAE5D9]"
+            >
+              {/* Header Icon + Title */}
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xl shrink-0">
+                  <i className="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-serif text-lg font-bold text-[#1C1A17] dark:text-white">
+                    Remove Amenity?
+                  </h3>
+                  <p className="text-xs text-[#7A746B] dark:text-white/60 leading-relaxed font-light">
+                    Are you sure you want to remove &ldquo;{itemToDelete.title}&rdquo; from the resort showcase? This will update the live website immediately.
+                  </p>
+                </div>
+              </div>
+
+              {/* Amenity Preview Box */}
+              <div className="bg-black/[0.03] dark:bg-white/[0.04] border border-black/10 dark:border-white/10 rounded-2xl p-4 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-luxury-gold uppercase tracking-wider font-semibold">
+                    {itemToDelete.categoryLabel}
+                  </span>
+                  <span className="text-[10px] text-black/40 dark:text-white/40 font-mono">
+                    {itemToDelete.hours}
+                  </span>
+                </div>
+                <p className="text-xs font-serif font-bold text-[#1C1A17] dark:text-white">
+                  {itemToDelete.title} <span className="font-sans font-normal text-black/60 dark:text-white/60">&mdash; {itemToDelete.subtitle}</span>
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeletingItem}
+                  onClick={() => setItemToDelete(null)}
+                  className="bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-[#5C564F] dark:text-white/80 font-semibold px-5 py-2.5 rounded-xl text-xs border border-black/10 dark:border-white/10 cursor-pointer transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingItem}
+                  onClick={confirmDeleteAmenity}
+                  className="bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-lg shadow-rose-500/25 border-none cursor-pointer transition-all disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isDeletingItem ? (
+                    <>
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                      <span>Removing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <i className="fa-solid fa-trash-can"></i>
+                      <span>Remove Amenity</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

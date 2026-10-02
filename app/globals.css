@@ -476,4 +476,15 @@ html:not(.admin-light) [data-theme-preview="light"] span[data-brand-light-text],
 html:not(.admin-light) [data-theme-preview="light"] .brand-preview-light-text {
     color: #1C1A17 !important;
 }
+
+/* Hide navbar when reel lightbox is active */
+body.reel-active #mainHeader,
+body.reel-active header,
+body.reel-active nav#desktopNav {
+    transform: translateY(-100%) !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: transform 0.35s ease, opacity 0.35s ease !important;
+}
+
 
