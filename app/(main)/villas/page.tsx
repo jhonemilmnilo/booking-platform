@@ -415,13 +415,16 @@ export default function VillasPage() {
 
   // Auto-open room if URL has matching hash (e.g. /villas#1br-1ba-private-pool-villa)
   React.useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash) {
-      const hash = window.location.hash.replace("#", "")
-      const found = rooms.find((r) => r.id === hash)
-      if (found) {
-        setSelectedRoom(found)
+    const timer = setTimeout(() => {
+      if (typeof window !== "undefined" && window.location.hash) {
+        const hash = window.location.hash.replace("#", "")
+        const found = rooms.find((r) => r.id === hash)
+        if (found) {
+          setSelectedRoom(found)
+        }
       }
-    }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [rooms])
 
   // Scroll listener for sticky breadcrumbs

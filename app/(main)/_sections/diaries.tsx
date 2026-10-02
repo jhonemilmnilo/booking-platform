@@ -19,11 +19,23 @@ interface Review {
 }
 
 export default function Diaries() {
-  const [reviews, setReviews] = React.useState<Review[]>([])
+  const [reviews, setReviews] = React.useState<Review[]>(() => {
+    if (typeof window !== "undefined") {
+      const cached = getClientCachedReviews<Review>()
+      if (cached && cached.length > 0) return cached
+    }
+    return []
+  })
   const [activeReel, setActiveReel] = React.useState<string | null>(null)
   const [isSubmitOpen, setIsSubmitOpen] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
-  const [mounted, setMounted] = React.useState(false)
+
+  // Track client mount for portal without cascading render effects
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   // Submit Form States
   const [guestName, setGuestName] = React.useState("")
@@ -33,18 +45,8 @@ export default function Diaries() {
   const [videoFile, setVideoFile] = React.useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
 
-  // Track client mount for portal
+  // Fetch fresh data from database
   React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // 1. Hydrate immediately from client cache, then fetch fresh data from database
-  React.useEffect(() => {
-    const cached = getClientCachedReviews<Review>()
-    if (cached && cached.length > 0) {
-      setReviews(cached)
-    }
-
     getApprovedReviewsAction()
       .then((data) => {
         if (data && Array.isArray(data)) {

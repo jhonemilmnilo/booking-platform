@@ -85,10 +85,12 @@ export default function Rooms({ mockRooms, onBookClick }: RoomsProps) {
   const [isGalleryPaused, setIsGalleryPaused] = React.useState(false)
 
   // Reset gallery to photo 0 whenever the active suite changes
-  React.useEffect(() => {
+  const [prevSuiteIndex, setPrevSuiteIndex] = React.useState(activeSuiteIndex)
+  if (prevSuiteIndex !== activeSuiteIndex) {
+    setPrevSuiteIndex(activeSuiteIndex)
     setActiveGalleryIndex(0)
     setGalleryDirection(0)
-  }, [activeSuiteIndex])
+  }
 
   // Automatically slide through gallery photos every 4.5 seconds
   React.useEffect(() => {

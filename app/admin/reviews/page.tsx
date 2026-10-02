@@ -50,20 +50,22 @@ export default function AdminReviewsPage() {
   const [reviewToDelete, setReviewToDelete] = React.useState<Review | null>(null)
   const [isDeleting, setIsDeleting] = React.useState(false)
 
-  const loadData = React.useCallback(async () => {
-    try {
-      const [pending, approved] = await Promise.all([
-        getPendingReviewsAction(),
-        getApprovedReviewsAction()
-      ])
-      setPendingReviews(pending)
-      setApprovedReviews(approved)
-    } catch (err) {
-      console.error("[AdminReviews] Error loading data:", err)
-      toast.error("Failed to load reviews data.")
-    } finally {
-      setIsLoading(false)
-    }
+  const loadData = React.useCallback(() => {
+    Promise.all([
+      getPendingReviewsAction(),
+      getApprovedReviewsAction()
+    ])
+      .then(([pending, approved]) => {
+        setPendingReviews(pending)
+        setApprovedReviews(approved)
+      })
+      .catch((err) => {
+        console.error("[AdminReviews] Error loading data:", err)
+        toast.error("Failed to load reviews data.")
+      })
+      .finally(() => {
+        setIsLoading(false)
+      })
   }, [])
 
   React.useEffect(() => {
