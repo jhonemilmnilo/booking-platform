@@ -56,6 +56,8 @@ export default function AdminSidebar({
   const router = useRouter()
   const pathname = usePathname()
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
+  const [isHovered, setIsHovered] = React.useState(false)
+  const isEffectiveCollapsed = isCollapsed && !isHovered
 
   const handleSignOut = async () => {
     setIsLoggingOut(true)
@@ -133,9 +135,19 @@ export default function AdminSidebar({
 
   return (
     <aside
+      onMouseEnter={() => {
+        setIsHovered(true)
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false)
+      }}
       className={`admin-sidebar-aside ${
-        isCollapsed ? "w-20" : "w-64"
-      } bg-[#16171b] border-r border-luxury-gold/20 flex flex-col justify-between h-screen fixed left-0 top-0 z-30 select-none transition-[width] duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-x-hidden`}
+        isEffectiveCollapsed ? "w-20" : "w-64"
+      } ${
+        isCollapsed && isHovered
+          ? "is-hovered z-50 shadow-2xl shadow-black/80 border-r border-luxury-gold/40"
+          : "z-30"
+      } bg-[#16171b] border-r border-luxury-gold/20 flex flex-col justify-between h-screen fixed left-0 top-0 select-none transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-x-hidden`}
     >
       {/* Brand Header */}
       <div className="flex flex-col flex-1 min-h-0">
@@ -148,12 +160,12 @@ export default function AdminSidebar({
                 <img
                   src={brandLogo}
                   alt={brandName}
-                  title={isCollapsed ? brandName : undefined}
+                  title={isEffectiveCollapsed ? brandName : undefined}
                   className="w-10 h-10 object-contain shrink-0"
                 />
               ) : (
                 <div
-                  title={isCollapsed ? brandName : undefined}
+                  title={isEffectiveCollapsed ? brandName : undefined}
                   className="w-10 h-10 rounded-xl bg-luxury-gold/10 flex items-center justify-center border border-luxury-gold/30 shrink-0 shadow-sm"
                 >
                   <i className="fa-solid fa-crown text-luxury-gold text-sm"></i>
@@ -163,8 +175,8 @@ export default function AdminSidebar({
 
             {/* Brand Title and Subtitle: smoothly slides and fades */}
             <div
-              className={`min-w-0 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden whitespace-nowrap pl-1 ${
-                isCollapsed
+              className={`admin-sidebar-brand-text min-w-0 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden whitespace-nowrap pl-1 ${
+                isEffectiveCollapsed
                   ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
                   : "max-w-[130px] opacity-100 translate-x-0"
               }`}
@@ -178,20 +190,24 @@ export default function AdminSidebar({
             </div>
           </div>
 
-          {/* Collapse Toggle Button */}
+          {/* Collapse Toggle / Pin Button */}
           {onToggleCollapse && (
             <button
               type="button"
               onClick={onToggleCollapse}
-              title="Collapse sidebar"
-              aria-label="Collapse sidebar"
-              className={`w-7 h-7 rounded-lg bg-white/5 hover:bg-luxury-gold/20 text-white/50 hover:text-luxury-gold flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer border border-white/10 shrink-0 ${
-                isCollapsed
+              title={isCollapsed ? "Pin sidebar open" : "Collapse sidebar"}
+              aria-label={isCollapsed ? "Pin sidebar open" : "Collapse sidebar"}
+              className={`admin-sidebar-toggle-btn w-7 h-7 rounded-lg bg-white/5 hover:bg-luxury-gold/20 text-white/50 hover:text-luxury-gold flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] cursor-pointer border border-white/10 shrink-0 ${
+                isEffectiveCollapsed
                   ? "opacity-0 scale-75 pointer-events-none -translate-x-2 w-0 overflow-hidden border-0 p-0 m-0"
                   : "opacity-100 scale-100"
               }`}
             >
-              <i className="fa-solid fa-angles-left text-xs"></i>
+              <i
+                className={`fa-solid ${
+                  isCollapsed ? "fa-thumbtack text-xs" : "fa-angles-left text-xs"
+                }`}
+              ></i>
             </button>
           )}
         </div>
@@ -211,7 +227,7 @@ export default function AdminSidebar({
                 <button
                   onClick={() => {
                     if (hasSubItems) {
-                      if (isCollapsed) {
+                      if (isEffectiveCollapsed) {
                         router.push(item.subItems![0].href)
                       } else {
                         setExpandedItems((prev) => ({
@@ -247,8 +263,8 @@ export default function AdminSidebar({
 
                   {/* Text Label & Badges: fluid width, opacity, and transform transition */}
                   <div
-                    className={`flex-1 flex items-center justify-between min-w-0 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden pr-3 ${
-                      isCollapsed
+                    className={`admin-sidebar-label flex-1 flex items-center justify-between min-w-0 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden pr-3 ${
+                      isEffectiveCollapsed
                         ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
                         : "max-w-[170px] opacity-100 translate-x-0"
                     }`}
@@ -282,10 +298,10 @@ export default function AdminSidebar({
 
                 {/* Collapsed Tooltip / Sub-items Flyout */}
                 <div
-                  className={`absolute left-full ml-3 top-0 ${
+                  className={`admin-sidebar-tooltip absolute left-full ml-3 top-0 ${
                     hasSubItems ? "w-48 p-2" : "px-3 py-2 whitespace-nowrap"
                   } bg-[#181920] border border-white/10 rounded-xl shadow-2xl transition-all duration-200 z-50 pointer-events-none ${
-                    isCollapsed
+                    isEffectiveCollapsed
                       ? "group-hover:opacity-100 group-hover:pointer-events-auto opacity-0 translate-x-1 group-hover:translate-x-0"
                       : "opacity-0 hidden"
                   }`}
@@ -338,7 +354,7 @@ export default function AdminSidebar({
                 </div>
 
                 {/* Sub Items Accordion (Expanded State) */}
-                {hasSubItems && !isCollapsed && (
+                {hasSubItems && !isEffectiveCollapsed && (
                   <div
                     className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] ${
                       isExpanded ? "max-h-40 opacity-100 mt-1" : "max-h-0 opacity-0"
@@ -389,7 +405,7 @@ export default function AdminSidebar({
           onClick={handleSignOut}
           disabled={isLoggingOut}
           aria-label="Log Out"
-          title={isCollapsed ? "Log Out Session" : undefined}
+          title={isEffectiveCollapsed ? "Log Out Session" : undefined}
           className="w-full flex items-center h-11 rounded-xl transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden cursor-pointer select-none admin-sidebar-logout group disabled:opacity-50"
         >
           {/* Stable Icon Container: exactly 52px wide, center matches other icons */}
@@ -403,8 +419,8 @@ export default function AdminSidebar({
 
           {/* Text Label & Badge */}
           <div
-            className={`flex-1 flex items-center justify-between min-w-0 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden pr-3 ${
-              isCollapsed
+            className={`admin-sidebar-logout-text flex-1 flex items-center justify-between min-w-0 transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)] overflow-hidden pr-3 ${
+              isEffectiveCollapsed
                 ? "max-w-0 opacity-0 -translate-x-3 pointer-events-none"
                 : "max-w-[170px] opacity-100 translate-x-0"
             }`}
